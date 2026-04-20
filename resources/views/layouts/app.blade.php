@@ -75,14 +75,40 @@
             background-color: #fff;
             cursor: pointer;
         }
+        .app-mobile-nav.offcanvas {
+            background: linear-gradient(180deg, #1d4ed8, #0f172a);
+            color: #e5e7eb;
+            max-width: min(280px, 88vw);
+        }
+        .app-mobile-nav .nav-link {
+            color: inherit;
+        }
+        .app-mobile-nav .nav-link.active,
+        .app-mobile-nav .nav-link:hover {
+            background-color: rgba(59, 130, 246, 0.25);
+        }
     </style>
 </head>
 <body>
     <div class="app-shell">
         <header class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
             <div class="container-fluid">
-                <a href="{{ session()->has('login_user_id') ? route('top.assignment') : route('login') }}" class="navbar-brand fw-semibold text-primary text-decoration-none">Nakatsuka DX</a>
-                <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center flex-grow-1 min-w-0">
+                    @if (session()->has('login_user_id'))
+                        <button
+                            class="navbar-toggler d-lg-none me-2 py-2 px-2 border shadow-none"
+                            type="button"
+                            data-bs-toggle="offcanvas"
+                            data-bs-target="#appSidebarOffcanvas"
+                            aria-controls="appSidebarOffcanvas"
+                            aria-label="メニューを開く"
+                        >
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                    @endif
+                    <a href="{{ session()->has('login_user_id') ? route('top.assignment') : route('login') }}" class="navbar-brand fw-semibold text-primary text-decoration-none mb-0 text-truncate">Nakatsuka DX</a>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
                     @if (session()->has('login_user_id'))
                         <span class="text-muted small">ログイン中</span>
                         <form method="POST" action="{{ route('logout') }}">
@@ -94,41 +120,27 @@
             </div>
         </header>
 
+        @if (session()->has('login_user_id'))
+            <div
+                class="offcanvas offcanvas-start app-mobile-nav"
+                tabindex="-1"
+                id="appSidebarOffcanvas"
+                aria-labelledby="appSidebarOffcanvasLabel"
+            >
+                <div class="offcanvas-header border-bottom border-secondary border-opacity-25">
+                    <h5 class="offcanvas-title text-white" id="appSidebarOffcanvasLabel">メニュー</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="閉じる"></button>
+                </div>
+                <div class="offcanvas-body pt-0">
+                    @include('layouts.partials.app-sidebar-nav', ['dismissOffcanvas' => true])
+                </div>
+            </div>
+        @endif
+
         <div class="app-main">
             @if (session()->has('login_user_id'))
                 <nav class="sidebar d-none d-lg-flex flex-column p-3">
-                    <div class="mb-4 small text-uppercase text-gray-400">メニュー</div>
-                    <ul class="nav nav-pills flex-column gap-1">
-                        <li class="nav-item">
-                            <a href="{{ route('top.attendance') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('top.attendance') ? 'active' : 'text-white-50' }}">
-                                <span class="me-2">🕒</span> 勤怠
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('top.assignment') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('top.assignment') ? 'active' : 'text-white-50' }}">
-                                <span class="me-2">📋</span> 配置一覧
-                            </a>
-                        </li>
-                        <li class="nav-item mt-3">
-                            <div class="small text-uppercase text-gray-400 mb-1">設定</div>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('top.setting') }}" class="nav-link d-flex align-items-start {{ request()->routeIs('top.setting') ? 'active' : 'text-white-50' }}">
-                                <span class="me-2 flex-shrink-0">⚙️</span>
-                                <span class="lh-sm text-start">設定<br>トップ</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('setting.attendance.manage') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('setting.attendance.*') ? 'active' : 'text-white-50' }}">
-                                <span class="me-2">🕒</span> 勤怠管理
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('setting.assignment.manage') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('setting.assignment.*') ? 'active' : 'text-white-50' }}">
-                                <span class="me-2">📋</span> 配置入力
-                            </a>
-                        </li>
-                    </ul>
+                    @include('layouts.partials.app-sidebar-nav', ['dismissOffcanvas' => false])
                 </nav>
             @endif
 
