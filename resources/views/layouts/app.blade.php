@@ -113,8 +113,9 @@
                             <div class="small text-uppercase text-gray-400 mb-1">設定</div>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('top.setting') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('top.setting') ? 'active' : 'text-white-50' }}">
-                                <span class="me-2">⚙️</span> 設定トップ
+                            <a href="{{ route('top.setting') }}" class="nav-link d-flex align-items-start {{ request()->routeIs('top.setting') ? 'active' : 'text-white-50' }}">
+                                <span class="me-2 flex-shrink-0">⚙️</span>
+                                <span class="lh-sm text-start">設定<br>トップ</span>
                             </a>
                         </li>
                         <li class="nav-item">
