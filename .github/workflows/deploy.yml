@@ -31,7 +31,10 @@ jobs:
             -e "ssh -p ${{ secrets.XSERVER_PORT }}" \
             ./ "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}:${{ secrets.XSERVER_DEPLOY_PATH }}/"
 
-      - name: Run Laravel optimize clear
+      - name: Run Laravel clear commands
         run: |
           ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" \
-            "cd '${{ secrets.XSERVER_DEPLOY_PATH }}' && /opt/php-8.3/bin/php artisan optimize:clear"
+            "cd '${{ secrets.XSERVER_DEPLOY_PATH }}' && \
+             /opt/php-8.3/bin/php artisan view:clear && \
+             /opt/php-8.3/bin/php artisan config:clear && \
+             /opt/php-8.3/bin/php artisan route:clear"
