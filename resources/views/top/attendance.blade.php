@@ -90,12 +90,13 @@
                             <tbody>
                                 @foreach($attendance_data as $row)
                                     @php
+                                        // 未入力時は一括登録と同じ初期値（08:00 / 17:00 / 休憩60分=01:00）
                                         $start = $row->start_time ?? '';
                                         $end = $row->end_time ?? '';
                                         $breakTime = $row->break_time ?? '';
-                                        $startVal = $start ? substr((string)$start, 0, 5) : '';
-                                        $endVal = $end ? substr((string)$end, 0, 5) : '';
-                                        $breakVal = $breakTime ? substr((string)$breakTime, 0, 5) : '';
+                                        $startVal = $start ? substr((string)$start, 0, 5) : '08:00';
+                                        $endVal = $end ? substr((string)$end, 0, 5) : '17:00';
+                                        $breakVal = $breakTime ? substr((string)$breakTime, 0, 5) : '01:00';
                                         $isAbsent = isset($row->absence_flg) && intval($row->absence_flg) === 1;
                                     @endphp
                                     <tr>

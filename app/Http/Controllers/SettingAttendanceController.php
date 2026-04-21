@@ -87,9 +87,22 @@ class SettingAttendanceController extends Controller
             $assignedStaffList = $this->attendanceService->GetAttendanceAllStaff($workplaceId, $workDate);
             if ($assignedStaffList === false || $assignedStaffList === null) $assignedStaffList = [];
 
+            $startDefault = trim((string) ($defaults->start_time ?? ''));
+            $endDefault = trim((string) ($defaults->end_time ?? ''));
+            $breakDefault = trim((string) ($defaults->break_time ?? ''));
+            if ($startDefault === '') {
+                $startDefault = '08:00:00';
+            }
+            if ($endDefault === '') {
+                $endDefault = '17:00:00';
+            }
+            if ($breakDefault === '') {
+                $breakDefault = '01:00:00';
+            }
+
             // 休憩の初期値は「分」で画面に出し、保存時に break_time に変換する
             $breakMinutesDefault = 60;
-            $breakTimeStr = $defaults->break_time ?? '';
+            $breakTimeStr = $breakDefault;
             if (is_string($breakTimeStr) && $breakTimeStr !== '') {
                 if (preg_match('/^(\\d{1,2}):(\\d{2})/', $breakTimeStr, $m) === 1) {
                     $breakMinutesDefault = ((int)$m[1]) * 60 + ((int)$m[2]);
@@ -103,9 +116,9 @@ class SettingAttendanceController extends Controller
                 'workplace_id' => $workplaceId,
                 'work_date' => $workDate,
                 'assigned_staff_list' => $assignedStaffList,
-                'start_time' => $defaults->start_time ?? '',
-                'end_time' => $defaults->end_time ?? '',
-                'break_time' => $defaults->break_time ?? '',
+                'start_time' => $startDefault,
+                'end_time' => $endDefault,
+                'break_time' => $breakDefault,
                 'break_minutes' => $breakMinutesDefault,
                 // 添付イメージの初期状態に合わせて「欠勤者の入力」をデフォルト表示
                 'absence_mode' => 1,
