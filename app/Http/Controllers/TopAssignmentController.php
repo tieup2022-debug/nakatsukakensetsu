@@ -87,6 +87,11 @@ class TopAssignmentController extends Controller
 
         $news = $this->newsService->GetNews();
 
+        $newsBodyHtml = '';
+        if ($news && isset($news->news)) {
+            $newsBodyHtml = $this->newsService->formatNewsHtmlWithDiffSinceDayStart((string) $news->news);
+        }
+
         return view('top.assignment')->with([
             'display_date' => formatJapaneseDate($resolvedWorkDate),
             'workplace_list' => $workplaceList,
@@ -99,6 +104,7 @@ class TopAssignmentController extends Controller
             'equipment_list' => $equipmentList,
             'previous_date' => $previousDate,
             'news' => $news,
+            'news_body_html' => $newsBodyHtml,
             'result' => null,
         ]);
     }

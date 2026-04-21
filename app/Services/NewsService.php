@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use SebastianBergmann\Diff\Differ;
+use SebastianBergmann\Diff\Output\UnifiedDiffOutputBuilder;
 
 class NewsService
 {
@@ -61,6 +64,76 @@ class NewsService
         }
 
         return $row;
+    }
+
+    /**
+     * お知らせ本文を HTML 化する。当日 0 時より前の履歴に保存されていた内容との差分で、
+     * 追記・変更された行（行単位の diff）をオレンジ色の span で囲む。
+     *
+     * @param  string  $currentNews  現在の本文（m_news と同一想定）
+     * @return string エスケープ済み HTML（改行はそのまま含み、表示側は white-space: pre-wrap 推奨）
+     */
+    public function formatNewsHtmlWithDiffSinceDayStart(string $currentNews): string
+    {
+        $current = str_replace(["\r\n", "\r"], "\n", $currentNews);
+        $baseline = $this->getNewsSnapshotBeforeTodayStart();
+
+        if ($baseline === null) {
+            return $this->escapeHtmlPreservingNewlines($current);
+        }
+
+        $baselineNorm = str_replace(["\r\n", "\r"], "\n", $baseline);
+        if ($baselineNorm === $current) {
+            return $this->escapeHtmlPreservingNewlines($current);
+        }
+
+        $differ = new Differ(new UnifiedDiffOutputBuilder('', false));
+        $diff = $differ->diffToArray($baselineNorm, $current);
+
+        $html = '';
+        foreach ($diff as [$fragment, $type]) {
+            if ($type === Differ::DIFF_LINE_END_WARNING || $type === Differ::NO_LINE_END_EOF_WARNING) {
+                continue;
+            }
+            if ($type === Differ::REMOVED) {
+                continue;
+            }
+            $escaped = $this->escapeHtmlPreservingNewlines((string) $fragment);
+            if ($type === Differ::ADDED) {
+                $html .= '<span class="news-diff-added">'.$escaped.'</span>';
+            } else {
+                $html .= $escaped;
+            }
+        }
+
+        return $html;
+    }
+
+    /**
+     * アプリのタイムゾーンで「今日 0 時」より前に保存された、直近のお知らせ本文。
+     */
+    private function getNewsSnapshotBeforeTodayStart(): ?string
+    {
+        try {
+            $start = Carbon::today()->startOfDay();
+            $news = DB::table('t_news_history')
+                ->whereNull('deleted_at')
+                ->where('created_at', '<', $start)
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->value('news');
+
+            return $news !== null ? (string) $news : null;
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return null;
+        }
+    }
+
+    private function escapeHtmlPreservingNewlines(string $text): string
+    {
+        return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
     /**

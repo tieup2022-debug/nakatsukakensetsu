@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+    <style>
+        .news-body-diff .news-diff-added { color: #e8590c; font-weight: 600; }
+    </style>
     <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
         <div>
             <h1 class="h4 mb-1 fw-semibold">配置一覧</h1>
@@ -224,18 +227,14 @@
                         <span class="badge bg-primary-subtle text-primary flex-shrink-0">最新</span>
                     </div>
                     @if($news && isset($news->news))
-                        <div class="small text-muted" style="white-space: pre-wrap;">
-                            {{ $news->news }}
+                        <div class="small text-muted news-body-diff" style="white-space: pre-wrap;">
+                            {!! $news_body_html !!}
                         </div>
                     @else
                         <div class="text-muted small">
                             お知らせはありません。
                         </div>
                     @endif
-
-                    <div class="mt-3 small text-muted">
-                        （必要なら「前日から複製」等も同じ画面内に追加できます）
-                    </div>
                 </div>
             </div>
         </div>
