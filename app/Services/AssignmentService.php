@@ -33,11 +33,7 @@ class AssignmentService
     {
         try {
             if (is_null($workDate)) {
-                if (new \DateTime() < '15:00') {
-                    $workDate = date('Y-m-d');
-                } else {
-                    $workDate = defaultWorkDate();
-                }
+                $workDate = defaultWorkDate();
             }
 
             if (is_null($workplaceId)) {

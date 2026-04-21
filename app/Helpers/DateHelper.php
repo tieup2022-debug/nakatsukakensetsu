@@ -19,18 +19,25 @@ if (!function_exists('formatJapaneseDate')) {
 }
 
 if (!function_exists('defaultWorkDate')) {
+    /**
+     * 作業日の既定値。
+     * - 15:00 未満: 当日
+     * - 15:00 以降: 月〜木は翌日、金・土・日は翌週の月曜（旧システムの曜日ロジック）
+     */
     function defaultWorkDate(): string
     {
-        $today = date('Y-m-d');
-        $dayOfWeek = date('w', strtotime($today));
-
-        if ($dayOfWeek >= 1 && $dayOfWeek <= 4) {
-            $defaultDate = date('Y-m-d', strtotime($today . ' + 1 day'));
-        } else {
-            $defaultDate = date('Y-m-d', strtotime('next Monday'));
+        $now = now();
+        if ((int) $now->format('Hi') < 1500) {
+            return $now->format('Y-m-d');
         }
 
-        return $defaultDate;
+        $today = $now->format('Y-m-d');
+        $w = (int) date('w', strtotime($today));
+        if ($w >= 1 && $w <= 4) {
+            return date('Y-m-d', strtotime($today . ' +1 day'));
+        }
+
+        return date('Y-m-d', strtotime($today . ' next Monday'));
     }
 }
 
