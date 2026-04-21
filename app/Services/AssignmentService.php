@@ -36,6 +36,10 @@ class AssignmentService
                 $workDate = defaultWorkDate();
             }
 
+            if ($workplaceId === '' || $workplaceId === null) {
+                $workplaceId = null;
+            }
+
             if (is_null($workplaceId)) {
                 $assinmentData = DB::table('t_assignment')
                     ->where('work_date', '=', $workDate)

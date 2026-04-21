@@ -28,6 +28,9 @@ class TopAssignmentController extends Controller
         }
 
         $workplaceId = $request->input('workplace_id');
+        if ($workplaceId === '' || $workplaceId === null) {
+            $workplaceId = null;
+        }
         $workDate = $request->input('work_date');
 
         $workplaceList = $this->workplaceService->getWorkplaceList(true);

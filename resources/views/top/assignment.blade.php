@@ -27,47 +27,58 @@
 
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body">
-            <form method="GET" action="{{ route('top.assignment') }}" class="row g-2 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label small text-muted">現場</label>
-                    <select class="form-select" name="workplace_id" onchange="this.form.submit()">
-                        @foreach($workplace_list as $w)
-                            <option value="{{ $w->id }}" {{ (string)$w->id === (string)$workplace_id ? 'selected' : '' }}>
-                                {{ $w->workplace_name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label small text-muted">作業日</label>
-                    <input
-                        type="text"
-                        class="form-control js-datepicker"
-                        name="work_date"
-                        value="{{ $work_date }}"
-                        data-datepicker-submit
-                        readonly
-                        autocomplete="off"
-                    >
-                </div>
-                <div class="col-md-4 text-md-end">
-                    <button class="btn btn-outline-primary btn-sm" type="submit">更新</button>
-                    <a
-                        class="btn btn-outline-secondary btn-sm ms-2"
-                        href="{{ route('top.assignment', ['workplace_id'=>$workplace_id,'work_date'=>$work_date,'output_preview'=>1]) }}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        ブラウザ表示
-                    </a>
-                    <a
-                        class="btn btn-outline-secondary btn-sm ms-2"
-                        href="{{ route('top.assignment', ['workplace_id'=>$workplace_id,'work_date'=>$work_date,'output_pdf'=>1]) }}"
-                    >
-                        PDF出力
-                    </a>
-                    @if(!empty($previous_date))
-                        <form method="POST" action="{{ route('top.assignment.copy') }}" class="d-inline ms-2" onsubmit="return confirm('前日の配置をコピーしますか？（現在の配置は上書きされます）');">
+            {{-- フォームのネストは無効 HTML のためモバイルで所属が崩れ、現場 select の GET が正しく送られないことがある --}}
+            <div class="d-flex flex-column flex-lg-row flex-lg-wrap align-items-stretch align-items-lg-end gap-2 gap-lg-3">
+                <form id="assignment-filter-form" method="GET" action="{{ route('top.assignment') }}" class="row g-2 align-items-end flex-grow-1" style="min-width:0">
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">現場</label>
+                        <select
+                            class="form-select"
+                            name="workplace_id"
+                            form="assignment-filter-form"
+                            data-assignment-filter-submit
+                        >
+                            @foreach($workplace_list as $w)
+                                <option value="{{ $w->id }}" {{ (string)$w->id === (string)$workplace_id ? 'selected' : '' }}>
+                                    {{ $w->workplace_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">作業日</label>
+                        <input
+                            type="text"
+                            class="form-control js-datepicker"
+                            name="work_date"
+                            form="assignment-filter-form"
+                            value="{{ $work_date }}"
+                            data-datepicker-submit
+                            readonly
+                            autocomplete="off"
+                        >
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <button class="btn btn-outline-primary btn-sm" type="submit" form="assignment-filter-form">更新</button>
+                        <a
+                            class="btn btn-outline-secondary btn-sm ms-2"
+                            href="{{ route('top.assignment', ['workplace_id'=>$workplace_id,'work_date'=>$work_date,'output_preview'=>1]) }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            ブラウザ表示
+                        </a>
+                        <a
+                            class="btn btn-outline-secondary btn-sm ms-2"
+                            href="{{ route('top.assignment', ['workplace_id'=>$workplace_id,'work_date'=>$work_date,'output_pdf'=>1]) }}"
+                        >
+                            PDF出力
+                        </a>
+                    </div>
+                </form>
+                @if(!empty($previous_date))
+                    <div class="d-flex justify-content-lg-end flex-shrink-0">
+                        <form method="POST" action="{{ route('top.assignment.copy') }}" class="d-inline" onsubmit="return confirm('前日の配置をコピーしますか？（現在の配置は上書きされます）');">
                             @csrf
                             <input type="hidden" name="workplace_id" value="{{ $workplace_id }}">
                             <input type="hidden" name="work_date" value="{{ $work_date }}">
@@ -75,9 +86,9 @@
                                 前日コピー
                             </button>
                         </form>
-                    @endif
-                </div>
-            </form>
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
 
@@ -247,5 +258,19 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-assignment-filter-submit]').forEach(function (sel) {
+                sel.addEventListener('change', function () {
+                    var f = sel.form || document.getElementById('assignment-filter-form');
+                    if (!f) return;
+                    window.setTimeout(function () {
+                        f.submit();
+                    }, 0);
+                });
+            });
+        });
+    </script>
 @endsection
 

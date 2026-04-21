@@ -181,8 +181,12 @@
                 };
                 if (el.hasAttribute('data-datepicker-submit')) {
                     opts.onChange = function () {
-                        var form = el.closest('form');
-                        if (form) form.submit();
+                        var form = el.form || el.closest('form');
+                        if (form) {
+                            window.setTimeout(function () {
+                                form.submit();
+                            }, 0);
+                        }
                     };
                 }
                 flatpickr(el, opts);
