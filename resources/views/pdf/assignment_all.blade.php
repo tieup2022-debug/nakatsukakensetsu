@@ -2,7 +2,16 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8">
-    @include('pdf.partials.fonts')
+    @if(!empty($web_preview))
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body, table, th, td, h1, h2, h3, div, span, strong, b {
+                font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", "Noto Sans JP", sans-serif;
+            }
+        </style>
+    @else
+        @include('pdf.partials.fonts')
+    @endif
     <style>
         * { box-sizing: border-box; }
         body {
@@ -68,9 +77,63 @@
         .col-abs {
             width: 9%;
         }
+        @if(!empty($web_preview))
+        body {
+            min-width: 960px;
+        }
+        .preview-toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: #f8fafc;
+            border-bottom: 1px solid #cbd5e1;
+            padding: 8px 12px;
+            margin: -8px -10px 12px -10px;
+            font-size: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .preview-toolbar a {
+            color: #1d4ed8;
+            text-decoration: none;
+        }
+        .preview-toolbar a:hover {
+            text-decoration: underline;
+        }
+        .preview-toolbar button {
+            font: inherit;
+            cursor: pointer;
+            padding: 4px 10px;
+            border: 1px solid #94a3b8;
+            border-radius: 4px;
+            background: #fff;
+        }
+        .preview-toolbar button:hover {
+            background: #f1f5f9;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                margin: 4px;
+            }
+        }
+        @endif
     </style>
 </head>
 <body>
+@if(!empty($web_preview))
+    <div class="preview-toolbar no-print">
+        <a href="{{ $assignment_list_url ?? route('top.assignment') }}">← 配置一覧に戻る</a>
+        <span style="color:#94a3b8">|</span>
+        <button type="button" onclick="window.print()">印刷</button>
+        <span style="color:#94a3b8">|</span>
+        <a href="{{ $assignment_pdf_url ?? '#' }}">PDFでダウンロード</a>
+    </div>
+@endif
 @php
     $pdf_data_list = is_array($pdf_data_list ?? null) ? $pdf_data_list : [];
     $absenceFlat = $pdf_data_list['absence_list'] ?? [];

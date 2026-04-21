@@ -54,6 +54,14 @@
                     <button class="btn btn-outline-primary btn-sm" type="submit">更新</button>
                     <a
                         class="btn btn-outline-secondary btn-sm ms-2"
+                        href="{{ route('top.assignment', ['workplace_id'=>$workplace_id,'work_date'=>$work_date,'output_preview'=>1]) }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        ブラウザ表示
+                    </a>
+                    <a
+                        class="btn btn-outline-secondary btn-sm ms-2"
                         href="{{ route('top.assignment', ['workplace_id'=>$workplace_id,'work_date'=>$work_date,'output_pdf'=>1]) }}"
                     >
                         PDF出力

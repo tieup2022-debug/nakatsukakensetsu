@@ -48,6 +48,32 @@ class TopAssignmentController extends Controller
             $resolvedWorkDate = defaultWorkDate();
         }
 
+        // ブラウザ表示（PDF と同じレイアウト・同一データ）
+        if ($request->has('output_preview')) {
+            $viewData = $this->assignmentService->getPdf($resolvedWorkDate);
+            if ($viewData === false || empty($viewData['pdf_data_list'] ?? [])) {
+                return redirect()
+                    ->route('top.assignment', [
+                        'workplace_id' => $resolvedWorkplaceId,
+                        'work_date' => $resolvedWorkDate,
+                    ])
+                    ->with('status', '表示できる配置データがありません。');
+            }
+
+            $viewData['web_preview'] = true;
+            $viewData['assignment_list_url'] = route('top.assignment', [
+                'workplace_id' => $resolvedWorkplaceId,
+                'work_date' => $resolvedWorkDate,
+            ]);
+            $viewData['assignment_pdf_url'] = route('top.assignment', [
+                'workplace_id' => $resolvedWorkplaceId,
+                'work_date' => $resolvedWorkDate,
+                'output_pdf' => 1,
+            ]);
+
+            return response()->view('pdf.assignment_all', $viewData);
+        }
+
         // PDF出力（旧システムと同じ「指定日の全現場＋欠勤予定者」レイアウト）
         if ($request->has('output_pdf')) {
             // DomPDF + 日本語フォントでメモリ不足になりやすいため、出力時のみ上限を引き上げる
