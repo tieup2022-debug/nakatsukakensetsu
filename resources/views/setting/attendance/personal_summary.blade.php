@@ -16,7 +16,7 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <div>
             <h1 class="h4 mb-1 fw-semibold">個人別集計（月次）</h1>
-            <div class="text-muted small">社員ごとの月次集計（普通/時間外/休日/深夜）</div>
+            <div class="text-muted small">社員ごとの月次集計（出退勤/休憩/実働/普通/休日/深夜）</div>
         </div>
         <div>
             <a class="btn btn-outline-secondary btn-sm" href="{{ route('setting.attendance.manage') }}">勤怠管理へ戻る</a>
@@ -84,26 +84,43 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach(['normal' => '普通', 'overtime' => '時間外', 'holiday' => '休日', 'midnight' => '(深夜)'] as $key => $label)
+                        @php
+                            $rows = [
+                                'start' => '出勤時間',
+                                'end' => '退勤時間',
+                                'break' => '休憩時間',
+                                'worked' => '実働時間',
+                                'normal' => '普通',
+                                'holiday' => '休日',
+                                'midnight' => '(深夜)',
+                            ];
+                        @endphp
+                        @foreach($rows as $key => $label)
                             <tr>
                                 @if($loop->first)
-                                    <td class="staff-col" rowspan="4">{{ $person['staff_name'] }}</td>
+                                    <td class="staff-col" rowspan="{{ count($rows) }}">{{ $person['staff_name'] }}</td>
                                 @endif
                                 <td class="label-col">{{ $label }}</td>
                                 @if($loop->first)
-                                    <td class="sum-col" rowspan="4">{{ $person['weekday_work_days'] }}日</td>
-                                    <td class="sum-col" rowspan="4">{{ $person['holiday_work_days'] }}日</td>
-                                    <td class="sum-col" rowspan="4">{{ number_format(($person['normal_minutes'] ?? 0) / 60, 2) }}時間</td>
-                                    <td class="sum-col" rowspan="4">{{ number_format(($person['overtime_minutes'] ?? 0) / 60, 2) }}時間</td>
-                                    <td class="sum-col" rowspan="4">{{ number_format(($person['holiday_minutes'] ?? 0) / 60, 2) }}時間</td>
-                                    <td class="sum-col" rowspan="4">{{ number_format(($person['midnight_minutes'] ?? 0) / 60, 2) }}時間</td>
+                                    <td class="sum-col" rowspan="{{ count($rows) }}">{{ $person['weekday_work_days'] }}日</td>
+                                    <td class="sum-col" rowspan="{{ count($rows) }}">{{ $person['holiday_work_days'] }}日</td>
+                                    <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['normal_minutes'] ?? 0) / 60, 2) }}時間</td>
+                                    <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['overtime_minutes'] ?? 0) / 60, 2) }}時間</td>
+                                    <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['holiday_minutes'] ?? 0) / 60, 2) }}時間</td>
+                                    <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['midnight_minutes'] ?? 0) / 60, 2) }}時間</td>
                                 @endif
                                 @foreach($date_list as $date)
                                     @php $cell = $person['daily'][$date] ?? null; @endphp
-                                    @if($key === 'normal' && !empty($cell['absence']))
+                                    @if($key === 'start' && !empty($cell['absence']))
                                         <td class="day-col abs-cell">休</td>
                                     @else
-                                        <td class="day-col">{{ $cell[$key] ?? '0.00' }}</td>
+                                        <td class="day-col">
+                                            @if(in_array($key, ['start', 'end'], true))
+                                                {{ $cell[$key] ?? '' }}
+                                            @else
+                                                {{ $cell[$key] ?? '0.00' }}
+                                            @endif
+                                        </td>
                                     @endif
                                 @endforeach
                             </tr>

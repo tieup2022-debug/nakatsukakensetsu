@@ -1006,10 +1006,17 @@ class AttendanceService
                     $holidayMinutes = 0;
                     $midnightMinutes = 0;
                     $absence = false;
+                    $startDisplay = '';
+                    $endDisplay = '';
+                    $breakMinutes = 0;
+                    $workedMinutes = 0;
 
                     if ($row) {
                         $absence = intval($row->absence_flg ?? 0) === 1;
                         if (!$absence) {
+                            $startDisplay = $this->formatTimeShort((string) ($row->start_time ?? ''));
+                            $endDisplay = $this->formatTimeShort((string) ($row->end_time ?? ''));
+                            $breakMinutes = $this->timeToMinutes((string) ($row->break_time ?? ''), true) ?? 0;
                             $workedMinutes = $this->calcWorkedMinutes(
                                 (string) ($row->start_time ?? ''),
                                 (string) ($row->end_time ?? ''),
@@ -1040,6 +1047,10 @@ class AttendanceService
                     $personal['midnight_minutes'] += $midnightMinutes;
 
                     $personal['daily'][$date] = [
+                        'start' => $startDisplay,
+                        'end' => $endDisplay,
+                        'break' => $this->minutesToHourDecimal($breakMinutes),
+                        'worked' => $this->minutesToHourDecimal($workedMinutes),
                         'normal' => $this->minutesToHourDecimal($normalMinutes),
                         'overtime' => $this->minutesToHourDecimal($overtimeMinutes),
                         'holiday' => $this->minutesToHourDecimal($holidayMinutes),
