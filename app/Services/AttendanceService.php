@@ -1122,6 +1122,25 @@ class AttendanceService
             return null;
         }
 
+        // 旧データ互換:
+        // - "1"   => 1時間（60分）
+        // - "1.5" => 1.5時間（90分）
+        // - "60"  => 60分
+        if ($allowDuration && is_numeric($time)) {
+            $num = (float) $time;
+            if ($num < 0) {
+                return null;
+            }
+            if (str_contains($time, '.')) {
+                return (int) round($num * 60);
+            }
+            $intNum = (int) $num;
+            if ($intNum <= 23) {
+                return $intNum * 60;
+            }
+            return $intNum;
+        }
+
         if (preg_match('/^(\d{1,2}):(\d{2})(?::\d{2})?$/', $time, $m) !== 1) {
             return null;
         }
