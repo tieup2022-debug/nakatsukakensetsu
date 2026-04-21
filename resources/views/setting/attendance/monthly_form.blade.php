@@ -35,7 +35,16 @@
                     >
                     <div class="form-text">この日付が属する月を対象にします。</div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-8 d-flex flex-wrap gap-2 align-items-end">
+                    <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        data-preview-url="{{ route('setting.attendance.monthly.preview') }}"
+                        data-default-date="{{ $work_date }}"
+                        onclick="var b=this.dataset.previewUrl;var el=document.querySelector('input[name=work_date]');var v=String(el?el.value:'');if(!v){v=this.dataset.defaultDate;}window.open(b+'?work_date='+encodeURIComponent(v),'_blank','noopener,noreferrer');"
+                    >
+                        ブラウザ表示
+                    </button>
                     <button class="btn btn-primary" type="submit">PDF出力</button>
                 </div>
             </form>

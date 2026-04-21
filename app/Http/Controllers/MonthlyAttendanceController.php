@@ -47,5 +47,27 @@ class MonthlyAttendanceController extends Controller
 
         return $pdf->download($fileName);
     }
+
+    /**
+     * 月次勤怠表 PDF をブラウザ内表示（ダウンロードしない）
+     */
+    public function preview(Request $request)
+    {
+        $workDate = $request->query('work_date') ?: date('Y-m-d');
+
+        $pdfData = $this->attendanceService->GetPdfData($workDate);
+        if ($pdfData === false || empty($pdfData['attendance_table_list'])) {
+            return redirect()
+                ->route('setting.attendance.monthly.form', ['work_date' => $workDate])
+                ->with('status', '表示できる勤怠データがありません。');
+        }
+
+        @ini_set('memory_limit', '512M');
+
+        $pdf = Pdf::loadView('pdf.attendance_monthly', $pdfData)->setPaper('A4', 'landscape');
+        $fileName = '勤怠月次_' . date('Ymd', strtotime($workDate)) . '.pdf';
+
+        return $pdf->stream($fileName);
+    }
 }
 
