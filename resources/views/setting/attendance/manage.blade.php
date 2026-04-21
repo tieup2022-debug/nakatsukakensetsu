@@ -115,6 +115,21 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h2 class="h6 fw-semibold mb-2">個人別集計</h2>
+                    <p class="text-muted small mb-3">月ごとの個人別勤怠（普通/時間外/休日/深夜）を確認します。</p>
+                    <a
+                        href="{{ route('setting.attendance.personal.summary', ['work_date' => $work_date]) }}"
+                        class="btn btn-outline-primary w-100"
+                    >
+                        個人別集計を表示
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
 

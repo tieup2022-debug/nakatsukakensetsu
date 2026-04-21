@@ -946,5 +946,194 @@ class AttendanceService
 
         return $hours . ':' . $minutes;
     }
+
+    /**
+     * 個人別の月次集計（勤怠管理画面向け）
+     *
+     * @return array<string, mixed>|false
+     */
+    public function GetPersonalMonthlySummary($workDate, $staffId = null)
+    {
+        try {
+            $baseDate = $workDate ?: date('Y-m-d');
+            $year = (int) date('Y', strtotime($baseDate));
+            $month = (int) date('m', strtotime($baseDate));
+            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+
+            $dateList = [];
+            for ($day = 1; $day <= $daysInMonth; $day++) {
+                $dateList[] = sprintf('%04d-%02d-%02d', $year, $month, $day);
+            }
+
+            $staffQuery = DB::table('m_staff')
+                ->whereNull('deleted_at')
+                ->orderBy('sort_number')
+                ->orderBy('id');
+            if (!empty($staffId)) {
+                $staffQuery->where('id', '=', $staffId);
+            }
+            $staffList = $staffQuery->get();
+
+            $summaryList = [];
+            foreach ($staffList as $staff) {
+                $dailyRows = DB::table('v_attendance_all')
+                    ->where('staff_id', '=', $staff->id)
+                    ->whereYear('work_date', '=', $year)
+                    ->whereMonth('work_date', '=', $month)
+                    ->orderBy('work_date')
+                    ->get()
+                    ->keyBy('work_date');
+
+                $personal = [
+                    'staff_id' => $staff->id,
+                    'staff_name' => $staff->staff_name,
+                    'weekday_work_days' => 0,
+                    'holiday_work_days' => 0,
+                    'normal_minutes' => 0,
+                    'overtime_minutes' => 0,
+                    'holiday_minutes' => 0,
+                    'midnight_minutes' => 0,
+                    'daily' => [],
+                ];
+
+                foreach ($dateList as $date) {
+                    $dow = (int) date('N', strtotime($date));
+                    $isHoliday = ($dow === 6 || $dow === 7);
+                    $row = $dailyRows->get($date);
+
+                    $normalMinutes = 0;
+                    $overtimeMinutes = 0;
+                    $holidayMinutes = 0;
+                    $midnightMinutes = 0;
+                    $absence = false;
+
+                    if ($row) {
+                        $absence = intval($row->absence_flg ?? 0) === 1;
+                        if (!$absence) {
+                            $workedMinutes = $this->calcWorkedMinutes(
+                                (string) ($row->start_time ?? ''),
+                                (string) ($row->end_time ?? ''),
+                                (string) ($row->break_time ?? '')
+                            );
+
+                            if ($workedMinutes > 0) {
+                                if ($isHoliday) {
+                                    $holidayMinutes = $workedMinutes;
+                                    $personal['holiday_work_days']++;
+                                } else {
+                                    $normalMinutes = min(480, $workedMinutes);
+                                    $overtimeMinutes = max(0, $workedMinutes - 480);
+                                    $personal['weekday_work_days']++;
+                                }
+
+                                $midnightMinutes = $this->calcMidnightMinutes(
+                                    (string) ($row->start_time ?? ''),
+                                    (string) ($row->end_time ?? '')
+                                );
+                            }
+                        }
+                    }
+
+                    $personal['normal_minutes'] += $normalMinutes;
+                    $personal['overtime_minutes'] += $overtimeMinutes;
+                    $personal['holiday_minutes'] += $holidayMinutes;
+                    $personal['midnight_minutes'] += $midnightMinutes;
+
+                    $personal['daily'][$date] = [
+                        'normal' => $this->minutesToHourDecimal($normalMinutes),
+                        'overtime' => $this->minutesToHourDecimal($overtimeMinutes),
+                        'holiday' => $this->minutesToHourDecimal($holidayMinutes),
+                        'midnight' => $this->minutesToHourDecimal($midnightMinutes),
+                        'absence' => $absence,
+                    ];
+                }
+
+                $summaryList[] = $personal;
+            }
+
+            return [
+                'date_list' => $dateList,
+                'staff_list' => $staffList,
+                'summary_list' => $summaryList,
+            ];
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+            return false;
+        }
+    }
+
+    private function calcWorkedMinutes(string $startTime, string $endTime, string $breakTime): int
+    {
+        $start = $this->timeToMinutes($startTime);
+        $end = $this->timeToMinutes($endTime);
+        if ($start === null || $end === null) {
+            return 0;
+        }
+
+        if ($end < $start) {
+            $end += 24 * 60;
+        }
+
+        $breakMinutes = $this->timeToMinutes($breakTime, true) ?? 0;
+        return max(0, ($end - $start) - $breakMinutes);
+    }
+
+    private function calcMidnightMinutes(string $startTime, string $endTime): int
+    {
+        $start = $this->timeToMinutes($startTime);
+        $end = $this->timeToMinutes($endTime);
+        if ($start === null || $end === null) {
+            return 0;
+        }
+
+        if ($end < $start) {
+            $end += 24 * 60;
+        }
+
+        $midnight1 = $this->overlapMinutes($start, $end, 0, 300);
+        $midnight2 = $this->overlapMinutes($start, $end, 1320, 1440);
+        $midnight3 = $this->overlapMinutes($start, $end, 1440, 1740);
+
+        return $midnight1 + $midnight2 + $midnight3;
+    }
+
+    private function overlapMinutes(int $start, int $end, int $rangeStart, int $rangeEnd): int
+    {
+        $s = max($start, $rangeStart);
+        $e = min($end, $rangeEnd);
+        return max(0, $e - $s);
+    }
+
+    private function timeToMinutes(string $time, bool $allowDuration = false): ?int
+    {
+        $time = trim($time);
+        if ($time === '') {
+            return null;
+        }
+
+        if (preg_match('/^(\d{1,2}):(\d{2})(?::\d{2})?$/', $time, $m) !== 1) {
+            return null;
+        }
+
+        $h = (int) $m[1];
+        $min = (int) $m[2];
+
+        if (!$allowDuration && ($h > 23 || $min > 59)) {
+            return null;
+        }
+        if ($allowDuration && $min > 59) {
+            return null;
+        }
+
+        return ($h * 60) + $min;
+    }
+
+    private function minutesToHourDecimal(int $minutes): string
+    {
+        if ($minutes <= 0) {
+            return '0.00';
+        }
+        return number_format($minutes / 60, 2, '.', '');
+    }
 }
 

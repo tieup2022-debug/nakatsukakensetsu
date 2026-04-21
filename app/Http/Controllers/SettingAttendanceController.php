@@ -315,5 +315,35 @@ class SettingAttendanceController extends Controller
             'result' => $result,
         ]);
     }
+
+    /**
+     * 個人別集計（月次）
+     */
+    public function personalSummary(Request $request)
+    {
+        $workDate = $request->query('work_date') ?: defaultWorkDate();
+        $staffId = $request->query('staff_id');
+
+        $summary = $this->attendanceService->GetPersonalMonthlySummary($workDate, $staffId);
+        if ($summary === false) {
+            return view('setting.attendance.personal_summary')->with([
+                'work_date' => $workDate,
+                'selected_staff_id' => $staffId,
+                'staff_list' => [],
+                'date_list' => [],
+                'summary_list' => [],
+                'status' => '集計データの取得に失敗しました。',
+            ]);
+        }
+
+        return view('setting.attendance.personal_summary')->with([
+            'work_date' => $workDate,
+            'selected_staff_id' => $staffId,
+            'staff_list' => $summary['staff_list'] ?? [],
+            'date_list' => $summary['date_list'] ?? [],
+            'summary_list' => $summary['summary_list'] ?? [],
+            'status' => null,
+        ]);
+    }
 }
 

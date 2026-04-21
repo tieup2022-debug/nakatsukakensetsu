@@ -91,6 +91,7 @@ Route::post('/setting/attendance/absence/update', [SettingAttendanceController::
 // monthly attendance PDF
 Route::get('/setting/attendance/monthly', [MonthlyAttendanceController::class, 'form'])->middleware('nakatsuka.auth')->name('setting.attendance.monthly.form');
 Route::post('/setting/attendance/monthly/download', [MonthlyAttendanceController::class, 'download'])->middleware('nakatsuka.auth')->name('setting.attendance.monthly.download');
+Route::get('/setting/attendance/personal-summary', [SettingAttendanceController::class, 'personalSummary'])->middleware('nakatsuka.auth')->name('setting.attendance.personal.summary');
 
 // assignment settings
 Route::get('/setting/assignment/manage', [SettingAssignmentController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.assignment.manage');
