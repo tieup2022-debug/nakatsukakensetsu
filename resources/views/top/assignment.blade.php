@@ -1,13 +1,19 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
         <div>
             <h1 class="h4 mb-1 fw-semibold">配置一覧</h1>
             <div class="text-muted small">
                 {{ $display_date ?: '—' }}
             </div>
         </div>
+        <a
+            class="btn btn-outline-dark btn-sm align-self-center"
+            href="{{ route('setting.assignment.manage', ['workplace_id' => $workplace_id, 'work_date' => $work_date]) }}"
+        >
+            配置入力
+        </a>
     </div>
 
     @if (session('status'))
@@ -48,12 +54,6 @@
                         href="{{ route('top.assignment', ['workplace_id'=>$workplace_id,'work_date'=>$work_date,'output_pdf'=>1]) }}"
                     >
                         PDF出力
-                    </a>
-                    <a
-                        class="btn btn-outline-dark btn-sm ms-2"
-                        href="{{ route('setting.assignment.manage', ['workplace_id' => $workplace_id, 'work_date' => $work_date]) }}"
-                    >
-                        配置入力
                     </a>
                     @if(!empty($previous_date))
                         <form method="POST" action="{{ route('top.assignment.copy') }}" class="d-inline ms-2" onsubmit="return confirm('前日の配置をコピーしますか？（現在の配置は上書きされます）');">
