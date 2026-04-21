@@ -53,7 +53,7 @@
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
                     <h2 class="h6 fw-semibold mb-2">車両/重機</h2>
-                    <p class="text-muted small mb-3">（準備中）</p>
+                    <p class="text-muted small mb-3">車両・重機マスタの登録・更新を行います。</p>
                     <div class="d-grid gap-2">
                         <a href="{{ route('setting.vehicle.manage') }}" class="btn btn-primary">車両管理</a>
                         <a href="{{ route('setting.equipment.manage') }}" class="btn btn-primary">重機管理</a>
