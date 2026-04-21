@@ -38,7 +38,7 @@
                 width: 100%;
             }
         }
-        /* Flatpickr: タップしやすい大きめのカレンダー */
+        /* Flatpickr: タップしやすい大きめのカレンダー（デスクトップ） */
         .flatpickr-calendar {
             font-size: 1.125rem;
             width: auto;
@@ -70,6 +70,68 @@
         }
         .flatpickr-day.today {
             border-width: 2px;
+        }
+        /* スマホ・狭い幅: 22rem 固定で画面外にはみ出すのを防ぐ（static 表示と併用） */
+        @media (max-width: 768px) {
+            .flatpickr-calendar {
+                min-width: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                left: auto !important;
+                right: auto !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                transform: none !important;
+                box-sizing: border-box;
+                font-size: 1rem;
+                padding: 0.25rem 0.15rem 0.4rem;
+            }
+            .flatpickr-calendar.arrowTop:before,
+            .flatpickr-calendar.arrowTop:after,
+            .flatpickr-calendar.arrowBottom:before,
+            .flatpickr-calendar.arrowBottom:after {
+                display: none;
+            }
+            .flatpickr-months .flatpickr-month {
+                height: auto;
+            }
+            .flatpickr-current-month {
+                font-size: 1rem;
+                padding: 0.25rem 0;
+            }
+            span.flatpickr-weekday {
+                font-size: 0.8rem;
+            }
+            .flatpickr-innerContainer,
+            .flatpickr-rContainer {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .flatpickr-days {
+                width: 100%;
+            }
+            /* Flatpickr は週ごとに .dayContainer（幅が px 固定で画面からはみ出しやすい） */
+            .flatpickr-calendar .dayContainer {
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
+                display: grid !important;
+                grid-template-columns: repeat(7, minmax(0, 1fr));
+                box-sizing: border-box;
+            }
+            .flatpickr-calendar .flatpickr-day {
+                height: 2.35rem;
+                line-height: 2.35rem;
+                width: auto !important;
+                max-width: none !important;
+                margin: 0.06rem 0;
+                font-size: 0.9rem;
+                box-sizing: border-box;
+            }
+            .flatpickr-wrapper {
+                width: 100%;
+                max-width: 100%;
+            }
         }
         input.js-datepicker[readonly] {
             background-color: #fff;
@@ -173,11 +235,13 @@
             if (typeof flatpickr === 'undefined') return;
             var ja = flatpickr.l10ns.ja;
             document.querySelectorAll('input.js-datepicker').forEach(function (el) {
+                var narrow = window.matchMedia('(max-width: 768px)').matches;
                 var opts = {
                     locale: ja,
                     dateFormat: 'Y-m-d',
                     allowInput: false,
                     disableMobile: true,
+                    static: narrow,
                 };
                 if (el.hasAttribute('data-datepicker-submit')) {
                     opts.onChange = function () {
