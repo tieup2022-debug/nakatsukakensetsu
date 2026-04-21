@@ -49,6 +49,12 @@
                     >
                         PDF出力
                     </a>
+                    <a
+                        class="btn btn-outline-dark btn-sm ms-2"
+                        href="{{ route('setting.assignment.manage', ['workplace_id' => $workplace_id, 'work_date' => $work_date]) }}"
+                    >
+                        配置入力
+                    </a>
                     @if(!empty($previous_date))
                         <form method="POST" action="{{ route('top.assignment.copy') }}" class="d-inline ms-2" onsubmit="return confirm('前日の配置をコピーしますか？（現在の配置は上書きされます）');">
                             @csrf
