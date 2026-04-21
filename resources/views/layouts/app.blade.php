@@ -141,9 +141,21 @@
             background: linear-gradient(180deg, #1d4ed8, #0f172a);
             color: #e5e7eb;
             max-width: min(280px, 88vw);
+            /* Flatpickr 等 z-index:99999 より手前にし、タップが下のレイヤーに抜けないようにする */
+            z-index: 100010 !important;
+        }
+        .offcanvas-backdrop {
+            z-index: 100000 !important;
+        }
+        .app-mobile-nav .offcanvas-body {
+            position: relative;
+            z-index: 1;
         }
         .app-mobile-nav .nav-link {
             color: inherit;
+            position: relative;
+            z-index: 2;
+            pointer-events: auto;
         }
         .app-mobile-nav .nav-link.active,
         .app-mobile-nav .nav-link:hover {
@@ -228,6 +240,19 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var oc = document.getElementById('appSidebarOffcanvas');
+            if (!oc || typeof bootstrap === 'undefined') return;
+            oc.addEventListener('show.bs.offcanvas', function () {
+                document.querySelectorAll('input.js-datepicker').forEach(function (input) {
+                    if (input._flatpickr && typeof input._flatpickr.close === 'function') {
+                        input._flatpickr.close();
+                    }
+                });
+            });
+        });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ja.js"></script>
     <script>
