@@ -107,12 +107,7 @@
                         </button>
                     @endif
                     <a href="{{ session()->has('login_user_id') ? route('top.assignment') : route('login') }}" class="navbar-brand d-inline-flex align-items-center gap-2 fw-semibold text-primary text-decoration-none mb-0 min-w-0">
-                        <img
-                            src="{{ asset('images/nakatsuka-dx-logo.png') }}"
-                            alt="中塚建設 DX"
-                            class="flex-shrink-0 rounded-2"
-                            style="height: 2.5rem; width: auto; max-width: 4.75rem; object-fit: contain;"
-                        >
+                        @include('layouts.partials.brand-logo-inline')
                         <span class="text-truncate">Nakatsuka DX</span>
                     </a>
                 </div>
