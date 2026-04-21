@@ -90,7 +90,6 @@
                                 'end' => '退勤時間',
                                 'break' => '休憩時間',
                                 'worked' => '実働時間',
-                                'normal' => '普通',
                                 'holiday' => '休日',
                                 'midnight' => '(深夜)',
                             ];
