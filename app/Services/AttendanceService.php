@@ -1049,9 +1049,8 @@ class AttendanceService
                     $personal['daily'][$date] = [
                         'start' => $startDisplay,
                         'end' => $endDisplay,
-                        // 画面仕様: 出勤日の日別表示は休憩1時間・実働8時間で固定
-                        'break' => ($row && !$absence) ? '1.00' : $this->minutesToHourDecimal($breakMinutes),
-                        'worked' => ($row && !$absence) ? '8.00' : $this->minutesToHourDecimal($workedMinutes),
+                        'break' => $this->minutesToHourDecimal($breakMinutes),
+                        'worked' => $this->minutesToHourDecimal($workedMinutes),
                         'normal' => $this->minutesToHourDecimal($normalMinutes),
                         'overtime' => $this->minutesToHourDecimal($overtimeMinutes),
                         'holiday' => $this->minutesToHourDecimal($holidayMinutes),
