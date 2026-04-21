@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+    @php
+        $todayDate = date('Y-m-d');
+    @endphp
     <style>
         .personal-wrap { overflow-x: auto; background: #fff; border: 1px solid #dbe3ea; border-radius: 8px; }
         .personal-table { border-collapse: collapse; min-width: 1400px; width: 100%; font-size: 12px; }
@@ -11,6 +14,8 @@
         .sum-col { min-width: 86px; background: #f8fafc; font-weight: 700; }
         .day-col { min-width: 44px; }
         .abs-cell { background: #fee2e2; color: #b91c1c; font-weight: 700; }
+        .sat-col { background: #eaf3ff; }
+        .sun-col { background: #ffeef0; }
     </style>
 
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
@@ -79,7 +84,13 @@
                             <th class="head-title sum-col">休日時間</th>
                             <th class="head-title sum-col">(深夜)</th>
                             @foreach($date_list as $date)
-                                <th class="head-title day-col">{{ (int)substr($date, 8, 2) }}</th>
+                                @php
+                                    $dowClass = '';
+                                    $dow = (int)date('N', strtotime($date));
+                                    if ($dow === 6) $dowClass = 'sat-col';
+                                    if ($dow === 7) $dowClass = 'sun-col';
+                                @endphp
+                                <th class="head-title day-col {{ $dowClass }}">{{ (int)substr($date, 8, 2) }}</th>
                             @endforeach
                         </tr>
                     </thead>
@@ -109,11 +120,25 @@
                                     <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['midnight_minutes'] ?? 0) / 60, 2) }}時間</td>
                                 @endif
                                 @foreach($date_list as $date)
-                                    @php $cell = $person['daily'][$date] ?? null; @endphp
-                                    @if($key === 'start' && !empty($cell['absence']))
-                                        <td class="day-col abs-cell">休</td>
+                                    @php
+                                        $cell = $person['daily'][$date] ?? null;
+                                        $isAbsence = !empty($cell['absence']);
+                                        $hasAttendance = !empty($cell['start']) || !empty($cell['end']);
+                                        $isPastNoAttendance = !$isAbsence && !$hasAttendance && $date < $todayDate;
+                                        $isFutureOrTodayNoAttendance = !$isAbsence && !$hasAttendance && $date >= $todayDate;
+                                        $dowClass = '';
+                                        $dow = (int)date('N', strtotime($date));
+                                        if ($dow === 6) $dowClass = 'sat-col';
+                                        if ($dow === 7) $dowClass = 'sun-col';
+                                    @endphp
+                                    @if($key === 'start' && $isAbsence)
+                                        <td class="day-col abs-cell {{ $dowClass }}">休</td>
+                                    @elseif($isPastNoAttendance)
+                                        <td class="day-col {{ $dowClass }}">{{ $key === 'start' ? '休日' : '' }}</td>
+                                    @elseif($isFutureOrTodayNoAttendance)
+                                        <td class="day-col {{ $dowClass }}"></td>
                                     @else
-                                        <td class="day-col">
+                                        <td class="day-col {{ $dowClass }}">
                                             @if(in_array($key, ['start', 'end'], true))
                                                 {{ $cell[$key] ?? '' }}
                                             @else
