@@ -198,9 +198,24 @@
         <div class="col-lg-4">
             <div class="card shadow-sm border-0">
                 <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <h2 class="h6 mb-0 fw-semibold">お知らせ</h2>
-                        <span class="badge bg-primary-subtle text-primary">最新</span>
+                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                        <div class="min-w-0">
+                            <h2 class="h6 mb-0 fw-semibold">お知らせ</h2>
+                            @if($news && (($news->updated_at ?? null) || ($news->last_editor_name ?? null)))
+                                <div class="small text-muted text-break mt-1">
+                                    @if(!empty($news->last_editor_name))
+                                        <span>最終更新者：{{ $news->last_editor_name }}</span>
+                                    @endif
+                                    @if(!empty($news->updated_at))
+                                        @if(!empty($news->last_editor_name))
+                                            <span class="mx-1">/</span>
+                                        @endif
+                                        <span>更新日時：{{ date('Y/m/d H:i', strtotime((string) $news->updated_at)) }}</span>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary flex-shrink-0">最新</span>
                     </div>
                     @if($news && isset($news->news))
                         <div class="small text-muted" style="white-space: pre-wrap;">

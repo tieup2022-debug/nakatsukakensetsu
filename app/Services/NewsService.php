@@ -14,18 +14,53 @@ class NewsService
     public function GetNews()
     {
         try {
-            return DB::table('m_news')
+            $row = DB::table('m_news')
                 ->whereNull('deleted_at')
                 ->orderByDesc('updated_at')
                 ->orderByDesc('id')
                 ->first();
+
+            return $this->enrichNewsWithLastEditor($row);
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
             if (app()->environment('local')) {
-                return (object) ['news' => $this->readLocalNews()];
+                return (object) [
+                    'news' => $this->readLocalNews(),
+                    'updated_at' => null,
+                    'last_editor_name' => null,
+                ];
             }
             return false;
         }
+    }
+
+    /**
+     * お知らせマスタ行に、履歴テーブル由来の最終更新者名を付与する
+     */
+    private function enrichNewsWithLastEditor(?object $row): ?object
+    {
+        if ($row === null) {
+            return null;
+        }
+        $row->last_editor_name = null;
+        try {
+            $hist = DB::table('t_news_history as h')
+                ->leftJoin('m_user as u', function ($join) {
+                    $join->on('u.id', '=', 'h.user_id')
+                        ->whereNull('u.deleted_at');
+                })
+                ->whereNull('h.deleted_at')
+                ->orderByDesc('h.id')
+                ->select('u.user_name')
+                ->first();
+            if ($hist && isset($hist->user_name) && (string) $hist->user_name !== '') {
+                $row->last_editor_name = (string) $hist->user_name;
+            }
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+        }
+
+        return $row;
     }
 
     /**
