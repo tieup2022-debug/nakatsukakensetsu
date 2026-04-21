@@ -9,8 +9,7 @@
         "php": ">=8.3.21 <8.4",
         "barryvdh/laravel-dompdf": "^3.1",
         "laravel/framework": "^11.31",
-        "laravel/tinker": "^2.9",
-        "sebastian/diff": "^6.0"
+        "laravel/tinker": "^2.9"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

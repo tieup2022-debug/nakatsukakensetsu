@@ -4,8 +4,6 @@ namespace App\Services;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use SebastianBergmann\Diff\Differ;
-use SebastianBergmann\Diff\Output\UnifiedDiffOutputBuilder;
 
 class NewsService
 {
@@ -87,26 +85,99 @@ class NewsService
             return $this->escapeHtmlPreservingNewlines($current);
         }
 
-        $differ = new Differ(new UnifiedDiffOutputBuilder('', false));
-        $diff = $differ->diffToArray($baselineNorm, $current);
+        return $this->buildNewsHtmlFromLineDiff($baselineNorm, $current);
+    }
+
+    /**
+     * 行単位 LCS による差分で「現在本文」側の行を組み立て、追加行のみ span で囲む（外部ライブラリ不要）。
+     */
+    private function buildNewsHtmlFromLineDiff(string $baselineNorm, string $current): string
+    {
+        $fromLines = $this->splitLinesForDiff($baselineNorm);
+        $toLines = $this->splitLinesForDiff($current);
+        $ops = $this->lineLcsDiffOperations($fromLines, $toLines);
 
         $html = '';
-        foreach ($diff as [$fragment, $type]) {
-            if ($type === Differ::DIFF_LINE_END_WARNING || $type === Differ::NO_LINE_END_EOF_WARNING) {
+        foreach ($ops as $op) {
+            if ($op['t'] === 'd') {
                 continue;
             }
-            if ($type === Differ::REMOVED) {
-                continue;
-            }
-            $escaped = $this->escapeHtmlPreservingNewlines((string) $fragment);
-            if ($type === Differ::ADDED) {
-                $html .= '<span class="news-diff-added">'.$escaped.'</span>';
+            $escaped = $this->escapeHtmlPreservingNewlines($op['line']);
+            if ($op['t'] === 'a') {
+                $html .= '<span class="news-diff-added">'.$escaped."</span>\n";
             } else {
-                $html .= $escaped;
+                $html .= $escaped."\n";
             }
         }
 
+        if ($html !== '' && ! str_ends_with($current, "\n")) {
+            $html = rtrim($html, "\n");
+        }
+
         return $html;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function splitLinesForDiff(string $text): array
+    {
+        if ($text === '') {
+            return [];
+        }
+
+        return explode("\n", $text);
+    }
+
+    /**
+     * @param  list<string>  $fromLines
+     * @param  list<string>  $toLines
+     * @return list<array{t: 'k'|'a'|'d', line: string}>
+     */
+    private function lineLcsDiffOperations(array $fromLines, array $toLines): array
+    {
+        $m = count($fromLines);
+        $n = count($toLines);
+        $dp = [];
+        for ($i = 0; $i <= $m; $i++) {
+            $dp[$i] = array_fill(0, $n + 1, 0);
+        }
+        for ($i = 1; $i <= $m; $i++) {
+            for ($j = 1; $j <= $n; $j++) {
+                if ($fromLines[$i - 1] === $toLines[$j - 1]) {
+                    $dp[$i][$j] = $dp[$i - 1][$j - 1] + 1;
+                } else {
+                    $dp[$i][$j] = max($dp[$i - 1][$j], $dp[$i][$j - 1]);
+                }
+            }
+        }
+
+        $ops = [];
+        $i = $m;
+        $j = $n;
+        while ($i > 0 || $j > 0) {
+            if ($i > 0 && $j > 0 && $fromLines[$i - 1] === $toLines[$j - 1]) {
+                array_unshift($ops, ['t' => 'k', 'line' => $toLines[$j - 1]]);
+                $i--;
+                $j--;
+            } elseif ($i > 0 && $j > 0) {
+                if ($dp[$i - 1][$j] >= $dp[$i][$j - 1]) {
+                    array_unshift($ops, ['t' => 'd', 'line' => $fromLines[$i - 1]]);
+                    $i--;
+                } else {
+                    array_unshift($ops, ['t' => 'a', 'line' => $toLines[$j - 1]]);
+                    $j--;
+                }
+            } elseif ($i > 0) {
+                array_unshift($ops, ['t' => 'd', 'line' => $fromLines[$i - 1]]);
+                $i--;
+            } else {
+                array_unshift($ops, ['t' => 'a', 'line' => $toLines[$j - 1]]);
+                $j--;
+            }
+        }
+
+        return $ops;
     }
 
     /**
