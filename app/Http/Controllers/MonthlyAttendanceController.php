@@ -49,7 +49,7 @@ class MonthlyAttendanceController extends Controller
     }
 
     /**
-     * 月次勤怠表 PDF をブラウザ内表示（ダウンロードしない）
+     * 月次勤怠表を Web ページとして表示（PDF ビューアではなく HTML）
      */
     public function preview(Request $request)
     {
@@ -62,12 +62,10 @@ class MonthlyAttendanceController extends Controller
                 ->with('status', '表示できる勤怠データがありません。');
         }
 
-        @ini_set('memory_limit', '512M');
+        $pdfData['work_date'] = $workDate;
+        $pdfData['title'] = '勤怠月次一覧';
 
-        $pdf = Pdf::loadView('pdf.attendance_monthly', $pdfData)->setPaper('A4', 'landscape');
-        $fileName = '勤怠月次_' . date('Ymd', strtotime($workDate)) . '.pdf';
-
-        return $pdf->stream($fileName);
+        return view('setting.attendance.monthly_web', $pdfData);
     }
 }
 
