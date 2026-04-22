@@ -79,7 +79,7 @@
                             name="is_enabled"
                             value="1"
                             id="is_enabled"
-                            {{ old('is_enabled', $isEnabled ? '1' : '0') === '1' ? 'checked' : '' }}
+                            {{ old('is_enabled', $is_enabled ? '1' : '0') === '1' ? 'checked' : '' }}
                         >
                         <label class="form-check-label small" for="is_enabled">この初期値を有効にする</label>
                     </div>
