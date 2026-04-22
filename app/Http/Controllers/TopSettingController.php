@@ -14,15 +14,18 @@ class TopSettingController extends Controller
         }
 
         $canEditAttendanceDefaults = false;
+        $canManageUsersAndAccounts = false;
         $uid = (int) $request->session()->get('login_user_id');
         if ($uid > 0) {
             $user = $userService->GetUser($uid);
             $canEditAttendanceDefaults = $user && (int) $user->permission === 1;
+            $canManageUsersAndAccounts = $user && (int) $user->permission === 1;
         }
 
         return view('top.setting')->with([
             'result' => null,
             'can_edit_attendance_defaults' => $canEditAttendanceDefaults,
+            'can_manage_users_and_accounts' => $canManageUsersAndAccounts,
         ]);
     }
 }

@@ -20,8 +20,33 @@ class SettingAccountController extends Controller
         $this->userService = $userService;
     }
 
+    private function isMasterUser(Request $request): bool
+    {
+        $uid = (int) $request->session()->get('login_user_id');
+        if ($uid <= 0) {
+            return false;
+        }
+
+        $user = $this->userService->GetUser($uid);
+
+        return $user && (int) $user->permission === 1;
+    }
+
+    private function redirectUnlessMaster(Request $request): ?\Illuminate\Http\RedirectResponse
+    {
+        if (! $this->isMasterUser($request)) {
+            return redirect()->route('top.setting')->with('status', 'ユーザー管理/アカウントは管理者（権限1）のみ利用できます。');
+        }
+
+        return null;
+    }
+
     public function linkUserUpdate(Request $request)
     {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
         $result = null;
         $loginUserId = $request->session()->get('login_user_id');
 
@@ -48,6 +73,10 @@ class SettingAccountController extends Controller
 
     public function passwordUpdate(Request $request)
     {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
         $result = null;
 
         if ($request->isMethod('POST')) {

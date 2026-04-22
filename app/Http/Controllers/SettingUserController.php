@@ -19,22 +19,44 @@ class SettingUserController extends Controller
     }
 
     /**
-     * マスター・担当者のみ。利用者（3）は不可。
+     * マスター（権限1）のみ。
      */
-    private function canAdminResetPassword(int $loginUserId): bool
+    private function isMasterUser(Request $request): bool
     {
-        $admin = $this->userService->GetUser($loginUserId);
+        $uid = (int) $request->session()->get('login_user_id');
+        if ($uid <= 0) {
+            return false;
+        }
 
-        return $admin && (int) $admin->permission <= 2;
+        $user = $this->userService->GetUser($uid);
+
+        return $user && (int) $user->permission === 1;
     }
 
-    public function manage()
+    private function redirectUnlessMaster(Request $request): ?\Illuminate\Http\RedirectResponse
     {
+        if (! $this->isMasterUser($request)) {
+            return redirect()->route('top.setting')->with('status', 'ユーザー管理/アカウントは管理者（権限1）のみ利用できます。');
+        }
+
+        return null;
+    }
+
+    public function manage(Request $request)
+    {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
         return view('setting.user.manage');
     }
 
     public function create(Request $request)
     {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
         $result = null;
 
         if ($request->isMethod('POST')) {
@@ -48,8 +70,12 @@ class SettingUserController extends Controller
         return view('setting.user.create')->with(['result' => $result]);
     }
 
-    public function list()
+    public function list(Request $request)
     {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
         $user_list = $this->userService->GetUserList();
         if ($user_list === false || $user_list === null) $user_list = [];
 
@@ -61,6 +87,10 @@ class SettingUserController extends Controller
 
     public function update(Request $request)
     {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
         $result = null;
         $userId = $request->input('user_id');
 
@@ -92,6 +122,10 @@ class SettingUserController extends Controller
 
     public function delete(Request $request)
     {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
         $result = $this->userService->delete($request->input('user_id'));
 
         $user_list = $this->userService->GetUserList();
@@ -105,9 +139,8 @@ class SettingUserController extends Controller
 
     public function resetPasswordForm(Request $request)
     {
-        $loginUserId = (int) $request->session()->get('login_user_id');
-        if (! $this->canAdminResetPassword($loginUserId)) {
-            return redirect()->route('top.setting')->with('status', 'パスワード再設定はマスター・担当者のみ行えます。');
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
         }
 
         $userId = (int) $request->query('user_id');
@@ -127,9 +160,8 @@ class SettingUserController extends Controller
 
     public function resetPasswordSubmit(Request $request)
     {
-        $loginUserId = (int) $request->session()->get('login_user_id');
-        if (! $this->canAdminResetPassword($loginUserId)) {
-            return redirect()->route('top.setting')->with('status', 'パスワード再設定はマスター・担当者のみ行えます。');
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
         }
 
         $validated = $request->validate([

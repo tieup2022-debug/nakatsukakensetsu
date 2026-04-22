@@ -8,6 +8,10 @@
         </div>
     </div>
 
+    @if (session('status'))
+        <div class="alert alert-info mb-3">{{ session('status') }}</div>
+    @endif
+
     <div class="row g-3">
         <div class="col-md-6 col-lg-4">
             <div class="card shadow-sm border-0 h-100">
@@ -77,15 +81,17 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <h2 class="h6 fw-semibold mb-2">ユーザー管理</h2>
-                    <p class="text-muted small mb-3">ログインユーザーを管理します。</p>
-                    <a href="{{ route('setting.user.manage') }}" class="btn btn-primary w-100">開く</a>
+        @if (!empty($can_manage_users_and_accounts))
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h2 class="h6 fw-semibold mb-2">ユーザー管理</h2>
+                        <p class="text-muted small mb-3">ログインユーザーを管理します。</p>
+                        <a href="{{ route('setting.user.manage') }}" class="btn btn-primary w-100">開く</a>
+                    </div>
                 </div>
             </div>
-        </div>
+        @endif
 
         <div class="col-md-6 col-lg-4">
             <div class="card shadow-sm border-0 h-100">
@@ -97,18 +103,20 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <h2 class="h6 fw-semibold mb-2">アカウント</h2>
-                    <p class="text-muted small mb-3">ユーザー連携とパスワード変更。</p>
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('setting.account.linkuser.update') }}" class="btn btn-outline-primary">ユーザー連携</a>
-                        <a href="{{ route('setting.account.password.update') }}" class="btn btn-outline-primary">パスワード変更</a>
+        @if (!empty($can_manage_users_and_accounts))
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h2 class="h6 fw-semibold mb-2">アカウント</h2>
+                        <p class="text-muted small mb-3">ユーザー連携とパスワード変更。</p>
+                        <div class="d-grid gap-2">
+                            <a href="{{ route('setting.account.linkuser.update') }}" class="btn btn-outline-primary">ユーザー連携</a>
+                            <a href="{{ route('setting.account.password.update') }}" class="btn btn-outline-primary">パスワード変更</a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        @endif
     </div>
 @endsection
 
