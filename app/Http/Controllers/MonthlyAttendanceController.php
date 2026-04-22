@@ -4,16 +4,41 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\AttendanceService;
+use App\Services\UserService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class MonthlyAttendanceController extends Controller
 {
     private AttendanceService $attendanceService;
+    private UserService $userService;
 
-    public function __construct(AttendanceService $attendanceService)
+    public function __construct(AttendanceService $attendanceService, UserService $userService)
     {
         $this->attendanceService = $attendanceService;
+        $this->userService = $userService;
+    }
+
+    private function isMasterUser(Request $request): bool
+    {
+        $uid = (int) $request->session()->get('login_user_id');
+        if ($uid <= 0) {
+            return false;
+        }
+
+        $user = $this->userService->GetUser($uid);
+
+        return $user && (int) $user->permission === 1;
+    }
+
+    private function redirectUnlessMaster(Request $request): ?\Illuminate\Http\RedirectResponse
+    {
+        if (! $this->isMasterUser($request)) {
+            return redirect()->route('setting.attendance.manage')
+                ->with('status', '月次勤怠表/個人別集計は管理者（権限1）のみ利用できます。');
+        }
+
+        return null;
     }
 
     /**
@@ -21,6 +46,10 @@ class MonthlyAttendanceController extends Controller
      */
     public function form(Request $request)
     {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
         $workDate = $request->query('work_date') ?: date('Y-m-d');
 
         return view('setting.attendance.monthly_form')->with([
@@ -33,6 +62,10 @@ class MonthlyAttendanceController extends Controller
      */
     public function download(Request $request)
     {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
         $workDate = $request->input('work_date') ?: date('Y-m-d');
 
         $pdfData = $this->attendanceService->GetPdfData($workDate);
@@ -53,6 +86,10 @@ class MonthlyAttendanceController extends Controller
      */
     public function preview(Request $request)
     {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
         $workDate = $request->query('work_date') ?: date('Y-m-d');
 
         $pdfData = $this->attendanceService->GetPdfData($workDate);

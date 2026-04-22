@@ -51,6 +51,16 @@ class SettingAttendanceController extends Controller
         return null;
     }
 
+    private function redirectUnlessMasterForAttendanceReport(Request $request): ?\Illuminate\Http\RedirectResponse
+    {
+        if (! $this->isMasterUser($request)) {
+            return redirect()->route('setting.attendance.manage')
+                ->with('status', '月次勤怠表/個人別集計は管理者（権限1）のみ利用できます。');
+        }
+
+        return null;
+    }
+
     private function timeToHmForInput(?string $time): string
     {
         $s = (string) ($time ?? '');
@@ -75,6 +85,7 @@ class SettingAttendanceController extends Controller
             'work_date' => $request->query('work_date') ?: defaultWorkDate(),
             'result' => session('result'),
             'can_edit_attendance_defaults' => $this->isMasterUser($request),
+            'can_use_attendance_reports' => $this->isMasterUser($request),
         ]);
     }
 
@@ -376,6 +387,10 @@ class SettingAttendanceController extends Controller
      */
     public function personalSummary(Request $request)
     {
+        if ($redirect = $this->redirectUnlessMasterForAttendanceReport($request)) {
+            return $redirect;
+        }
+
         $workDate = $request->query('work_date') ?: defaultWorkDate();
         $staffType = $request->query('staff_type');
 
