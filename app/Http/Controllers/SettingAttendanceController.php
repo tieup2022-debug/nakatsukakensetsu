@@ -4,18 +4,61 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\AttendanceService;
+use App\Services\UserService;
 use App\Services\WorkplaceService;
 use Illuminate\Http\Request;
 
 class SettingAttendanceController extends Controller
 {
     private AttendanceService $attendanceService;
+
     private WorkplaceService $workplaceService;
 
-    public function __construct(AttendanceService $attendanceService, WorkplaceService $workplaceService)
+    private UserService $userService;
+
+    public function __construct(AttendanceService $attendanceService, WorkplaceService $workplaceService, UserService $userService)
     {
         $this->attendanceService = $attendanceService;
         $this->workplaceService = $workplaceService;
+        $this->userService = $userService;
+    }
+
+    /**
+     * マスター（権限1）のみ true
+     */
+    private function isMasterUser(Request $request): bool
+    {
+        $uid = (int) $request->session()->get('login_user_id');
+        if ($uid <= 0) {
+            return false;
+        }
+
+        $user = $this->userService->GetUser($uid);
+
+        return $user && (int) $user->permission === 1;
+    }
+
+    /**
+     * マスター以外は勤怠管理へリダイレクト
+     */
+    private function redirectUnlessMaster(Request $request): ?\Illuminate\Http\RedirectResponse
+    {
+        if (! $this->isMasterUser($request)) {
+            return redirect()->route('setting.attendance.manage')
+                ->with('status', '勤怠の初期時間の設定は管理者（権限1）のみ利用できます。');
+        }
+
+        return null;
+    }
+
+    private function timeToHmForInput(?string $time): string
+    {
+        $s = (string) ($time ?? '');
+        if (preg_match('/^(\d{1,2}):(\d{2})/', $s, $m) === 1) {
+            return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
+        }
+
+        return '08:00';
     }
 
     /**
@@ -31,6 +74,7 @@ class SettingAttendanceController extends Controller
             'selected_workplace_id' => $request->query('workplace_id'),
             'work_date' => $request->query('work_date') ?: defaultWorkDate(),
             'result' => session('result'),
+            'can_edit_attendance_defaults' => $this->isMasterUser($request),
         ]);
     }
 
@@ -355,6 +399,63 @@ class SettingAttendanceController extends Controller
             'summary_list' => $summary['summary_list'] ?? [],
             'status' => null,
         ]);
+    }
+
+    /**
+     * 勤怠一括入力などで使う初期出退勤・休憩（m_attendance_defaults）の編集（マスターのみ）
+     */
+    public function attendanceDefaults(Request $request)
+    {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
+        $settingsRow = $this->attendanceService->getAttendanceDefaultsSettingsRow();
+        $defaults = $settingsRow ?? $this->attendanceService->GetDefaults();
+        $breakMinutes = $this->attendanceService->breakStoreValueToMinutes($defaults->break_time ?? null);
+        $startDisplay = $this->timeToHmForInput($defaults->start_time ?? null);
+        $endDisplay = $this->timeToHmForInput($defaults->end_time ?? null);
+        $isEnabled = $settingsRow
+            ? (bool) $settingsRow->is_enabled
+            : true;
+
+        return view('setting.attendance.defaults')->with([
+            'start_display' => $startDisplay,
+            'end_display' => $endDisplay,
+            'break_minutes' => $breakMinutes,
+            'is_enabled' => $isEnabled,
+        ]);
+    }
+
+    public function attendanceDefaultsSubmit(Request $request)
+    {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
+        $validated = $request->validate([
+            'start_time' => 'required|string|max:16',
+            'end_time' => 'required|string|max:16',
+            'break_minutes' => 'required|integer|min:0|max:1440',
+        ]);
+
+        $isEnabled = (string) $request->input('is_enabled') === '1';
+
+        $ok = $this->attendanceService->saveAttendanceDefaults(
+            $validated['start_time'],
+            $validated['end_time'],
+            (int) $validated['break_minutes'],
+            $isEnabled
+        );
+
+        if (! $ok) {
+            return redirect()->route('setting.attendance.defaults')
+                ->withInput()
+                ->with('status', '保存に失敗しました。');
+        }
+
+        return redirect()->route('setting.attendance.defaults')
+            ->with('status', '保存しました。');
     }
 }
 

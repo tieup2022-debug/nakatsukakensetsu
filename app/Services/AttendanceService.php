@@ -507,6 +507,124 @@ class AttendanceService
     }
 
     /**
+     * 初期値マスタの編集用に 1 行取得（有効行があればそれ、なければ先頭行）
+     */
+    public function getAttendanceDefaultsSettingsRow(): ?object
+    {
+        try {
+            $row = DB::table('m_attendance_defaults')
+                ->where('is_enabled', '=', true)
+                ->orderBy('id')
+                ->first();
+
+            if ($row) {
+                return $row;
+            }
+
+            return DB::table('m_attendance_defaults')->orderBy('id')->first();
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return null;
+        }
+    }
+
+    /**
+     * 休憩の DB 値（HH:MM(:SS) や分）を分に変換（初期値画面・一括入力と揃える）
+     */
+    public function breakStoreValueToMinutes(?string $breakTime): int
+    {
+        if ($breakTime === null || $breakTime === '') {
+            return 60;
+        }
+
+        $breakTimeStr = trim((string) $breakTime);
+        if (preg_match('/^(\d{1,2}):(\d{2})/', $breakTimeStr, $m) === 1) {
+            return ((int) $m[1]) * 60 + ((int) $m[2]);
+        }
+
+        if (is_numeric($breakTimeStr)) {
+            return (int) $breakTimeStr;
+        }
+
+        return 60;
+    }
+
+    /**
+     * 分を休憩用 TIME 文字列（HH:MM:00）へ
+     */
+    public function minutesToBreakStoreValue(int $minutes): string
+    {
+        $mins = max(0, $minutes);
+        $hours = intdiv($mins, 60);
+        $minutesOnly = $mins % 60;
+
+        return sprintf('%02d:%02d:00', $hours, $minutesOnly);
+    }
+
+    /**
+     * m_attendance_defaults を更新（有効行が無ければ先頭行、無ければ新規作成）
+     */
+    public function saveAttendanceDefaults(string $startTimeInput, string $endTimeInput, int $breakMinutes, bool $isEnabled): bool
+    {
+        try {
+            $startHms = $this->normalizeTimeInputToHms($startTimeInput);
+            $endHms = $this->normalizeTimeInputToHms($endTimeInput);
+            $breakHms = $this->minutesToBreakStoreValue($breakMinutes);
+
+            DB::beginTransaction();
+
+            $row = DB::table('m_attendance_defaults')
+                ->where('is_enabled', '=', true)
+                ->orderBy('id')
+                ->first();
+
+            if (! $row) {
+                $row = DB::table('m_attendance_defaults')->orderBy('id')->first();
+            }
+
+            $payload = [
+                'start_time' => $startHms,
+                'end_time' => $endHms,
+                'break_time' => $breakHms,
+                'is_enabled' => $isEnabled,
+                'updated_at' => now(),
+            ];
+
+            if ($row) {
+                DB::table('m_attendance_defaults')
+                    ->where('id', '=', $row->id)
+                    ->update($payload);
+            } else {
+                $payload['created_at'] = now();
+                DB::table('m_attendance_defaults')->insert($payload);
+            }
+
+            DB::commit();
+
+            return true;
+        } catch (\Exception $e) {
+            DB::rollback();
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return false;
+        }
+    }
+
+    private function normalizeTimeInputToHms(string $input): string
+    {
+        $s = trim($input);
+        if (preg_match('/^(\d{1,2}):(\d{2}):(\d{2})$/', $s, $m) === 1) {
+            return sprintf('%02d:%02d:%02d', (int) $m[1], (int) $m[2], (int) $m[3]);
+        }
+        if (preg_match('/^(\d{1,2}):(\d{2})$/', $s, $m) === 1) {
+            return sprintf('%02d:%02d:00', (int) $m[1], (int) $m[2]);
+        }
+
+        throw new \InvalidArgumentException('Invalid time: '.$input);
+    }
+
+    /**
      * ローカルDB未接続でも「勤怠一括入力」「勤怠一覧」で使えるように、
      * local_assignments.json + local_staff.json (+ local_attendances.json) から返す
      *

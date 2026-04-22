@@ -77,6 +77,8 @@ Route::post('/setting/equipment/delete', [SettingEquipmentController::class, 'de
 
 // attendance settings
 Route::get('/setting/attendance/manage', [SettingAttendanceController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.attendance.manage');
+Route::get('/setting/attendance/defaults', [SettingAttendanceController::class, 'attendanceDefaults'])->middleware('nakatsuka.auth')->name('setting.attendance.defaults');
+Route::post('/setting/attendance/defaults', [SettingAttendanceController::class, 'attendanceDefaultsSubmit'])->middleware('nakatsuka.auth')->name('setting.attendance.defaults.submit');
 Route::get('/setting/attendance/edit', [SettingAttendanceController::class, 'edit'])->middleware('nakatsuka.auth')->name('setting.attendance.edit');
 Route::get('/setting/attendance/input', [SettingAttendanceController::class, 'input'])->middleware('nakatsuka.auth')->name('setting.attendance.input');
 Route::post('/setting/attendance/create', [SettingAttendanceController::class, 'create'])->middleware('nakatsuka.auth')->name('setting.attendance.create');

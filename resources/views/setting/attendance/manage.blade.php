@@ -43,11 +43,27 @@
         </div>
     </div>
 
+    @if (session('status'))
+        <div class="alert alert-info mb-3">{{ session('status') }}</div>
+    @endif
+
     @php
         $canGo = !empty($selected_workplace_id) && !empty($work_date);
     @endphp
 
     <div class="row g-3">
+        @if (!empty($can_edit_attendance_defaults))
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h2 class="h6 fw-semibold mb-2">勤怠の初期時間</h2>
+                        <p class="text-muted small mb-3">一括登録フォームに出すデフォルトの出勤・退勤・休憩を変更します。</p>
+                        <a href="{{ route('setting.attendance.defaults') }}" class="btn btn-outline-secondary w-100">開く</a>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="col-md-6">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">

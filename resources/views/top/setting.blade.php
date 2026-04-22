@@ -24,7 +24,12 @@
                 <div class="card-body">
                     <h2 class="h6 fw-semibold mb-2">勤怠管理</h2>
                     <p class="text-muted small mb-3">毎日の出退勤・欠勤者管理を行います。</p>
-                    <a href="{{ route('setting.attendance.manage') }}" class="btn btn-primary w-100">開く</a>
+                    <div class="d-grid gap-2">
+                        <a href="{{ route('setting.attendance.manage') }}" class="btn btn-primary">開く</a>
+                        @if (!empty($can_edit_attendance_defaults))
+                            <a href="{{ route('setting.attendance.defaults') }}" class="btn btn-outline-secondary btn-sm">勤怠の初期時間</a>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
