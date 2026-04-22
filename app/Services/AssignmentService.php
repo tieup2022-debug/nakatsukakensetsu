@@ -52,14 +52,20 @@ class AssignmentService
                 }
             }
 
+            $staffFirst = $this->GetStaffList(1, $workplaceId, $workDate, true);
+            $staffSecond = $this->GetStaffList(2, $workplaceId, $workDate, true);
+            $staffThird = $this->GetStaffList(3, $workplaceId, $workDate, true);
+            $vehicles = $this->GetVehicleList($workplaceId, $workDate, true);
+            $equipments = $this->GetEquipmentList($workplaceId, $workDate, true);
+
             return [
                 'workplace_id' => $workplaceId,
                 'work_date' => $workDate,
-                'staff_list_first' => $this->GetStaffList(1, $workplaceId, $workDate, true) ? $this->GetStaffList(1, $workplaceId, $workDate, true) : [],
-                'staff_list_second' => $this->GetStaffList(2, $workplaceId, $workDate, true) ? $this->GetStaffList(2, $workplaceId, $workDate, true) : [],
-                'staff_list_third' => $this->GetStaffList(3, $workplaceId, $workDate, true) ? $this->GetStaffList(3, $workplaceId, $workDate, true) : [],
-                'vehicle_list' => $this->GetVehicleList($workplaceId, $workDate, true) ? $this->GetVehicleList($workplaceId, $workDate, true) : [],
-                'equipment_list' => $this->GetEquipmentList($workplaceId, $workDate, true) ? $this->GetEquipmentList($workplaceId, $workDate, true) : [],
+                'staff_list_first' => $staffFirst ?: [],
+                'staff_list_second' => $staffSecond ?: [],
+                'staff_list_third' => $staffThird ?: [],
+                'vehicle_list' => $vehicles ?: [],
+                'equipment_list' => $equipments ?: [],
             ];
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);

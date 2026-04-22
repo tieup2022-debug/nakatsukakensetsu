@@ -98,19 +98,40 @@ class TopAssignmentController extends Controller
             return $pdf->download($fileName);
         }
 
-        // 選択した現場・作業日に対して配置が付いているメンバー・車両・重機のみ表示（設定画面の一覧編集は従来どおり全件）
-        $staffListFirst = $this->assignmentService->GetStaffList(1, $resolvedWorkplaceId, $resolvedWorkDate, true);
-        $staffListSecond = $this->assignmentService->GetStaffList(2, $resolvedWorkplaceId, $resolvedWorkDate, true);
-        $staffListThird = $this->assignmentService->GetStaffList(3, $resolvedWorkplaceId, $resolvedWorkDate, true);
+        // getAssignment で既に同一条件の一覧を取っている場合は再クエリしない（重複 SQL が最大のボトルネックだった）
+        $reuseLists = is_array($assignmentData)
+            && (string) ($assignmentData['workplace_id'] ?? '') === (string) $resolvedWorkplaceId
+            && (string) ($assignmentData['work_date'] ?? '') === (string) $resolvedWorkDate;
 
-        $vehicleList = $this->assignmentService->GetVehicleList($resolvedWorkplaceId, $resolvedWorkDate, true);
-        $equipmentList = $this->assignmentService->GetEquipmentList($resolvedWorkplaceId, $resolvedWorkDate, true);
+        if ($reuseLists) {
+            $staffListFirst = $assignmentData['staff_list_first'] ?? [];
+            $staffListSecond = $assignmentData['staff_list_second'] ?? [];
+            $staffListThird = $assignmentData['staff_list_third'] ?? [];
+            $vehicleList = $assignmentData['vehicle_list'] ?? [];
+            $equipmentList = $assignmentData['equipment_list'] ?? [];
+        } else {
+            $staffListFirst = $this->assignmentService->GetStaffList(1, $resolvedWorkplaceId, $resolvedWorkDate, true);
+            $staffListSecond = $this->assignmentService->GetStaffList(2, $resolvedWorkplaceId, $resolvedWorkDate, true);
+            $staffListThird = $this->assignmentService->GetStaffList(3, $resolvedWorkplaceId, $resolvedWorkDate, true);
+            $vehicleList = $this->assignmentService->GetVehicleList($resolvedWorkplaceId, $resolvedWorkDate, true);
+            $equipmentList = $this->assignmentService->GetEquipmentList($resolvedWorkplaceId, $resolvedWorkDate, true);
+        }
 
-        if ($staffListFirst === false || $staffListFirst === null) $staffListFirst = [];
-        if ($staffListSecond === false || $staffListSecond === null) $staffListSecond = [];
-        if ($staffListThird === false || $staffListThird === null) $staffListThird = [];
-        if ($vehicleList === false || $vehicleList === null) $vehicleList = [];
-        if ($equipmentList === false || $equipmentList === null) $equipmentList = [];
+        if ($staffListFirst === false || $staffListFirst === null) {
+            $staffListFirst = [];
+        }
+        if ($staffListSecond === false || $staffListSecond === null) {
+            $staffListSecond = [];
+        }
+        if ($staffListThird === false || $staffListThird === null) {
+            $staffListThird = [];
+        }
+        if ($vehicleList === false || $vehicleList === null) {
+            $vehicleList = [];
+        }
+        if ($equipmentList === false || $equipmentList === null) {
+            $equipmentList = [];
+        }
 
         $previousDate = $this->assignmentService->CheckAssignmentPreviousDate($resolvedWorkplaceId, $resolvedWorkDate);
 
