@@ -30,6 +30,9 @@
         .assignment-edit-title {
             padding-right: min(13rem, 38vw);
         }
+        #assignment-edit-form tr.assignment-edit-select-row {
+            cursor: pointer;
+        }
     </style>
     <div class="assignment-edit-float" role="toolbar" aria-label="配置の保存・戻る">
         <a class="btn btn-outline-secondary btn-sm" href="{{ $manageUrl }}">管理画面へ</a>
@@ -99,7 +102,7 @@
                         <tbody>
                         @forelse($staffFirst as $s)
                             @php $checked = isset($s->assignment_flg) && intval($s->assignment_flg) === 1; @endphp
-                            <tr>
+                            <tr class="assignment-edit-select-row">
                                 <td class="fw-medium">{{ $s->staff_name ?? '' }}</td>
                                 <td>
                                     <input type="hidden" name="staff_list[{{ $s->staff_id }}]" value="0">
@@ -135,7 +138,7 @@
                         <tbody>
                         @forelse($staffSecond as $s)
                             @php $checked = isset($s->assignment_flg) && intval($s->assignment_flg) === 1; @endphp
-                            <tr>
+                            <tr class="assignment-edit-select-row">
                                 <td class="fw-medium">{{ $s->staff_name ?? '' }}</td>
                                 <td>
                                     <input type="hidden" name="staff_list[{{ $s->staff_id }}]" value="0">
@@ -171,7 +174,7 @@
                         <tbody>
                         @forelse($staffThird as $s)
                             @php $checked = isset($s->assignment_flg) && intval($s->assignment_flg) === 1; @endphp
-                            <tr>
+                            <tr class="assignment-edit-select-row">
                                 <td class="fw-medium">{{ $s->staff_name ?? '' }}</td>
                                 <td>
                                     <input type="hidden" name="staff_list[{{ $s->staff_id }}]" value="0">
@@ -207,7 +210,7 @@
                         <tbody>
                         @forelse($vehicleList as $v)
                             @php $checked = isset($v->assignment_flg) && intval($v->assignment_flg) === 1; @endphp
-                            <tr>
+                            <tr class="assignment-edit-select-row">
                                 <td class="fw-medium">{{ $v->vehicle_name ?? '' }}</td>
                                 <td>
                                     <input type="hidden" name="vehicle_list[{{ $v->vehicle_id }}]" value="0">
@@ -243,7 +246,7 @@
                         <tbody>
                         @forelse($equipmentList as $e)
                             @php $checked = isset($e->assignment_flg) && intval($e->assignment_flg) === 1; @endphp
-                            <tr>
+                            <tr class="assignment-edit-select-row">
                                 <td class="fw-medium">{{ $e->vehicle_name ?? '' }}</td>
                                 <td>
                                     <input type="hidden" name="equipment_list[{{ $e->vehicle_id }}]" value="0">
@@ -270,5 +273,21 @@
             <button class="btn btn-primary" type="submit">保存</button>
         </div>
     </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var form = document.getElementById('assignment-edit-form');
+            if (!form) return;
+            form.addEventListener('click', function (e) {
+                var tr = e.target.closest('tr.assignment-edit-select-row');
+                if (!tr || !form.contains(tr)) return;
+                if (e.target.closest('input[type="checkbox"]')) return;
+                var cb = tr.querySelector('input[type="checkbox"]');
+                if (cb) {
+                    cb.checked = !cb.checked;
+                }
+            });
+        });
+    </script>
 @endsection
 
