@@ -1129,7 +1129,7 @@ class AttendanceService
      *
      * @return array<string, mixed>|false
      */
-    public function GetPersonalMonthlySummary($workDate, $staffId = null)
+    public function GetPersonalMonthlySummary($workDate, $staffId = null, $staffType = null)
     {
         try {
             $baseDate = $workDate ?: date('Y-m-d');
@@ -1144,10 +1144,14 @@ class AttendanceService
 
             $staffQuery = DB::table('m_staff')
                 ->whereNull('deleted_at')
+                ->orderBy('staff_type')
                 ->orderBy('sort_number')
                 ->orderBy('id');
             if (!empty($staffId)) {
                 $staffQuery->where('id', '=', $staffId);
+            }
+            if ($staffType !== null && $staffType !== '') {
+                $staffQuery->where('staff_type', '=', (int) $staffType);
             }
             $staffList = $staffQuery->get();
 

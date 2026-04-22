@@ -377,13 +377,13 @@ class SettingAttendanceController extends Controller
     public function personalSummary(Request $request)
     {
         $workDate = $request->query('work_date') ?: defaultWorkDate();
-        $staffId = $request->query('staff_id');
+        $staffType = $request->query('staff_type');
 
-        $summary = $this->attendanceService->GetPersonalMonthlySummary($workDate, $staffId);
+        $summary = $this->attendanceService->GetPersonalMonthlySummary($workDate, null, $staffType);
         if ($summary === false) {
             return view('setting.attendance.personal_summary')->with([
                 'work_date' => $workDate,
-                'selected_staff_id' => $staffId,
+                'selected_staff_type' => $staffType,
                 'staff_list' => [],
                 'date_list' => [],
                 'summary_list' => [],
@@ -393,7 +393,7 @@ class SettingAttendanceController extends Controller
 
         return view('setting.attendance.personal_summary')->with([
             'work_date' => $workDate,
-            'selected_staff_id' => $staffId,
+            'selected_staff_type' => $staffType,
             'staff_list' => $summary['staff_list'] ?? [],
             'date_list' => $summary['date_list'] ?? [],
             'summary_list' => $summary['summary_list'] ?? [],
