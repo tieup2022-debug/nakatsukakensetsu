@@ -1,6 +1,37 @@
 @extends('layouts.app')
 
 @section('content')
+    <style>
+        /* カード内の縦スペースをテキストエリアに割り当てる */
+        .news-update-card .card-body {
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100dvh - 13rem);
+        }
+        .news-update-form {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+        .news-update-textarea-wrap {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .news-update-textarea-wrap textarea {
+            flex: 1 1 auto;
+            width: 100%;
+            min-height: max(22rem, calc(100dvh - 19rem));
+            resize: vertical;
+        }
+        @media (max-width: 576px) {
+            .news-update-card .card-body {
+                min-height: calc(100dvh - 11rem);
+            }
+        }
+    </style>
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <div>
             <h1 class="h4 mb-1 fw-semibold">お知らせ管理</h1>
@@ -17,15 +48,21 @@
         </div>
     @endif
 
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0 news-update-card">
         <div class="card-body">
-            <form method="POST" action="{{ route('setting.news.update') }}">
+            <form method="POST" action="{{ route('setting.news.update') }}" class="news-update-form">
                 @csrf
-                <div class="mb-3">
-                    <label class="form-label small text-muted">お知らせ内容</label>
-                    <textarea name="news" class="form-control" rows="8">{{ $news_data->news ?? '' }}</textarea>
+                <div class="news-update-textarea-wrap mb-0">
+                    <label class="form-label small text-muted mb-1" for="news-update-textarea">お知らせ内容</label>
+                    <textarea
+                        id="news-update-textarea"
+                        name="news"
+                        class="form-control"
+                        rows="6"
+                        spellcheck="false"
+                    >{{ $news_data->news ?? '' }}</textarea>
                 </div>
-                <div class="d-flex justify-content-end gap-2">
+                <div class="d-flex justify-content-end gap-2 mt-3 flex-shrink-0">
                     <button type="submit" class="btn btn-primary">保存</button>
                 </div>
             </form>
