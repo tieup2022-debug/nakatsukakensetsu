@@ -34,9 +34,9 @@
                     <tbody>
                         @forelse($assigned_staff_list as $row)
                             @php
-                                $startVal = $row->start_time ? substr((string)$row->start_time, 0, 5) : '';
-                                $endVal = $row->end_time ? substr((string)$row->end_time, 0, 5) : '';
-                                $breakVal = $row->break_time ? substr((string)$row->break_time, 0, 5) : '';
+                                $startVal = $row->display_start ?? '';
+                                $endVal = $row->display_end ?? '';
+                                $breakVal = $row->display_break ?? '';
                                 $isAbsent = isset($row->absence_flg) && intval($row->absence_flg) === 1;
                             @endphp
                             <tr>

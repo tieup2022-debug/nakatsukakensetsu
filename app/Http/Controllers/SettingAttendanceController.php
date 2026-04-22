@@ -226,7 +226,18 @@ class SettingAttendanceController extends Controller
         }
 
         $assignedStaffList = $this->attendanceService->GetAttendanceAllStaff($workplaceId, $workDate);
-        if ($assignedStaffList === false || $assignedStaffList === null) $assignedStaffList = [];
+        if ($assignedStaffList === false || $assignedStaffList === null) {
+            $assignedStaffList = collect();
+        } else {
+            $assignedStaffList = collect($assignedStaffList);
+        }
+
+        $defaults = $this->attendanceService->GetDefaults();
+        if ($defaults === false || $defaults === null) {
+            $defaults = (object) [];
+        }
+
+        $assignedStaffList = $this->attendanceService->withListDisplayTimes($assignedStaffList, $defaults);
 
         return view('setting.attendance.list')->with([
             'workplace_id' => $workplaceId,

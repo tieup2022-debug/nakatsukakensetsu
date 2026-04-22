@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AttendanceService
@@ -73,6 +74,64 @@ class AttendanceService
             }
             return false;
         }
+    }
+
+    /**
+     * 勤怠一覧・帳票向け: DB の時刻値を HH:MM に正規化（日時型や TIME 文字列に対応）
+     */
+    public function formatTimeForDisplay($time): string
+    {
+        if ($time === null || $time === '') {
+            return '';
+        }
+
+        $s = trim((string) $time);
+        if ($s === '') {
+            return '';
+        }
+
+        if (preg_match('/\d{4}-\d{2}-\d{2}\s+(\d{1,2}):(\d{2})(?::\d{2})?/', $s, $m) === 1) {
+            return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
+        }
+
+        if (preg_match('/^(\d{1,2}):(\d{2})(?::\d{2})?$/', $s, $m) === 1) {
+            return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
+        }
+
+        return '';
+    }
+
+    /**
+     * 勤怠一覧行に表示用の時刻を付与（未登録・NULL 時は m_attendance_defaults 相当の既定値）
+     */
+    public function withListDisplayTimes(iterable $rows, object $defaults): Collection
+    {
+        $rows = collect($rows);
+
+        $fallbackStart = $this->formatTimeForDisplay($defaults->start_time ?? null) ?: '08:00';
+        $fallbackEnd = $this->formatTimeForDisplay($defaults->end_time ?? null) ?: '17:00';
+        $fallbackBreak = $this->formatTimeForDisplay($defaults->break_time ?? null) ?: '01:00';
+
+        return $rows->map(function ($row) use ($fallbackStart, $fallbackEnd, $fallbackBreak) {
+            $absent = isset($row->absence_flg) && (int) $row->absence_flg === 1;
+            if ($absent) {
+                $row->display_start = '';
+                $row->display_end = '';
+                $row->display_break = '';
+
+                return $row;
+            }
+
+            $s = $this->formatTimeForDisplay($row->start_time ?? null);
+            $e = $this->formatTimeForDisplay($row->end_time ?? null);
+            $b = $this->formatTimeForDisplay($row->break_time ?? null);
+
+            $row->display_start = $s !== '' ? $s : $fallbackStart;
+            $row->display_end = $e !== '' ? $e : $fallbackEnd;
+            $row->display_break = $b !== '' ? $b : $fallbackBreak;
+
+            return $row;
+        });
     }
 
     /**
