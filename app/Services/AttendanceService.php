@@ -1210,8 +1210,9 @@ class AttendanceService
                                     // 土曜は全時間を時間外として集計
                                     $overtimeMinutes = $workedMinutes;
                                 } else {
-                                    $normalMinutes = min(480, $workedMinutes);
-                                    $overtimeMinutes = max(0, $workedMinutes - 480);
+                                    // 平日は実働を通常時間として扱い、8時間超は時間外に含めない
+                                    $normalMinutes = $workedMinutes;
+                                    $overtimeMinutes = 0;
                                     $personal['weekday_work_days']++;
                                 }
 
