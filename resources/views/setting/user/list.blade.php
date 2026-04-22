@@ -11,10 +11,6 @@
         </div>
     </div>
 
-    @if (session('status'))
-        <div class="alert alert-info mb-3">{{ session('status') }}</div>
-    @endif
-
     <div class="card shadow-sm border-0">
         <div class="card-body">
             <div class="table-responsive">
@@ -25,7 +21,7 @@
                             <th>ユーザー名</th>
                             <th style="width: 180px;">ログインID</th>
                             <th style="width: 120px;">権限</th>
-                            <th style="width: 220px;">操作</th>
+                            <th style="width: 300px;">操作</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -36,7 +32,8 @@
                             <td class="text-muted">{{ $u->login_id }}</td>
                             <td>{{ $u->permission }}</td>
                             <td class="text-end">
-                                <a class="btn btn-outline-primary btn-sm me-2" href="{{ route('setting.user.update', ['user_id'=>$u->id]) }}">編集</a>
+                                <a class="btn btn-outline-secondary btn-sm me-1" href="{{ route('setting.user.password.form', ['user_id' => $u->id]) }}">パスワード</a>
+                                <a class="btn btn-outline-primary btn-sm me-1" href="{{ route('setting.user.update', ['user_id'=>$u->id]) }}">編集</a>
                                 <form method="POST" action="{{ route('setting.user.delete') }}" style="display:inline;">
                                     @csrf
                                     <input type="hidden" name="user_id" value="{{ $u->id }}">

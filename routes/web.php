@@ -114,6 +114,8 @@ Route::post('/setting/user/create', [SettingUserController::class, 'create'])->m
 Route::get('/setting/user/list', [SettingUserController::class, 'list'])->middleware('nakatsuka.auth')->name('setting.user.list');
 Route::get('/setting/user/update', [SettingUserController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.user.update');
 Route::post('/setting/user/update', [SettingUserController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.user.update.submit');
+Route::get('/setting/user/password-reset', [SettingUserController::class, 'resetPasswordForm'])->middleware('nakatsuka.auth')->name('setting.user.password.form');
+Route::post('/setting/user/password-reset', [SettingUserController::class, 'resetPasswordSubmit'])->middleware('nakatsuka.auth')->name('setting.user.password.reset');
 Route::post('/setting/user/delete', [SettingUserController::class, 'delete'])->middleware('nakatsuka.auth')->name('setting.user.delete');
 
 // news
