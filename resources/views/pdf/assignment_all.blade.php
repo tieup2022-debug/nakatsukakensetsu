@@ -174,9 +174,9 @@
                         @endphp
                         <td>
                             @if($name !== '')
-                                担当 {{ $name }}
+                                技術者 {{ $name }}
                             @else
-                                <span class="cell-muted">担当</span>
+                                <span class="cell-muted">技術者</span>
                             @endif
                         </td>
                     @endfor

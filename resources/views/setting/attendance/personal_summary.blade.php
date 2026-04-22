@@ -51,7 +51,7 @@
                     <label class="form-label small text-muted">スタッフ種別</label>
                     <select class="form-select" name="staff_type">
                         <option value="" {{ (string)($selected_staff_type ?? '') === '' ? 'selected' : '' }}>全員</option>
-                        <option value="1" {{ (string)($selected_staff_type ?? '') === '1' ? 'selected' : '' }}>スタッフ1（担当）</option>
+                        <option value="1" {{ (string)($selected_staff_type ?? '') === '1' ? 'selected' : '' }}>スタッフ1（技術者）</option>
                         <option value="2" {{ (string)($selected_staff_type ?? '') === '2' ? 'selected' : '' }}>スタッフ2（OP）</option>
                         <option value="3" {{ (string)($selected_staff_type ?? '') === '3' ? 'selected' : '' }}>スタッフ3（作業員）</option>
                         <option value="4" {{ (string)($selected_staff_type ?? '') === '4' ? 'selected' : '' }}>スタッフ4（総務部）</option>

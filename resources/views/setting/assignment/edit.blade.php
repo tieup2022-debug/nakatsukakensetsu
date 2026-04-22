@@ -90,7 +90,7 @@
 
         <div class="card shadow-sm border-0 mb-3">
             <div class="card-body">
-                <h2 class="h6 fw-semibold mb-2">技術担当</h2>
+                <h2 class="h6 fw-semibold mb-2">技術者</h2>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead>

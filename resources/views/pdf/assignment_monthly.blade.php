@@ -39,7 +39,7 @@
                     <td colspan="3" class="workplace-title small">{{ $name }}</td>
                 </tr>
                 <tr>
-                    <th class="small" style="width: 20%;">技術担当</th>
+                    <th class="small" style="width: 20%;">技術者</th>
                     <th class="small" style="width: 40%;">作業員</th>
                     <th class="small" style="width: 40%;">車両・重機</th>
                 </tr>

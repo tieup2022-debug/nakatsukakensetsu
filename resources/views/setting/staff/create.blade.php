@@ -30,7 +30,7 @@
                 <div class="mb-3">
                     <label class="form-label small text-muted">種別</label>
                     <select name="staff_type" class="form-select" required>
-                        <option value="1">担当</option>
+                        <option value="1">技術者</option>
                         <option value="2">OP</option>
                         <option value="3">作業員</option>
                         <option value="4">総務部</option>

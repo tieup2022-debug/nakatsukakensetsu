@@ -21,7 +21,7 @@ class AssignmentService
 
     /** @var array<int, string> */
     private const PDF_STAFF_HEADER = [
-        1 => '担当',
+        1 => '技術者',
         2 => 'OP',
         3 => '作業員',
         4 => '総務部',

@@ -26,7 +26,7 @@
                 <div class="mb-3">
                     <label class="form-label small text-muted">種別</label>
                     <select name="staff_type" class="form-select" required>
-                        <option value="1" {{ (string)$staff_data->staff_type === '1' ? 'selected' : '' }}>担当</option>
+                        <option value="1" {{ (string)$staff_data->staff_type === '1' ? 'selected' : '' }}>技術者</option>
                         <option value="2" {{ (string)$staff_data->staff_type === '2' ? 'selected' : '' }}>OP</option>
                         <option value="3" {{ (string)$staff_data->staff_type === '3' ? 'selected' : '' }}>作業員</option>
                         <option value="4" {{ (string)$staff_data->staff_type === '4' ? 'selected' : '' }}>総務部</option>

@@ -33,7 +33,7 @@
                         @foreach($staff_list as $s)
                             @php
                                 $typeLabel = match ((string)$s->staff_type) {
-                                    '1' => '担当',
+                                    '1' => '技術者',
                                     '2' => 'OP',
                                     '3' => '作業員',
                                     '4' => '総務部',

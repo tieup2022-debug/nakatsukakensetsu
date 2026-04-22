@@ -102,12 +102,12 @@
                         <input type="hidden" name="work_date" value="{{ $work_date }}">
 
                         <div class="d-flex gap-2 flex-wrap mb-3">
-                            <div class="badge bg-primary-subtle text-primary p-2">技術担当/OP/作業員・車両/重機</div>
+                            <div class="badge bg-primary-subtle text-primary p-2">技術者/OP/作業員・車両/重機</div>
                         </div>
 
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <div class="small text-muted mb-2">担当（技術担当者）</div>
+                                <div class="small text-muted mb-2">技術者</div>
                                 <div class="table-responsive">
                                     <table class="table table-sm align-middle mb-0">
                                         <tbody>
