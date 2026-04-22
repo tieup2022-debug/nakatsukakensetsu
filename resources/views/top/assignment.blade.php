@@ -238,7 +238,13 @@
                                         @if(!empty($news->last_editor_name))
                                             <span class="mx-1">/</span>
                                         @endif
-                                        <span>更新日時：{{ date('Y/m/d H:i', strtotime((string) $news->updated_at)) }}</span>
+                                        <span>
+                                            更新日時：{{
+                                                \Illuminate\Support\Carbon::parse((string) $news->updated_at, 'UTC')
+                                                    ->setTimezone('Asia/Tokyo')
+                                                    ->format('Y/m/d H:i')
+                                            }}
+                                        </span>
                                     @endif
                                 </div>
                             @endif

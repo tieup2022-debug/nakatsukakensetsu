@@ -26,7 +26,13 @@
                     <tbody>
                     @forelse($history_list as $h)
                         <tr>
-                            <td class="text-muted">{{ $h->created_at ?? '' }}</td>
+                            <td class="text-muted">
+                                {{
+                                    !empty($h->created_at)
+                                        ? \Illuminate\Support\Carbon::parse((string) $h->created_at, 'UTC')->setTimezone('Asia/Tokyo')->format('Y/m/d H:i')
+                                        : ''
+                                }}
+                            </td>
                             <td class="text-muted">{{ $h->user_name ?? '' }}</td>
                             <td style="white-space: pre-wrap;">{{ $h->news ?? '' }}</td>
                         </tr>
