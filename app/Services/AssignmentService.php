@@ -24,6 +24,7 @@ class AssignmentService
         1 => '担当',
         2 => 'OP',
         3 => '作業員',
+        4 => '総務部',
     ];
 
     /**

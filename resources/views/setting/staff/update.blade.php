@@ -29,6 +29,7 @@
                         <option value="1" {{ (string)$staff_data->staff_type === '1' ? 'selected' : '' }}>担当</option>
                         <option value="2" {{ (string)$staff_data->staff_type === '2' ? 'selected' : '' }}>OP</option>
                         <option value="3" {{ (string)$staff_data->staff_type === '3' ? 'selected' : '' }}>作業員</option>
+                        <option value="4" {{ (string)$staff_data->staff_type === '4' ? 'selected' : '' }}>総務部</option>
                     </select>
                 </div>
 

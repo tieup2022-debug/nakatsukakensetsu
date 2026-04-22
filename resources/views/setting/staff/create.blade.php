@@ -33,6 +33,7 @@
                         <option value="1">担当</option>
                         <option value="2">OP</option>
                         <option value="3">作業員</option>
+                        <option value="4">総務部</option>
                     </select>
                 </div>
 
