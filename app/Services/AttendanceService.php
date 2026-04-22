@@ -1175,7 +1175,8 @@ class AttendanceService
 
                 foreach ($dateList as $date) {
                     $dow = (int) date('N', strtotime($date));
-                    $isHoliday = ($dow === 6 || $dow === 7);
+                    $isSaturday = ($dow === 6);
+                    $isSunday = ($dow === 7);
                     $row = $dailyRows->get($date);
 
                     $normalMinutes = 0;
@@ -1201,9 +1202,13 @@ class AttendanceService
                             );
 
                             if ($workedMinutes > 0) {
-                                if ($isHoliday) {
+                                if ($isSunday) {
+                                    // 日曜は出勤時のみ「休日出勤日」カウントし、全時間を休日時間に集計
                                     $holidayMinutes = $workedMinutes;
                                     $personal['holiday_work_days']++;
+                                } elseif ($isSaturday) {
+                                    // 土曜は全時間を時間外として集計
+                                    $overtimeMinutes = $workedMinutes;
                                 } else {
                                     $normalMinutes = min(480, $workedMinutes);
                                     $overtimeMinutes = max(0, $workedMinutes - 480);
