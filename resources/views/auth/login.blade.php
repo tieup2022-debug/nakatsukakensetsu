@@ -49,9 +49,12 @@
 
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="1" id="remember" name="remember">
+                                {{-- 未チェック時も remember=0 を送る（バリデーションエラー後の表示ずれ防止） --}}
+                                <input type="hidden" name="remember" value="0">
+                                <input class="form-check-input" type="checkbox" value="1" id="remember" name="remember" {{ old('remember', '1') === '1' ? 'checked' : '' }}>
                                 <label class="form-check-label small" for="remember">
                                     ログイン状態を保持する
+                                    <span class="d-block text-muted mt-1" style="font-size: 0.7rem;">スマホでタブを閉じたあとも、チェック時は再ログインしにくくなります。</span>
                                 </label>
                             </div>
                         </div>

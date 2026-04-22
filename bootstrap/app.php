@@ -18,6 +18,12 @@ $app = Application::configure(basePath: $basePath)
         $middleware->alias([
             'nakatsuka.auth' => \App\Http\Middleware\NakatsukaAuth::class,
         ]);
+        $middleware->encryptCookies(except: [
+            (string) env('REMEMBER_WEB_COOKIE', 'nakatsuka_remember_web'),
+        ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\RestoreWebSessionFromRemember::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
