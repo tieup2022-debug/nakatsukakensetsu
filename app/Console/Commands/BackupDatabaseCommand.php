@@ -18,7 +18,7 @@ class BackupDatabaseCommand extends Command
     public function handle(): int
     {
         $dir = $this->option('path') ?: config('backup.database.directory');
-        $keepDays = (int) ($this->option('keep-days') ?: config('backup.database.keep_days', 14));
+        $keepDays = (int) ($this->option('keep-days') ?: config('backup.database.keep_days', 365));
 
         if (! is_dir($dir) && ! @mkdir($dir, 0775, true) && ! is_dir($dir)) {
             $this->error('バックアップ先ディレクトリを作成できません: '.$dir);
