@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     @include('pdf.partials.fonts')
     <style>
-        /* A4縦・3名/ページ：下余白をページ高で均等割り（flex）＋読みやすさ */
-        @page { margin: 2mm 2.5mm; }
+        /* A4縦・3名/ページ：左右はプリンタ非印刷域を避けるため少し広め */
+        @page { margin: 2mm 6mm; }
         * { box-sizing: border-box; }
         body {
             margin: 0;
