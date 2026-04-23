@@ -4,71 +4,81 @@
     <meta charset="utf-8">
     @include('pdf.partials.fonts')
     <style>
-        @page { margin: 3.5mm 4mm; }
+        /* A4縦で3名/ページを優先：余白最小・日次は3行（休日は月間サマリーのみ） */
+        @page { margin: 2mm 2.5mm; }
         * { box-sizing: border-box; }
         body {
             margin: 0;
             padding: 0;
-            font-size: 8.5pt;
+            font-size: 7.5pt;
             color: #111;
         }
         .pdf-page { page-break-after: always; }
         .pdf-page:last-child { page-break-after: auto; }
         .person-block {
-            margin-bottom: 3.5mm;
+            margin-bottom: 1mm;
             page-break-inside: avoid;
         }
         .person-block:last-child { margin-bottom: 0; }
         .hdr {
             display: table;
             width: 100%;
-            margin-bottom: 1mm;
+            margin-bottom: 0.3mm;
         }
         .hdr-left {
             display: table-cell;
             vertical-align: bottom;
             width: 58%;
-            font-size: 11.5pt;
+            font-size: 9.5pt;
             font-weight: 700;
         }
         .hdr-right {
             display: table-cell;
             vertical-align: bottom;
             text-align: right;
-            font-size: 10pt;
+            font-size: 8.5pt;
         }
-        .staff-line { font-size: 9.5pt; font-weight: 700; margin: 0.5mm 0 1.5mm; }
+        .staff-line { font-size: 8pt; font-weight: 700; margin: 0 0 0.6mm; }
         table.grid {
             width: 100%;
             max-width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
         }
-        table.grid th, table.grid td {
+        table.grid-sum th, table.grid-sum td {
             border: 1px solid #222;
-            padding: 2px 3px;
+            padding: 1px 2px;
             text-align: center;
             vertical-align: middle;
-            line-height: 1.2;
+            line-height: 1.1;
+        }
+        table.grid-daily th, table.grid-daily td {
+            border: 1px solid #222;
+            padding: 0 1px;
+            text-align: center;
+            vertical-align: middle;
+            line-height: 1.08;
         }
         .sum-label {
             width: 16.66%;
             background: #eef1f5;
             font-weight: 700;
-            font-size: 7.5pt;
+            font-size: 6.5pt;
         }
-        .sum-val { font-size: 8.5pt; }
-        .day-h { font-size: 7pt; padding: 2px 1px !important; }
+        .sum-val { font-size: 7.5pt; }
+        .day-h { font-size: 5.8pt; padding: 0 !important; }
         .day-h.sun { background: #fde2e4; }
         .row-lbl {
-            width: 8.5%;
+            width: 7%;
             min-width: 0;
             background: #f4f6f8;
-            font-size: 7pt;
+            font-size: 5.8pt;
             font-weight: 700;
         }
-        .day-cell { font-size: 7.5pt; padding: 2px 2px !important; }
-        .section-gap { height: 2mm; }
+        .day-cell { font-size: 6.2pt; padding: 0 !important; }
+        .mb-sum { margin-bottom: 0.5mm; }
+        .mb-daily { margin-bottom: 0.4mm; }
+        .section-gap { height: 0.6mm; }
     </style>
 </head>
 <body>
@@ -90,8 +100,8 @@
                     &nbsp;&nbsp;{{ $person['staff_name'] ?? '' }}
                 </div>
 
-                {{-- 月間サマリー --}}
-                <table class="grid" style="margin-bottom: 3px;">
+                {{-- 月間サマリー（休日時間はここで確認。日次グリッドは縦スペースのため3行のみ） --}}
+                <table class="grid grid-sum mb-sum">
                     <tr>
                         <th class="sum-label">平日出勤</th>
                         <th class="sum-label">休日出勤</th>
@@ -113,7 +123,7 @@
                 @foreach([$firstHalf, $secondHalf] as $halfDates)
                     @if(count($halfDates) === 0)
                     @else
-                    <table class="grid" style="margin-bottom: 2px;">
+                    <table class="grid grid-daily mb-daily">
                         <tr>
                             <th class="row-lbl"></th>
                             @foreach($halfDates as $d)
@@ -137,13 +147,6 @@
                             @foreach($halfDates as $d)
                                 @php $c = $person['daily'][$d] ?? []; @endphp
                                 <td class="day-cell">{{ $c['overtime'] ?? '0.00' }}</td>
-                            @endforeach
-                        </tr>
-                        <tr>
-                            <td class="row-lbl">休日</td>
-                            @foreach($halfDates as $d)
-                                @php $c = $person['daily'][$d] ?? []; @endphp
-                                <td class="day-cell">{{ $c['holiday'] ?? '0.00' }}</td>
                             @endforeach
                         </tr>
                         <tr>
