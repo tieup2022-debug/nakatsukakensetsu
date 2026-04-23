@@ -39,9 +39,15 @@ class SettingWorkplaceController extends Controller
     public function list()
     {
         $workplace_list = $this->workplaceService->getWorkplaceList(true);
-        if ($workplace_list === false || $workplace_list === null) $workplace_list = [];
+        if ($workplace_list === false || $workplace_list === null) {
+            $workplace_list = [];
+        }
+        $ids = collect($workplace_list)->pluck('id')->filter()->all();
+        $deletion_stats = $this->workplaceService->getDeletionImpactCounts($ids);
+
         return view('setting.workplace.list')->with([
             'workplace_list' => $workplace_list,
+            'deletion_stats' => $deletion_stats,
             'mode' => 'active',
             'result' => null,
         ]);
@@ -50,9 +56,15 @@ class SettingWorkplaceController extends Controller
     public function listCompleted()
     {
         $workplace_list = $this->workplaceService->getWorkplaceList(false);
-        if ($workplace_list === false || $workplace_list === null) $workplace_list = [];
+        if ($workplace_list === false || $workplace_list === null) {
+            $workplace_list = [];
+        }
+        $ids = collect($workplace_list)->pluck('id')->filter()->all();
+        $deletion_stats = $this->workplaceService->getDeletionImpactCounts($ids);
+
         return view('setting.workplace.list')->with([
             'workplace_list' => $workplace_list,
+            'deletion_stats' => $deletion_stats,
             'mode' => 'completed',
             'result' => null,
         ]);
@@ -63,7 +75,7 @@ class SettingWorkplaceController extends Controller
         $workplaceId = $request->query('workplace_id');
         $workplaceData = $this->workplaceService->getWorkplace($workplaceId);
 
-        if (!$workplaceData) {
+        if (! $workplaceData) {
             return redirect()->route('setting.workplace.list')->with('status', '対象データが見つかりません');
         }
 
@@ -94,7 +106,10 @@ class SettingWorkplaceController extends Controller
         $workplaceId = $request->input('workplace_id');
         $result = $this->workplaceService->delete($workplaceId);
 
-        return redirect()->route('setting.workplace.list')->with('status', $result ? '削除しました' : '削除に失敗しました');
+        $msg = $result
+            ? '現場と紐づく勤怠・配置を非表示にしました（DB上は保持されます）'
+            : '削除に失敗しました';
+
+        return redirect()->route('setting.workplace.list')->with('status', $msg);
     }
 }
-
