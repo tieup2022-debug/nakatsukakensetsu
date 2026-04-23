@@ -68,8 +68,22 @@
                         <option value="4" {{ (string)($selected_staff_type ?? '') === '4' ? 'selected' : '' }}>スタッフ4（総務部）</option>
                     </select>
                 </div>
-                <div class="field-submit align-self-end">
+                <div class="field-submit align-self-end d-flex flex-wrap gap-1">
                     <button class="btn btn-outline-primary btn-sm" type="submit">更新</button>
+                    @if(!empty($summary_list))
+                        @php
+                            $pdfQuery = ['work_date' => $work_date];
+                            if (($selected_staff_type ?? '') !== '' && ($selected_staff_type ?? '') !== null) {
+                                $pdfQuery['staff_type'] = $selected_staff_type;
+                            }
+                        @endphp
+                        <a
+                            class="btn btn-outline-secondary btn-sm"
+                            href="{{ route('setting.attendance.personal.summary.pdf', $pdfQuery) }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >PDF出力</a>
+                    @endif
                 </div>
             </form>
         </div>

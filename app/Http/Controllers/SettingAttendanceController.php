@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\AttendanceService;
 use App\Services\UserService;
 use App\Services\WorkplaceService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class SettingAttendanceController extends Controller
@@ -414,6 +415,55 @@ class SettingAttendanceController extends Controller
             'summary_list' => $summary['summary_list'] ?? [],
             'status' => null,
         ]);
+    }
+
+    /**
+     * 個人別集計 PDF（A4縦・3名/ページ）
+     */
+    public function personalSummaryPdf(Request $request)
+    {
+        if ($redirect = $this->redirectUnlessMasterForAttendanceReport($request)) {
+            return $redirect;
+        }
+
+        $workDate = $request->query('work_date') ?: defaultWorkDate();
+        $staffType = $request->query('staff_type');
+
+        $summary = $this->attendanceService->GetPersonalMonthlySummary($workDate, null, $staffType);
+        if ($summary === false || empty($summary['summary_list'])) {
+            return redirect()
+                ->route('setting.attendance.personal.summary', array_filter([
+                    'work_date' => $workDate,
+                    'staff_type' => $staffType,
+                ], fn ($v) => $v !== null && $v !== ''))
+                ->with('status', 'PDF出力できる集計データがありません。');
+        }
+
+        $pages = array_chunk($summary['summary_list'], 3);
+
+        $pdf = Pdf::loadView('pdf.personal_summary', [
+            'pages' => $pages,
+            'date_list' => $summary['date_list'] ?? [],
+            'period_label' => $this->personalSummaryPeriodLabel($workDate),
+            'company_name' => '中塚建設株式会社',
+        ])->setPaper('a4', 'portrait');
+
+        $ym = date('Ym', strtotime($workDate));
+
+        return $pdf->download('個人別集計_'.$ym.'.pdf');
+    }
+
+    private function personalSummaryPeriodLabel(string $workDate): string
+    {
+        $t = strtotime($workDate) ?: time();
+        $year = (int) date('Y', $t);
+        $month = (int) date('n', $t);
+
+        if ($year > 2019 || ($year === 2019 && $month >= 5)) {
+            return sprintf('令和%d年%d月分', $year - 2018, $month);
+        }
+
+        return sprintf('%d年%d月分', $year, $month);
     }
 
     /**
