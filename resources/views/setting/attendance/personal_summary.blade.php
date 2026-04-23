@@ -16,6 +16,17 @@
         .abs-cell { background: #fee2e2; color: #b91c1c; font-weight: 700; }
         .sat-col { background: #eaf3ff; }
         .sun-col { background: #ffeef0; }
+        /* フィルタ行は左に詰め、更新ボタンが画面外に押し出されないようにする */
+        .personal-summary-filter {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 0.5rem 0.75rem;
+            max-width: 100%;
+        }
+        .personal-summary-filter .field-date { width: 10.5rem; max-width: 100%; flex: 0 0 auto; }
+        .personal-summary-filter .field-type { width: min(17rem, 100%); max-width: 100%; flex: 0 1 auto; min-width: 0; }
+        .personal-summary-filter .field-submit { flex: 0 0 auto; }
     </style>
 
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
@@ -33,23 +44,23 @@
     @endif
 
     <div class="card shadow-sm border-0 mb-3">
-        <div class="card-body">
-            <form method="GET" action="{{ route('setting.attendance.personal.summary') }}" class="row g-2 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label small text-muted">基準日</label>
+        <div class="card-body py-2 px-3">
+            <form method="GET" action="{{ route('setting.attendance.personal.summary') }}" class="personal-summary-filter">
+                <div class="field-date">
+                    <label class="form-label small text-muted mb-0">基準日</label>
                     <input
                         type="text"
                         name="work_date"
-                        class="form-control js-datepicker"
+                        class="form-control form-control-sm js-datepicker"
                         value="{{ $work_date }}"
                         data-datepicker-submit
                         readonly
                         autocomplete="off"
                     >
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label small text-muted">スタッフ種別</label>
-                    <select class="form-select" name="staff_type">
+                <div class="field-type">
+                    <label class="form-label small text-muted mb-0">スタッフ種別</label>
+                    <select class="form-select form-select-sm" name="staff_type">
                         <option value="" {{ (string)($selected_staff_type ?? '') === '' ? 'selected' : '' }}>全員</option>
                         <option value="1" {{ (string)($selected_staff_type ?? '') === '1' ? 'selected' : '' }}>スタッフ1（技術者）</option>
                         <option value="2" {{ (string)($selected_staff_type ?? '') === '2' ? 'selected' : '' }}>スタッフ2（OP）</option>
@@ -57,7 +68,7 @@
                         <option value="4" {{ (string)($selected_staff_type ?? '') === '4' ? 'selected' : '' }}>スタッフ4（総務部）</option>
                     </select>
                 </div>
-                <div class="col-md-4 text-md-end">
+                <div class="field-submit align-self-end">
                     <button class="btn btn-outline-primary btn-sm" type="submit">更新</button>
                 </div>
             </form>
