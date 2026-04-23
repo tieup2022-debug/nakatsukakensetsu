@@ -4,43 +4,71 @@
     <meta charset="utf-8">
     @include('pdf.partials.fonts')
     <style>
+        @page { margin: 3.5mm 4mm; }
         * { box-sizing: border-box; }
         body {
             margin: 0;
-            padding: 6mm 7mm;
-            font-size: 6.5px;
+            padding: 0;
+            font-size: 8.5pt;
             color: #111;
         }
         .pdf-page { page-break-after: always; }
         .pdf-page:last-child { page-break-after: auto; }
         .person-block {
-            margin-bottom: 5mm;
+            margin-bottom: 3.5mm;
             page-break-inside: avoid;
         }
         .person-block:last-child { margin-bottom: 0; }
         .hdr {
             display: table;
             width: 100%;
-            margin-bottom: 2px;
+            margin-bottom: 1mm;
         }
-        .hdr-left { display: table-cell; vertical-align: bottom; width: 55%; font-size: 9px; font-weight: 700; }
-        .hdr-right { display: table-cell; vertical-align: bottom; text-align: right; font-size: 8px; }
-        .staff-line { font-size: 7px; margin: 2px 0 4px; }
-        table.grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .hdr-left {
+            display: table-cell;
+            vertical-align: bottom;
+            width: 58%;
+            font-size: 11.5pt;
+            font-weight: 700;
+        }
+        .hdr-right {
+            display: table-cell;
+            vertical-align: bottom;
+            text-align: right;
+            font-size: 10pt;
+        }
+        .staff-line { font-size: 9.5pt; font-weight: 700; margin: 0.5mm 0 1.5mm; }
+        table.grid {
+            width: 100%;
+            max-width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
         table.grid th, table.grid td {
-            border: 1px solid #333;
-            padding: 1px 1px;
+            border: 1px solid #222;
+            padding: 2px 3px;
             text-align: center;
             vertical-align: middle;
-            line-height: 1.15;
+            line-height: 1.2;
         }
-        .sum-label { width: 14%; background: #f3f4f6; font-weight: 700; font-size: 5.5px; }
-        .sum-val { font-size: 6px; }
-        .day-h { font-size: 5px; padding: 0 !important; }
+        .sum-label {
+            width: 16.66%;
+            background: #eef1f5;
+            font-weight: 700;
+            font-size: 7.5pt;
+        }
+        .sum-val { font-size: 8.5pt; }
+        .day-h { font-size: 7pt; padding: 2px 1px !important; }
         .day-h.sun { background: #fde2e4; }
-        .row-lbl { width: 11%; background: #f9fafb; font-size: 5.5px; font-weight: 700; }
-        .day-cell { font-size: 5px; padding: 0 1px !important; }
-        .section-gap { height: 3px; }
+        .row-lbl {
+            width: 8.5%;
+            min-width: 0;
+            background: #f4f6f8;
+            font-size: 7pt;
+            font-weight: 700;
+        }
+        .day-cell { font-size: 7.5pt; padding: 2px 2px !important; }
+        .section-gap { height: 2mm; }
     </style>
 </head>
 <body>
