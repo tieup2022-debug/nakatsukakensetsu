@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     @include('pdf.partials.fonts')
     <style>
-        /* A4縦で3名/ページを優先：余白最小・日次は3行（休日は月間サマリーのみ） */
+        /* A4縦・3名/ページ：下余白をページ高で均等割り（flex）＋読みやすさ */
         @page { margin: 2mm 2.5mm; }
         * { box-sizing: border-box; }
         body {
@@ -13,13 +13,30 @@
             font-size: 7.5pt;
             color: #111;
         }
-        .pdf-page { page-break-after: always; }
+        /* 印刷可能高さ（A4 297mm − @page 上下 4mm 目安）に合わせ、3ブロック間に余白を分配 */
+        .pdf-page {
+            page-break-after: always;
+            min-height: 289mm;
+            height: 289mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
         .pdf-page:last-child { page-break-after: auto; }
+        /* 1〜2名のみのページは縦伸ばししない（大きな隙間を避ける） */
+        .pdf-page--compact {
+            height: auto;
+            min-height: 0;
+            justify-content: flex-start;
+        }
+        .pdf-page--compact .person-block + .person-block {
+            margin-top: 2mm;
+        }
         .person-block {
-            margin-bottom: 1mm;
+            flex: 0 0 auto;
+            margin: 0;
             page-break-inside: avoid;
         }
-        .person-block:last-child { margin-bottom: 0; }
         .hdr {
             display: table;
             width: 100%;
@@ -29,16 +46,16 @@
             display: table-cell;
             vertical-align: bottom;
             width: 58%;
-            font-size: 9.5pt;
+            font-size: 10pt;
             font-weight: 700;
         }
         .hdr-right {
             display: table-cell;
             vertical-align: bottom;
             text-align: right;
-            font-size: 8.5pt;
+            font-size: 9pt;
         }
-        .staff-line { font-size: 8pt; font-weight: 700; margin: 0 0 0.6mm; }
+        .staff-line { font-size: 8.5pt; font-weight: 700; margin: 0 0 0.8mm; }
         table.grid {
             width: 100%;
             max-width: 100%;
@@ -47,43 +64,42 @@
         }
         table.grid-sum th, table.grid-sum td {
             border: 1px solid #222;
-            padding: 1px 2px;
+            padding: 2px 3px;
             text-align: center;
             vertical-align: middle;
-            line-height: 1.1;
+            line-height: 1.2;
         }
         table.grid-daily th, table.grid-daily td {
             border: 1px solid #222;
-            padding: 0 1px;
+            padding: 1px 2px;
             text-align: center;
             vertical-align: middle;
-            line-height: 1.08;
+            line-height: 1.18;
         }
         .sum-label {
             width: 16.66%;
             background: #eef1f5;
             font-weight: 700;
-            font-size: 6.5pt;
+            font-size: 7pt;
         }
-        .sum-val { font-size: 7.5pt; }
-        .day-h { font-size: 5.8pt; padding: 0 !important; }
+        .sum-val { font-size: 8pt; }
+        .day-h { font-size: 6.2pt; padding: 1px 0 !important; }
         .day-h.sun { background: #fde2e4; }
         .row-lbl {
             width: 7%;
             min-width: 0;
             background: #f4f6f8;
-            font-size: 5.8pt;
+            font-size: 6.2pt;
             font-weight: 700;
         }
-        .day-cell { font-size: 6.2pt; padding: 0 !important; }
-        .mb-sum { margin-bottom: 0.5mm; }
-        .mb-daily { margin-bottom: 0.4mm; }
-        .section-gap { height: 0.6mm; }
+        .day-cell { font-size: 6.8pt; padding: 1px 1px !important; }
+        .mb-sum { margin-bottom: 0.6mm; }
+        .mb-daily { margin-bottom: 0.6mm; }
     </style>
 </head>
 <body>
 @foreach($pages as $pageIndex => $pagePeople)
-    <div class="pdf-page">
+    <div class="pdf-page {{ count($pagePeople) < 3 ? 'pdf-page--compact' : '' }}">
         @foreach($pagePeople as $person)
             @php
                 $firstHalf = array_slice($date_list, 0, 15);
@@ -160,9 +176,6 @@
                     @endif
                 @endforeach
             </div>
-            @if(!$loop->last)
-                <div class="section-gap"></div>
-            @endif
         @endforeach
     </div>
 @endforeach
