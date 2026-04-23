@@ -20,8 +20,19 @@ jobs:
 
       - name: Add host key
         run: |
+          set -eo pipefail
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_HOST }}" >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
+          if [ -z "${{ secrets.XSERVER_HOST }}" ] || [ -z "${{ secrets.XSERVER_PORT }}" ]; then
+            echo "::error::GitHub Secrets の XSERVER_HOST または XSERVER_PORT が空です。"
+            exit 1
+          fi
+          # 接続できないと ssh-keyscan が失敗する（Xserver の SSH 許可IP・ポート番号・ホスト名を要確認）
+          if ! timeout 45 ssh-keyscan -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_HOST }}" >> ~/.ssh/known_hosts 2>ssh-keyscan.err; then
+            echo "::error::ssh-keyscan に失敗しました。Xserver の SSH 接続元制限・ホスト名・ポート（例: 10022）を確認してください。"
+            head -30 ssh-keyscan.err 2>/dev/null || true
+            exit 1
+          fi
 
       - name: Sync files to Xserver
         run: |
