@@ -60,34 +60,13 @@
             font-size: 1rem;
             font-weight: 600;
         }
-        /* 曜日ヘッダと各週の日付を常に7列で揃える（max-width 固定は折り返しでずれの原因になる） */
-        .flatpickr-calendar .flatpickr-weekdays {
-            display: flex !important;
-            flex-wrap: nowrap !important;
-            width: 100% !important;
-        }
-        .flatpickr-calendar span.flatpickr-weekday {
-            flex: 1 1 0 !important;
-            min-width: 0 !important;
-            max-width: none !important;
-            text-align: center;
-        }
-        .flatpickr-calendar .dayContainer {
-            display: flex !important;
-            flex-wrap: nowrap !important;
-            width: 100% !important;
-            box-sizing: border-box;
-        }
+        /* 見た目のみ。幅・flex・折り返しは flatpickr.min.css 既定（dayContainer は flex-wrap:wrap で週ごとに折返し） */
         .flatpickr-calendar .flatpickr-day {
-            flex: 1 1 0 !important;
-            min-width: 0 !important;
-            max-width: none !important;
             height: 3rem;
             line-height: 3rem;
-            margin: 0.06rem;
+            margin: 0.04rem;
             border-radius: 0.35rem;
             font-size: 1.05rem;
-            box-sizing: border-box;
         }
         .flatpickr-day.today {
             border-width: 2px;
