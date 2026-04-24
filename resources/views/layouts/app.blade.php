@@ -329,10 +329,11 @@
                         locale: ja,
                         enableTime: true,
                         time_24hr: true,
-                        minuteIncrement: 60,
+                        minuteIncrement: 1,
                         dateFormat: 'Y-m-d H:i',
-                        allowInput: false,
+                        allowInput: true,
                         disableMobile: true,
+                        appendTo: modal,
                     });
                 });
             }
