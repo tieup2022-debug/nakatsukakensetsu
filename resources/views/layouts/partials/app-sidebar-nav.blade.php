@@ -4,7 +4,6 @@
 @if (! $dismiss)
     <div class="mb-4 small text-uppercase text-gray-400">メニュー</div>
 @endif
-@include('layouts.partials.paid-leave-sidebar-block', ['dismissOffcanvas' => $dismiss])
 <ul class="nav nav-pills flex-column gap-1">
     <li class="nav-item">
         {{-- data-bs-dismiss を付けない: モバイルで dismiss が先に効き href 遷移が阻害されることがある --}}
@@ -35,5 +34,12 @@
         <a href="{{ route('setting.assignment.manage') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('setting.assignment.*') ? 'active' : 'text-white-50' }}">
             <span class="me-2">📋</span> 配置入力
         </a>
+    </li>
+    <li class="nav-item mt-2">
+        @if ($dismiss)
+            <a href="#" class="nav-link text-white-50 py-2 js-paid-leave-from-offcanvas" data-offcanvas-id="appSidebarOffcanvas">有給申請</a>
+        @else
+            <a href="#" class="nav-link text-white-50 py-2" data-bs-toggle="modal" data-bs-target="#paidLeaveModal">有給申請</a>
+        @endif
     </li>
 </ul>

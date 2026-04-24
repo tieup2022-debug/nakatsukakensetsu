@@ -256,6 +256,25 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        document.addEventListener('click', function (e) {
+            var a = e.target.closest('a.js-paid-leave-from-offcanvas');
+            if (!a || typeof bootstrap === 'undefined') return;
+            var ocId = a.getAttribute('data-offcanvas-id');
+            if (!ocId) return;
+            e.preventDefault();
+            var ocEl = document.getElementById(ocId);
+            var modalEl = document.getElementById('paidLeaveModal');
+            if (!ocEl || !modalEl) return;
+            var oc = bootstrap.Offcanvas.getInstance(ocEl) || new bootstrap.Offcanvas(ocEl);
+            function onHidden() {
+                ocEl.removeEventListener('hidden.bs.offcanvas', onHidden);
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
+            ocEl.addEventListener('hidden.bs.offcanvas', onHidden);
+            oc.hide();
+        });
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', function () {
             var oc = document.getElementById('appSidebarOffcanvas');
             if (!oc || typeof bootstrap === 'undefined') return;
