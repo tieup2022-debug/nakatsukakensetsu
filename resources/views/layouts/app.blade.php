@@ -60,13 +60,34 @@
             font-size: 1rem;
             font-weight: 600;
         }
-        .flatpickr-day {
+        /* 曜日ヘッダと各週の日付を常に7列で揃える（max-width 固定は折り返しでずれの原因になる） */
+        .flatpickr-calendar .flatpickr-weekdays {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            width: 100% !important;
+        }
+        .flatpickr-calendar span.flatpickr-weekday {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            max-width: none !important;
+            text-align: center;
+        }
+        .flatpickr-calendar .dayContainer {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+        .flatpickr-calendar .flatpickr-day {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            max-width: none !important;
             height: 3rem;
             line-height: 3rem;
-            max-width: 3.1rem;
-            margin: 0.08rem;
+            margin: 0.06rem;
             border-radius: 0.35rem;
             font-size: 1.05rem;
+            box-sizing: border-box;
         }
         .flatpickr-day.today {
             border-width: 2px;
@@ -102,17 +123,6 @@
             span.flatpickr-weekday {
                 font-size: 0.8rem;
             }
-            .flatpickr-calendar .flatpickr-weekdays {
-                display: flex !important;
-                flex-wrap: nowrap !important;
-                width: 100% !important;
-            }
-            .flatpickr-calendar span.flatpickr-weekday {
-                flex: 1 1 0 !important;
-                min-width: 0 !important;
-                max-width: none !important;
-                text-align: center;
-            }
             .flatpickr-innerContainer,
             .flatpickr-rContainer {
                 width: 100% !important;
@@ -121,25 +131,10 @@
             .flatpickr-days {
                 width: 100%;
             }
-            /* Flatpickr 既定は週行ごと flex。grid にすると曜日ヘッダと日付がずれるため flex のまま幅だけ調整 */
-            .flatpickr-calendar .dayContainer {
-                width: 100% !important;
-                min-width: 0 !important;
-                max-width: 100% !important;
-                display: flex !important;
-                flex-wrap: nowrap !important;
-                box-sizing: border-box;
-            }
             .flatpickr-calendar .flatpickr-day {
                 height: 2.35rem;
                 line-height: 2.35rem;
-                flex: 1 1 0 !important;
-                min-width: 0 !important;
-                width: auto !important;
-                max-width: none !important;
-                margin: 0.06rem 0;
                 font-size: 0.9rem;
-                box-sizing: border-box;
             }
             .flatpickr-wrapper {
                 width: 100%;
