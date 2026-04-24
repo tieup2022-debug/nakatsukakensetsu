@@ -187,6 +187,12 @@
                 </div>
                 <div class="d-flex align-items-center gap-2 flex-shrink-0">
                     @if (session()->has('login_user_id'))
+                        <a href="{{ route('notifications.index') }}" class="btn btn-outline-secondary btn-sm position-relative" title="通知" aria-label="通知">
+                            <span aria-hidden="true">🔔</span>
+                            @if(($inAppUnreadCount ?? 0) > 0)
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ $inAppUnreadCount > 99 ? '99+' : $inAppUnreadCount }}</span>
+                            @endif
+                        </a>
                         <span class="text-muted small">ログイン中</span>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -228,6 +234,11 @@
                             {{ session('status') }}
                         </div>
                     @endif
+                    @if (session('error'))
+                        <div class="alert alert-danger mb-3">
+                            {{ session('error') }}
+                        </div>
+                    @endif
 
                     @yield('content')
                 </div>
@@ -238,6 +249,10 @@
             &copy; {{ date('Y') }} Nakatsuka Construction
         </footer>
     </div>
+
+    @if (session()->has('login_user_id'))
+        @include('layouts.partials.paid-leave-modal')
+    @endif
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -282,6 +297,30 @@
             });
         });
     </script>
+    @if (session()->has('login_user_id'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var modal = document.getElementById('paidLeaveModal');
+            if (!modal || typeof flatpickr === 'undefined') return;
+            var ja = flatpickr.l10ns.ja;
+            function initPaidLeavePickers() {
+                document.querySelectorAll('#paidLeaveModal .js-paid-leave-datetime').forEach(function (el) {
+                    if (el._flatpickr) return;
+                    flatpickr(el, {
+                        locale: ja,
+                        enableTime: true,
+                        time_24hr: true,
+                        minuteIncrement: 60,
+                        dateFormat: 'Y-m-d H:i',
+                        allowInput: false,
+                        disableMobile: true,
+                    });
+                });
+            }
+            modal.addEventListener('shown.bs.modal', initPaidLeavePickers);
+        });
+    </script>
+    @endif
 </body>
 </html>
 

@@ -4,6 +4,7 @@
 @if (! $dismiss)
     <div class="mb-4 small text-uppercase text-gray-400">メニュー</div>
 @endif
+@include('layouts.partials.paid-leave-sidebar-block', ['dismissOffcanvas' => $dismiss])
 <ul class="nav nav-pills flex-column gap-1">
     <li class="nav-item">
         {{-- data-bs-dismiss を付けない: モバイルで dismiss が先に効き href 遷移が阻害されることがある --}}

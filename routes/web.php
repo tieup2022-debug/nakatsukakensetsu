@@ -1,29 +1,35 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\TopAttendanceController;
-use App\Http\Controllers\TopAssignmentController;
-use App\Http\Controllers\TopSettingController;
-use App\Http\Controllers\SettingVehicleController;
-use App\Http\Controllers\SettingEquipmentController;
-use App\Http\Controllers\SettingAttendanceController;
-use App\Http\Controllers\SettingAssignmentController;
-use App\Http\Controllers\SettingUtilizationRateController;
-use App\Http\Controllers\SettingUserController;
-use App\Http\Controllers\SettingNewsController;
-use App\Http\Controllers\SettingAccountController;
-use App\Http\Controllers\MonthlyAttendanceController;
+use App\Http\Controllers\InAppNotificationController;
 use App\Http\Controllers\MonthlyAssignmentController;
+use App\Http\Controllers\MonthlyAttendanceController;
+use App\Http\Controllers\PaidLeaveApprovalController;
+use App\Http\Controllers\PaidLeaveController;
+use App\Http\Controllers\SettingAccountController;
+use App\Http\Controllers\SettingAssignmentController;
+use App\Http\Controllers\SettingAttendanceController;
+use App\Http\Controllers\SettingEquipmentController;
+use App\Http\Controllers\SettingNewsController;
+use App\Http\Controllers\SettingStaffController;
+use App\Http\Controllers\SettingUserController;
+use App\Http\Controllers\SettingUtilizationRateController;
+use App\Http\Controllers\SettingVehicleController;
+use App\Http\Controllers\SettingWorkplaceController;
+use App\Http\Controllers\TopAssignmentController;
+use App\Http\Controllers\TopAttendanceController;
+use App\Http\Controllers\TopSettingController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::get('/dashboard', function () {
-    if (!session()->has('login_user_id')) {
+    if (! session()->has('login_user_id')) {
         return redirect()->route('login');
     }
+
     return redirect()->route('top.assignment');
 })->name('dashboard');
 
@@ -36,24 +42,24 @@ Route::post('/top/assignment/copy', [TopAssignmentController::class, 'copy'])->n
 Route::get('/top/setting', [TopSettingController::class, 'index'])->middleware('nakatsuka.auth')->name('top.setting');
 
 // staff
-Route::get('/setting/staff/manage', [\App\Http\Controllers\SettingStaffController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.staff.manage');
-Route::get('/setting/staff/create', [\App\Http\Controllers\SettingStaffController::class, 'showCreate'])->middleware('nakatsuka.auth')->name('setting.staff.create');
-Route::post('/setting/staff/create', [\App\Http\Controllers\SettingStaffController::class, 'create'])->middleware('nakatsuka.auth')->name('setting.staff.create.submit');
-Route::get('/setting/staff/list', [\App\Http\Controllers\SettingStaffController::class, 'list'])->middleware('nakatsuka.auth')->name('setting.staff.list');
-Route::post('/setting/staff/sort', [\App\Http\Controllers\SettingStaffController::class, 'sort'])->middleware('nakatsuka.auth')->name('setting.staff.sort');
-Route::get('/setting/staff/update', [\App\Http\Controllers\SettingStaffController::class, 'showUpdate'])->middleware('nakatsuka.auth')->name('setting.staff.update');
-Route::post('/setting/staff/update', [\App\Http\Controllers\SettingStaffController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.staff.update.submit');
-Route::post('/setting/staff/delete', [\App\Http\Controllers\SettingStaffController::class, 'delete'])->middleware('nakatsuka.auth')->name('setting.staff.delete');
+Route::get('/setting/staff/manage', [SettingStaffController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.staff.manage');
+Route::get('/setting/staff/create', [SettingStaffController::class, 'showCreate'])->middleware('nakatsuka.auth')->name('setting.staff.create');
+Route::post('/setting/staff/create', [SettingStaffController::class, 'create'])->middleware('nakatsuka.auth')->name('setting.staff.create.submit');
+Route::get('/setting/staff/list', [SettingStaffController::class, 'list'])->middleware('nakatsuka.auth')->name('setting.staff.list');
+Route::post('/setting/staff/sort', [SettingStaffController::class, 'sort'])->middleware('nakatsuka.auth')->name('setting.staff.sort');
+Route::get('/setting/staff/update', [SettingStaffController::class, 'showUpdate'])->middleware('nakatsuka.auth')->name('setting.staff.update');
+Route::post('/setting/staff/update', [SettingStaffController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.staff.update.submit');
+Route::post('/setting/staff/delete', [SettingStaffController::class, 'delete'])->middleware('nakatsuka.auth')->name('setting.staff.delete');
 
 // workplace
-Route::get('/setting/workplace/manage', [\App\Http\Controllers\SettingWorkplaceController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.workplace.manage');
-Route::get('/setting/workplace/create', [\App\Http\Controllers\SettingWorkplaceController::class, 'showCreate'])->middleware('nakatsuka.auth')->name('setting.workplace.create');
-Route::post('/setting/workplace/create', [\App\Http\Controllers\SettingWorkplaceController::class, 'create'])->middleware('nakatsuka.auth')->name('setting.workplace.create.submit');
-Route::get('/setting/workplace/list', [\App\Http\Controllers\SettingWorkplaceController::class, 'list'])->middleware('nakatsuka.auth')->name('setting.workplace.list');
-Route::get('/setting/workplace/completed/list', [\App\Http\Controllers\SettingWorkplaceController::class, 'listCompleted'])->middleware('nakatsuka.auth')->name('setting.workplace.completed.list');
-Route::get('/setting/workplace/update', [\App\Http\Controllers\SettingWorkplaceController::class, 'showUpdate'])->middleware('nakatsuka.auth')->name('setting.workplace.update');
-Route::post('/setting/workplace/update', [\App\Http\Controllers\SettingWorkplaceController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.workplace.update.submit');
-Route::post('/setting/workplace/delete', [\App\Http\Controllers\SettingWorkplaceController::class, 'delete'])->middleware('nakatsuka.auth')->name('setting.workplace.delete');
+Route::get('/setting/workplace/manage', [SettingWorkplaceController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.workplace.manage');
+Route::get('/setting/workplace/create', [SettingWorkplaceController::class, 'showCreate'])->middleware('nakatsuka.auth')->name('setting.workplace.create');
+Route::post('/setting/workplace/create', [SettingWorkplaceController::class, 'create'])->middleware('nakatsuka.auth')->name('setting.workplace.create.submit');
+Route::get('/setting/workplace/list', [SettingWorkplaceController::class, 'list'])->middleware('nakatsuka.auth')->name('setting.workplace.list');
+Route::get('/setting/workplace/completed/list', [SettingWorkplaceController::class, 'listCompleted'])->middleware('nakatsuka.auth')->name('setting.workplace.completed.list');
+Route::get('/setting/workplace/update', [SettingWorkplaceController::class, 'showUpdate'])->middleware('nakatsuka.auth')->name('setting.workplace.update');
+Route::post('/setting/workplace/update', [SettingWorkplaceController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.workplace.update.submit');
+Route::post('/setting/workplace/delete', [SettingWorkplaceController::class, 'delete'])->middleware('nakatsuka.auth')->name('setting.workplace.delete');
 
 // vehicle
 Route::get('/setting/vehicle/manage', [SettingVehicleController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.vehicle.manage');
@@ -132,3 +138,11 @@ Route::post('/setting/account/linkuser/update', [SettingAccountController::class
 Route::get('/setting/account/password/update', [SettingAccountController::class, 'passwordUpdate'])->middleware('nakatsuka.auth')->name('setting.account.password.update');
 Route::post('/setting/account/password/update', [SettingAccountController::class, 'passwordUpdate'])->middleware('nakatsuka.auth')->name('setting.account.password.update.submit');
 
+// 有給申請・承認・システム内通知
+Route::post('/paid-leave', [PaidLeaveController::class, 'store'])->middleware('nakatsuka.auth')->name('paid-leave.store');
+Route::get('/paid-leave/mine', [PaidLeaveController::class, 'mine'])->middleware('nakatsuka.auth')->name('paid-leave.mine');
+Route::get('/paid-leave/approvals', [PaidLeaveApprovalController::class, 'index'])->middleware('nakatsuka.auth')->name('paid-leave.approvals');
+Route::post('/paid-leave/{id}/approve', [PaidLeaveApprovalController::class, 'approve'])->middleware('nakatsuka.auth')->name('paid-leave.approve')->where('id', '[0-9]+');
+Route::get('/notifications', [InAppNotificationController::class, 'index'])->middleware('nakatsuka.auth')->name('notifications.index');
+Route::post('/notifications/{id}/read', [InAppNotificationController::class, 'markRead'])->middleware('nakatsuka.auth')->name('notifications.read')->where('id', '[0-9]+');
+Route::post('/notifications/read-all', [InAppNotificationController::class, 'markAllRead'])->middleware('nakatsuka.auth')->name('notifications.read-all');
