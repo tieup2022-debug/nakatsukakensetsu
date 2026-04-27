@@ -16,6 +16,7 @@ use App\Http\Controllers\SettingUserController;
 use App\Http\Controllers\SettingUtilizationRateController;
 use App\Http\Controllers\SettingVehicleController;
 use App\Http\Controllers\SettingWorkplaceController;
+use App\Http\Controllers\SystemInquiryController;
 use App\Http\Controllers\TopAssignmentController;
 use App\Http\Controllers\TopAttendanceController;
 use App\Http\Controllers\TopSettingController;
@@ -146,3 +147,8 @@ Route::post('/paid-leave/{id}/approve', [PaidLeaveApprovalController::class, 'ap
 Route::get('/notifications', [InAppNotificationController::class, 'index'])->middleware('nakatsuka.auth')->name('notifications.index');
 Route::post('/notifications/{id}/read', [InAppNotificationController::class, 'markRead'])->middleware('nakatsuka.auth')->name('notifications.read')->where('id', '[0-9]+');
 Route::post('/notifications/read-all', [InAppNotificationController::class, 'markAllRead'])->middleware('nakatsuka.auth')->name('notifications.read-all');
+
+// お問い合わせ（不具合・追加要望）
+Route::get('/inquiry', [SystemInquiryController::class, 'create'])->middleware('nakatsuka.auth')->name('inquiry.create');
+Route::post('/inquiry', [SystemInquiryController::class, 'store'])->middleware('nakatsuka.auth')->name('inquiry.store');
+Route::get('/setting/inquiry/list', [SystemInquiryController::class, 'adminIndex'])->middleware('nakatsuka.auth')->name('setting.inquiry.index');

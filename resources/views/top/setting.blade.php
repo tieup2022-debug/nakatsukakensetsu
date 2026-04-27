@@ -85,6 +85,15 @@
             <div class="col-md-6 col-lg-4">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-body">
+                        <h2 class="h6 fw-semibold mb-2">お問い合わせ一覧</h2>
+                        <p class="text-muted small mb-3">不具合・要望の連絡履歴（送信者・日時）を確認します。</p>
+                        <a href="{{ route('setting.inquiry.index') }}" class="btn btn-primary w-100">開く</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
                         <h2 class="h6 fw-semibold mb-2">ユーザー管理</h2>
                         <p class="text-muted small mb-3">ログインユーザーを管理します。</p>
                         <a href="{{ route('setting.user.manage') }}" class="btn btn-primary w-100">開く</a>

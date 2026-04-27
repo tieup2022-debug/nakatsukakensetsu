@@ -48,4 +48,9 @@
             </a>
         @endif
     </li>
+    <li class="nav-item mt-4 pt-3 border-top border-secondary border-opacity-25">
+        <a href="{{ route('inquiry.create') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('inquiry.*') ? 'active' : 'text-white-50' }}">
+            <span class="me-2">✉️</span> お問い合わせ
+        </a>
+    </li>
 </ul>
