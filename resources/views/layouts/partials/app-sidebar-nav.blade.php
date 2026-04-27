@@ -37,9 +37,15 @@
     </li>
     <li class="nav-item mt-2">
         @if ($dismiss)
-            <a href="#" class="nav-link text-white-50 py-2 js-paid-leave-from-offcanvas" data-offcanvas-id="appSidebarOffcanvas">有給申請</a>
+            <a href="#" class="nav-link text-white-50 py-2 d-flex align-items-center flex-wrap gap-1 js-paid-leave-from-offcanvas" data-offcanvas-id="appSidebarOffcanvas">
+                有給申請
+                <span class="badge rounded-pill bg-secondary bg-opacity-75">準備中</span>
+            </a>
         @else
-            <a href="#" class="nav-link text-white-50 py-2" data-bs-toggle="modal" data-bs-target="#paidLeaveModal">有給申請</a>
+            <a href="#" class="nav-link text-white-50 py-2 d-flex align-items-center flex-wrap gap-1" data-bs-toggle="modal" data-bs-target="#paidLeaveModal">
+                有給申請
+                <span class="badge rounded-pill bg-secondary bg-opacity-75">準備中</span>
+            </a>
         @endif
     </li>
 </ul>
