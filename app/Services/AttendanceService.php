@@ -906,31 +906,36 @@ class AttendanceService
                     $attendanceDataList[$fullDate]['week_day'] = $weekdays[date('N', strtotime($fullDate)) - 1];
                     $attendanceDataList[$fullDate]['staff_name'] = $staff->staff_name;
 
-                    $attendanceData = DB::table('t_attendance as ta')
-                        ->leftJoin('m_workplace as mw', function ($join) {
-                            $join->on('mw.id', '=', 'ta.workplace_id')
-                                ->whereNull('mw.deleted_at');
-                        })
-                        ->where('ta.staff_id', '=', $staff->id)
-                        ->where('ta.work_date', '=', $fullDate)
-                        ->whereNull('ta.deleted_at')
-                        ->orderByDesc('ta.id')
-                        ->first([
-                            'ta.staff_id',
-                            'ta.work_date',
-                            'ta.workplace_id',
-                            'ta.start_time',
-                            'ta.end_time',
-                            'ta.break_time',
-                            'ta.absence_flg',
-                            DB::raw('COALESCE(mw.workplace_name, "") as workplace_name'),
-                        ]);
+                    // 月次表は v_attendance_all を主に使い、時刻が空のときだけ t_attendance から補完する。
+                    $attendanceData = DB::table('v_attendance_all')
+                        ->where('staff_id', '=', $staff->id)
+                        ->where('work_date', '=', $fullDate)
+                        ->first();
+
+                    $attendanceRaw = DB::table('t_attendance')
+                        ->where('staff_id', '=', $staff->id)
+                        ->where('work_date', '=', $fullDate)
+                        ->whereNull('deleted_at')
+                        ->orderByDesc('id')
+                        ->first(['start_time', 'end_time', 'break_time']);
 
                     if ($attendanceData && !$attendanceData->absence_flg) {
                         $attendanceDataList[$fullDate]['workplace_name'] = $attendanceData->workplace_name;
-                        $attendanceDataList[$fullDate]['start_time'] = $this->formatTimeShort($attendanceData->start_time);
-                        $attendanceDataList[$fullDate]['end_time'] = $this->formatTimeShort($attendanceData->end_time);
-                        $attendanceDataList[$fullDate]['break_time'] = $this->formatTimeShort($attendanceData->break_time);
+                        $startTime = $this->formatTimeShort($attendanceData->start_time);
+                        $endTime = $this->formatTimeShort($attendanceData->end_time);
+                        $breakTime = $this->formatTimeShort($attendanceData->break_time);
+                        if ($startTime === '' && $attendanceRaw) {
+                            $startTime = $this->formatTimeShort($attendanceRaw->start_time ?? '');
+                        }
+                        if ($endTime === '' && $attendanceRaw) {
+                            $endTime = $this->formatTimeShort($attendanceRaw->end_time ?? '');
+                        }
+                        if ($breakTime === '' && $attendanceRaw) {
+                            $breakTime = $this->formatTimeShort($attendanceRaw->break_time ?? '');
+                        }
+                        $attendanceDataList[$fullDate]['start_time'] = $startTime;
+                        $attendanceDataList[$fullDate]['end_time'] = $endTime;
+                        $attendanceDataList[$fullDate]['break_time'] = $breakTime;
                         $attendanceDataList[$fullDate]['absence'] = '';
                     } else {
                         $attendanceDataList[$fullDate]['workplace_name'] = '';
