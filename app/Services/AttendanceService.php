@@ -1123,23 +1123,8 @@ class AttendanceService
 
     private function formatTimeShort($time): string
     {
-        if (!is_string($time)) {
-            return '';
-        }
-
-        // DBが返す TIME は "HH:MM:SS" のことが多いが、ローカル保存は "HH:MM" の場合がある
-        if (preg_match('/^\d{2}:\d{2}$/', $time) === 1) {
-            return $time;
-        }
-
-        if (!preg_match('/^\d{2}:\d{2}:\d{2}$/', $time)) {
-            return '';
-        }
-
-        [$hours, $minutes, $seconds] = explode(':', $time);
-        $hours = $hours !== '00' ? ltrim($hours, '0') : '0';
-
-        return $hours . ':' . $minutes;
+        // 月次表も一覧と同じロジックで時刻を正規化する（H:MM / HH:MM / HH:MM:SS / datetime すべて対応）
+        return $this->formatTimeForDisplay($time);
     }
 
     /**
