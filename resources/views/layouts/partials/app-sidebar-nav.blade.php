@@ -36,17 +36,9 @@
         </a>
     </li>
     <li class="nav-item mt-2">
-        @if ($dismiss)
-            <a href="#" class="nav-link text-white-50 py-2 d-flex align-items-center flex-wrap gap-1 js-paid-leave-from-offcanvas" data-offcanvas-id="appSidebarOffcanvas">
-                有給申請
-                <span class="badge rounded-pill bg-secondary bg-opacity-75">準備中</span>
-            </a>
-        @else
-            <a href="#" class="nav-link text-white-50 py-2 d-flex align-items-center flex-wrap gap-1" data-bs-toggle="modal" data-bs-target="#paidLeaveModal">
-                有給申請
-                <span class="badge rounded-pill bg-secondary bg-opacity-75">準備中</span>
-            </a>
-        @endif
+        <a href="{{ route('paid-leave.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('paid-leave.*') ? 'active' : 'text-white-50' }}">
+            <span class="me-2">🗓️</span> 有給申請
+        </a>
     </li>
     <li class="nav-item mt-4 pt-3 border-top border-secondary border-opacity-25">
         <a href="{{ route('inquiry.create') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('inquiry.*') ? 'active' : 'text-white-50' }}">

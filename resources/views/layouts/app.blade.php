@@ -237,30 +237,7 @@
         </footer>
     </div>
 
-    @if (session()->has('login_user_id'))
-        @include('layouts.partials.paid-leave-modal')
-    @endif
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('click', function (e) {
-            var a = e.target.closest('a.js-paid-leave-from-offcanvas');
-            if (!a || typeof bootstrap === 'undefined') return;
-            var ocId = a.getAttribute('data-offcanvas-id');
-            if (!ocId) return;
-            e.preventDefault();
-            var ocEl = document.getElementById(ocId);
-            var modalEl = document.getElementById('paidLeaveModal');
-            if (!ocEl || !modalEl) return;
-            var oc = bootstrap.Offcanvas.getInstance(ocEl) || new bootstrap.Offcanvas(ocEl);
-            function onHidden() {
-                ocEl.removeEventListener('hidden.bs.offcanvas', onHidden);
-                bootstrap.Modal.getOrCreateInstance(modalEl).show();
-            }
-            ocEl.addEventListener('hidden.bs.offcanvas', onHidden);
-            oc.hide();
-        });
-    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var oc = document.getElementById('appSidebarOffcanvas');
@@ -303,31 +280,6 @@
             });
         });
     </script>
-    @if (session()->has('login_user_id'))
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var modal = document.getElementById('paidLeaveModal');
-            if (!modal || typeof flatpickr === 'undefined') return;
-            var ja = flatpickr.l10ns.ja;
-            function initPaidLeavePickers() {
-                document.querySelectorAll('#paidLeaveModal .js-paid-leave-datetime').forEach(function (el) {
-                    if (el._flatpickr) return;
-                    flatpickr(el, {
-                        locale: ja,
-                        enableTime: true,
-                        time_24hr: true,
-                        minuteIncrement: 1,
-                        dateFormat: 'Y-m-d H:i',
-                        allowInput: true,
-                        disableMobile: true,
-                        appendTo: modal,
-                    });
-                });
-            }
-            modal.addEventListener('shown.bs.modal', initPaidLeavePickers);
-        });
-    </script>
-    @endif
 </body>
 </html>
 

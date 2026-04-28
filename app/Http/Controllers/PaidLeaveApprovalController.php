@@ -42,9 +42,9 @@ class PaidLeaveApprovalController extends Controller
         $ok = $this->paidLeaveService->approve($id, (int) $staff->id);
 
         if ($ok) {
-            return redirect()->route('paid-leave.approvals')->with('status', '承認しました。');
+            return redirect()->route('paid-leave.index')->with('status', '承認しました。');
         }
 
-        return redirect()->route('paid-leave.approvals')->with('error', '承認できませんでした（既に処理済み、またはご自身の申請です）。');
+        return redirect()->route('paid-leave.index')->with('error', '承認できませんでした（既に処理済み、またはご自身の申請です）。');
     }
 }

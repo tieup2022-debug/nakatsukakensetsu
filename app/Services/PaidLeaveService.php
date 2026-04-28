@@ -296,4 +296,40 @@ class PaidLeaveService
             return false;
         }
     }
+
+    /**
+     * 全員に見せる有給申請一覧（最新）
+     *
+     * @return Collection<int, object>|false
+     */
+    public function listRecentWithNames(int $limit = 100)
+    {
+        try {
+            return DB::table('t_paid_leave_requests as r')
+                ->leftJoin('m_staff as s', function ($join) {
+                    $join->on('s.id', '=', 'r.applicant_staff_id')
+                        ->whereNull('s.deleted_at');
+                })
+                ->leftJoin('m_user as u', function ($join) {
+                    $join->on('u.id', '=', 'r.applicant_user_id')
+                        ->whereNull('u.deleted_at');
+                })
+                ->leftJoin('m_staff as ap', function ($join) {
+                    $join->on('ap.id', '=', 'r.approved_by_staff_id')
+                        ->whereNull('ap.deleted_at');
+                })
+                ->orderByDesc('r.id')
+                ->limit($limit)
+                ->get([
+                    'r.*',
+                    DB::raw('COALESCE(s.staff_name, CONCAT("社員ID ", r.applicant_staff_id)) as target_staff_name'),
+                    DB::raw('COALESCE(u.user_name, CONCAT("ユーザーID ", r.applicant_user_id)) as requester_user_name'),
+                    DB::raw('COALESCE(ap.staff_name, "") as approver_staff_name'),
+                ]);
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return false;
+        }
+    }
 }

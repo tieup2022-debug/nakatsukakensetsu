@@ -140,6 +140,7 @@ Route::get('/setting/account/password/update', [SettingAccountController::class,
 Route::post('/setting/account/password/update', [SettingAccountController::class, 'passwordUpdate'])->middleware('nakatsuka.auth')->name('setting.account.password.update.submit');
 
 // 有給申請・承認・システム内通知
+Route::get('/paid-leave', [PaidLeaveController::class, 'index'])->middleware('nakatsuka.auth')->name('paid-leave.index');
 Route::post('/paid-leave', [PaidLeaveController::class, 'store'])->middleware('nakatsuka.auth')->name('paid-leave.store');
 Route::get('/paid-leave/mine', [PaidLeaveController::class, 'mine'])->middleware('nakatsuka.auth')->name('paid-leave.mine');
 Route::get('/paid-leave/approvals', [PaidLeaveApprovalController::class, 'index'])->middleware('nakatsuka.auth')->name('paid-leave.approvals');
