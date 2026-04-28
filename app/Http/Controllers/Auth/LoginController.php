@@ -59,8 +59,8 @@ class LoginController extends Controller
             return $this->redirectAfterWebLogin($request, $user->id, $appFlag);
         }
 
-        // 開発中のみ: ローカルDB未設定でも画面を触れるフォールバック（本番では認証失敗として扱う）
-        if (app()->environment('local')) {
+        // 開発用フォールバックは、local かつ明示的に有効化した場合のみ許可する。
+        if (app()->environment('local') && (bool) config('auth.allow_dev_login_fallback', false)) {
             $request->session()->regenerate();
             $request->session()->put('login_user_id', 1);
             $request->session()->put(config('tokens.web_token'), Str::random(16));
