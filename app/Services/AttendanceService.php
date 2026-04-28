@@ -893,6 +893,9 @@ class AttendanceService
                 ->whereNull('deleted_at')
                 ->orderBy('sort_number')
                 ->get();
+            $workplaceMap = DB::table('m_workplace')
+                ->whereNull('deleted_at')
+                ->pluck('workplace_name', 'id');
 
             $onePageData = [];
             $cnt = 0;
@@ -917,7 +920,17 @@ class AttendanceService
                         ->where('work_date', '=', $fullDate)
                         ->whereNull('deleted_at')
                         ->orderByDesc('id')
-                        ->first(['start_time', 'end_time', 'break_time']);
+                        ->first(['workplace_id', 'start_time', 'end_time', 'break_time', 'absence_flg']);
+
+                    if (! $attendanceData && $attendanceRaw) {
+                        $attendanceData = (object) [
+                            'workplace_name' => (string) ($workplaceMap[$attendanceRaw->workplace_id] ?? ''),
+                            'start_time' => $attendanceRaw->start_time ?? '',
+                            'end_time' => $attendanceRaw->end_time ?? '',
+                            'break_time' => $attendanceRaw->break_time ?? '',
+                            'absence_flg' => (int) ($attendanceRaw->absence_flg ?? 0),
+                        ];
+                    }
 
                     if ($attendanceData && !$attendanceData->absence_flg) {
                         $attendanceDataList[$fullDate]['workplace_name'] = $attendanceData->workplace_name;
