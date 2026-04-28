@@ -174,8 +174,8 @@ class AttendanceService
                             'updated_at' => now(),
                         ]);
                 } else {
-                    DB::table('t_attendance')
-                        ->insert([
+                    DB::table('t_attendance')->upsert(
+                        [[
                             'staff_id' => $staffId,
                             'workplace_id' => $workplaceId,
                             'work_date' => $workDate,
@@ -183,9 +183,13 @@ class AttendanceService
                             'end_time' => $endTime,
                             'break_time' => $breakTimeForStorage,
                             'absence_flg' => $absenceFlg,
+                            'deleted_at' => null,
                             'created_at' => now(),
                             'updated_at' => now(),
-                        ]);
+                        ]],
+                        ['staff_id', 'work_date'],
+                        ['workplace_id', 'start_time', 'end_time', 'break_time', 'absence_flg', 'deleted_at', 'updated_at']
+                    );
                 }
 
                 DB::commit();
@@ -265,7 +269,6 @@ class AttendanceService
 
                     $existsCheck = DB::table('t_attendance')
                         ->where('staff_id', '=', $assignedStaff->master_id)
-                        ->where('workplace_id', '=', $workplaceId)
                         ->where('work_date', '=', $workDate)
                         ->whereNull('deleted_at')
                         ->first();
@@ -284,17 +287,22 @@ class AttendanceService
                                 'updated_at' => now(),
                             ]);
                     } else {
-                        DB::table('t_attendance')->insert([
-                            'staff_id' => $assignedStaff->master_id,
-                            'workplace_id' => $workplaceId,
-                            'work_date' => $workDate,
-                            'start_time' => $startTime,
-                            'end_time' => $endTime,
-                            'break_time' => $breakTimeForStorage,
-                            'absence_flg' => $absenceFlg,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
+                        DB::table('t_attendance')->upsert(
+                            [[
+                                'staff_id' => $assignedStaff->master_id,
+                                'workplace_id' => $workplaceId,
+                                'work_date' => $workDate,
+                                'start_time' => $startTime,
+                                'end_time' => $endTime,
+                                'break_time' => $breakTimeForStorage,
+                                'absence_flg' => $absenceFlg,
+                                'deleted_at' => null,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]],
+                            ['staff_id', 'work_date'],
+                            ['workplace_id', 'start_time', 'end_time', 'break_time', 'absence_flg', 'deleted_at', 'updated_at']
+                        );
                     }
                 }
 
