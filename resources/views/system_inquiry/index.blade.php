@@ -1,18 +1,35 @@
 @extends('layouts.app')
 
 @section('content')
+    <style>
+        /* 狭い幅でも右端の「操作」列が隠れにくいよう固定表示 */
+        .inquiry-table-wrap .table th:last-child,
+        .inquiry-table-wrap .table td:last-child {
+            position: sticky;
+            right: 0;
+            z-index: 2;
+            background-color: #fff;
+            box-shadow: -6px 0 8px -4px rgba(15, 23, 42, 0.12);
+        }
+        .inquiry-table-wrap .table thead th:last-child {
+            z-index: 3;
+            background-color: var(--bs-table-bg, #f8f9fa);
+        }
+    </style>
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <div>
             <h1 class="h4 mb-1 fw-semibold">お問い合わせ一覧</h1>
-            <div class="text-muted small">送信者・送信日時と内容の履歴です（直近200件）。</div>
+            <div class="text-muted small">
+                送信者・送信日時と内容の履歴です（直近200件）。右端の列で対応状況の変更・削除ができます。表示されない場合は表を横にスクロールしてください。
+            </div>
         </div>
         <a href="{{ route('top.setting') }}" class="btn btn-outline-secondary btn-sm">設定トップへ</a>
     </div>
 
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+            <div class="table-responsive inquiry-table-wrap">
+                <table class="table table-hover align-middle mb-0" style="min-width: 52rem;">
                     <thead class="table-light">
                         <tr>
                             <th style="width: 12rem;">送信日時</th>
