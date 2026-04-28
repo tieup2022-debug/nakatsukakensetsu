@@ -150,7 +150,6 @@ class AttendanceService
             ) {
                 $attendanceData = DB::table('t_attendance')
                     ->where('staff_id', '=', $staffId)
-                    ->where('workplace_id', '=', $workplaceId)
                     ->where('work_date', '=', $workDate)
                     ->whereNull('deleted_at')
                     ->first();
@@ -222,7 +221,6 @@ class AttendanceService
             if (isset($staffId) && isset($workplaceId) && isset($workDate)) {
                 return DB::table('t_attendance')
                     ->where('staff_id', '=', $staffId)
-                    ->where('workplace_id', '=', $workplaceId)
                     ->where('work_date', '=', $workDate)
                     ->whereNull('deleted_at')
                     ->first();
