@@ -59,15 +59,21 @@ class LoginController extends Controller
             return $this->redirectAfterWebLogin($request, $user->id, $appFlag);
         }
 
-        // 開発中: ローカルDB未設定でも画面を触れるようにするフォールバック
-        $request->session()->regenerate();
-        $request->session()->put('login_user_id', 1);
-        $request->session()->put(config('tokens.web_token'), Str::random(16));
-        $request->session()->forget(config('tokens.app_token'));
+        // 開発中のみ: ローカルDB未設定でも画面を触れるフォールバック（本番では認証失敗として扱う）
+        if (app()->environment('local')) {
+            $request->session()->regenerate();
+            $request->session()->put('login_user_id', 1);
+            $request->session()->put(config('tokens.web_token'), Str::random(16));
+            $request->session()->forget(config('tokens.app_token'));
 
-        Cookie::queue(cookie()->forget(config('remember_web.cookie'), '/', config('session.domain')));
+            Cookie::queue(cookie()->forget(config('remember_web.cookie'), '/', config('session.domain')));
 
-        return redirect()->route('top.assignment')->with('status', '開発用ログイン（DB認証に失敗しました）');
+            return redirect()->route('top.assignment')->with('status', '開発用ログイン（DB認証に失敗しました）');
+        }
+
+        return back()
+            ->withInput($request->only('login_id'))
+            ->with('error', 'ログインIDまたはパスワードが正しくありません。データベースに接続できない場合は管理者に連絡してください。');
     }
 
     public function logout(Request $request)

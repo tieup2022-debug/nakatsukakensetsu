@@ -19,12 +19,6 @@
         </a>
     </div>
 
-    @if (session('status'))
-        <div class="alert alert-info mb-3">
-            {{ session('status') }}
-        </div>
-    @endif
-
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body">
             {{-- フォームのネストは無効 HTML のためモバイルで所属が崩れ、現場 select の GET が正しく送られないことがある --}}
