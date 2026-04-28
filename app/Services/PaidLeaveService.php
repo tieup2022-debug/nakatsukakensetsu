@@ -170,9 +170,9 @@ class PaidLeaveService
         }
     }
 
-    public function approve(int $requestId, int $approverStaffId): bool
+    public function approve(int $requestId, int $approverStaffId, bool $allowBypassApproverCheck = false): bool
     {
-        if (! $this->isApproverStaffId($approverStaffId)) {
+        if (! $allowBypassApproverCheck && ! $this->isApproverStaffId($approverStaffId)) {
             return false;
         }
 
@@ -191,7 +191,7 @@ class PaidLeaveService
                 return false;
             }
 
-            if ((int) $row->applicant_staff_id === $approverStaffId) {
+            if ($approverStaffId > 0 && (int) $row->applicant_staff_id === $approverStaffId) {
                 DB::rollBack();
 
                 return false;
@@ -201,7 +201,7 @@ class PaidLeaveService
                 ->where('id', '=', $requestId)
                 ->update([
                     'status' => 'approved',
-                    'approved_by_staff_id' => $approverStaffId,
+                    'approved_by_staff_id' => $approverStaffId > 0 ? $approverStaffId : null,
                     'approved_at' => now(),
                     'updated_at' => now(),
                 ]);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\LinkUserService;
 use App\Services\PaidLeaveService;
 use App\Services\StaffService;
+use App\Services\UserService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -14,13 +15,17 @@ class PaidLeaveController extends Controller
         private PaidLeaveService $paidLeaveService,
         private LinkUserService $linkUserService,
         private StaffService $staffService,
+        private UserService $userService,
     ) {}
 
     public function index(Request $request)
     {
         $uid = (int) $request->session()->get('login_user_id');
         $linkedStaff = $this->linkUserService->GetLinkedStaff($uid);
-        $canApprove = $linkedStaff && $this->paidLeaveService->isApproverStaffId((int) $linkedStaff->id);
+        $user = $uid > 0 ? $this->userService->GetUser($uid) : null;
+        $isMaster = $user && (int) $user->permission === 1;
+        $canApproveByStaff = $linkedStaff && $this->paidLeaveService->isApproverStaffId((int) $linkedStaff->id);
+        $canApprove = $isMaster || $canApproveByStaff;
 
         $staffList = $this->staffService->GetStaffList();
         if ($staffList === false || $staffList === null) {
