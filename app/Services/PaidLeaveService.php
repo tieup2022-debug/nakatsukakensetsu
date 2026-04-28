@@ -142,6 +142,7 @@ class PaidLeaveService
         $applicantName = $this->staffDisplayName((int) $request->applicant_staff_id);
         $range = $this->formatRange($request);
         $approverMap = $this->approverUserIdsByStaffId();
+        $notifiedUserIds = [];
 
         foreach ($this->approverStaffIds() as $approverStaffId) {
             $email = $this->resolveEmailForStaff($approverStaffId);
@@ -166,7 +167,31 @@ class PaidLeaveService
                     'paid_leave_applied',
                     (int) $request->id
                 );
+                $notifiedUserIds[$uid] = true;
             }
+        }
+
+        // 承認者設定に含まれていない管理者（権限1）にも通知する。
+        try {
+            $adminUserIds = DB::table('m_user')
+                ->where('permission', '=', 1)
+                ->whereNull('deleted_at')
+                ->pluck('id');
+            foreach ($adminUserIds as $adminUid) {
+                $adminUid = (int) $adminUid;
+                if ($adminUid <= 0 || isset($notifiedUserIds[$adminUid])) {
+                    continue;
+                }
+                $this->notifications->create(
+                    $adminUid,
+                    '有給申請がきました',
+                    $applicantName." さんから有給申請が届きました。\n".$range.($request->reason ? "\n\n事由: ".$request->reason : ''),
+                    'paid_leave_applied',
+                    (int) $request->id
+                );
+            }
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
         }
     }
 
