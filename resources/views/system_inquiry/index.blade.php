@@ -18,23 +18,31 @@
                             <th style="width: 12rem;">送信日時</th>
                             <th style="width: 10rem;">送信者</th>
                             <th>内容</th>
+                            <th style="width: 5rem;" class="text-end">操作</th>
                         </tr>
                     </thead>
                     <tbody>
                     @forelse($rows as $r)
                         <tr>
                             <td class="small text-nowrap">
-                                {{ \Carbon\Carbon::parse($r->created_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}
+                                {{ \App\Services\SystemInquiryService::formatStoredAt($r->created_at) }}
                             </td>
                             <td class="small">
                                 <div class="fw-semibold">{{ $r->submitted_by_user_name }}</div>
                                 <div class="text-muted">ユーザーID {{ $r->submitted_by_user_id }}</div>
                             </td>
                             <td class="small text-break" style="white-space: pre-wrap;">{{ $r->body }}</td>
+                            <td class="text-end">
+                                <form method="post" action="{{ route('setting.inquiry.destroy', $r->id) }}" class="d-inline" onsubmit="return confirm('このお問い合わせを削除しますか？');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">削除</button>
+                                </form>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="text-center text-muted py-4">お問い合わせはまだありません。</td>
+                            <td colspan="4" class="text-center text-muted py-4">お問い合わせはまだありません。</td>
                         </tr>
                     @endforelse
                     </tbody>

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Services\SystemInquiryService;
 use App\Services\UserService;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -45,7 +44,7 @@ class SystemInquiryController extends Controller
             return back()->withInput()->with('error', '送信に失敗しました。しばらくしてから再度お試しください。');
         }
 
-        $at = Carbon::parse($row->created_at)->timezone(config('app.timezone'))->format('Y年n月j日 G:i');
+        $at = SystemInquiryService::formatStoredAt($row->created_at, 'Y年n月j日 G:i');
 
         return redirect()->route('inquiry.create')->with(
             'status',
@@ -68,6 +67,22 @@ class SystemInquiryController extends Controller
             'title' => 'お問い合わせ一覧',
             'rows' => $rows,
         ]);
+    }
+
+    /**
+     * 管理者（権限1）のみ。
+     */
+    public function adminDestroy(Request $request, int $id)
+    {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
+        if (! $this->systemInquiryService->deleteById($id)) {
+            return redirect()->route('setting.inquiry.index')->with('error', '削除できませんでした。');
+        }
+
+        return redirect()->route('setting.inquiry.index')->with('status', 'お問い合わせを削除しました。');
     }
 
     private function isMasterUser(Request $request): bool

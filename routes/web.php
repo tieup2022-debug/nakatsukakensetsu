@@ -152,3 +152,4 @@ Route::post('/notifications/read-all', [InAppNotificationController::class, 'mar
 Route::get('/inquiry', [SystemInquiryController::class, 'create'])->middleware('nakatsuka.auth')->name('inquiry.create');
 Route::post('/inquiry', [SystemInquiryController::class, 'store'])->middleware('nakatsuka.auth')->name('inquiry.store');
 Route::get('/setting/inquiry/list', [SystemInquiryController::class, 'adminIndex'])->middleware('nakatsuka.auth')->name('setting.inquiry.index');
+Route::delete('/setting/inquiry/{id}', [SystemInquiryController::class, 'adminDestroy'])->middleware('nakatsuka.auth')->name('setting.inquiry.destroy')->where('id', '[0-9]+');
