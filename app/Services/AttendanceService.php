@@ -906,16 +906,31 @@ class AttendanceService
                     $attendanceDataList[$fullDate]['week_day'] = $weekdays[date('N', strtotime($fullDate)) - 1];
                     $attendanceDataList[$fullDate]['staff_name'] = $staff->staff_name;
 
-                    $attendanceData = DB::table('v_attendance_all')
-                        ->where('staff_id', '=', $staff->id)
-                        ->where('work_date', '=', $fullDate)
-                        ->first();
+                    $attendanceData = DB::table('t_attendance as ta')
+                        ->leftJoin('m_workplace as mw', function ($join) {
+                            $join->on('mw.id', '=', 'ta.workplace_id')
+                                ->whereNull('mw.deleted_at');
+                        })
+                        ->where('ta.staff_id', '=', $staff->id)
+                        ->where('ta.work_date', '=', $fullDate)
+                        ->whereNull('ta.deleted_at')
+                        ->orderByDesc('ta.id')
+                        ->first([
+                            'ta.staff_id',
+                            'ta.work_date',
+                            'ta.workplace_id',
+                            'ta.start_time',
+                            'ta.end_time',
+                            'ta.break_time',
+                            'ta.absence_flg',
+                            DB::raw('COALESCE(mw.workplace_name, "") as workplace_name'),
+                        ]);
 
                     if ($attendanceData && !$attendanceData->absence_flg) {
                         $attendanceDataList[$fullDate]['workplace_name'] = $attendanceData->workplace_name;
                         $attendanceDataList[$fullDate]['start_time'] = $this->formatTimeShort($attendanceData->start_time);
                         $attendanceDataList[$fullDate]['end_time'] = $this->formatTimeShort($attendanceData->end_time);
-                        $attendanceDataList[$fullDate]['break_time'] = $attendanceData->break_time;
+                        $attendanceDataList[$fullDate]['break_time'] = $this->formatTimeShort($attendanceData->break_time);
                         $attendanceDataList[$fullDate]['absence'] = '';
                     } else {
                         $attendanceDataList[$fullDate]['workplace_name'] = '';
