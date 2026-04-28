@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AttendanceService
 {
@@ -154,6 +155,8 @@ class AttendanceService
                     ->whereNull('deleted_at')
                     ->first();
 
+                $breakTimeForStorage = $this->prepareBreakTimeForStorage($breakTime);
+
                 DB::beginTransaction();
 
                 if ($attendanceData) {
@@ -166,7 +169,7 @@ class AttendanceService
                             'work_date' => $workDate,
                             'start_time' => $startTime,
                             'end_time' => $endTime,
-                            'break_time' => $breakTime,
+                            'break_time' => $breakTimeForStorage,
                             'absence_flg' => $absenceFlg,
                             'updated_at' => now(),
                         ]);
@@ -178,7 +181,7 @@ class AttendanceService
                             'work_date' => $workDate,
                             'start_time' => $startTime,
                             'end_time' => $endTime,
-                            'break_time' => $breakTime,
+                            'break_time' => $breakTimeForStorage,
                             'absence_flg' => $absenceFlg,
                             'created_at' => now(),
                             'updated_at' => now(),
@@ -243,6 +246,7 @@ class AttendanceService
     {
         try {
             DB::beginTransaction();
+            $breakTimeForStorage = $this->prepareBreakTimeForStorage($breakTime);
 
             if (isset($workplaceId) && isset($workDate) && isset($startTime) && isset($endTime) && isset($breakTime)) {
                 $assignedStaffList = DB::table('t_assignment')
@@ -275,7 +279,7 @@ class AttendanceService
                                 'work_date' => $workDate,
                                 'start_time' => $startTime,
                                 'end_time' => $endTime,
-                                'break_time' => $breakTime,
+                                'break_time' => $breakTimeForStorage,
                                 'absence_flg' => $absenceFlg,
                                 'updated_at' => now(),
                             ]);
@@ -286,7 +290,7 @@ class AttendanceService
                             'work_date' => $workDate,
                             'start_time' => $startTime,
                             'end_time' => $endTime,
-                            'break_time' => $breakTime,
+                            'break_time' => $breakTimeForStorage,
                             'absence_flg' => $absenceFlg,
                             'created_at' => now(),
                             'updated_at' => now(),
@@ -1164,6 +1168,31 @@ class AttendanceService
     {
         // 月次表も一覧と同じロジックで時刻を正規化する（H:MM / HH:MM / HH:MM:SS / datetime すべて対応）
         return $this->formatTimeForDisplay($time);
+    }
+
+    private function prepareBreakTimeForStorage($breakTime)
+    {
+        $raw = trim((string) ($breakTime ?? ''));
+        $columnType = Schema::getColumnType('t_attendance', 'break_time');
+        $isNumericBreak = in_array($columnType, ['integer', 'bigint', 'smallint', 'mediumint', 'tinyint', 'decimal', 'float', 'double'], true);
+
+        if (! $isNumericBreak) {
+            return $raw;
+        }
+
+        if ($raw === '') {
+            return 0;
+        }
+
+        if (preg_match('/^(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/', $raw, $m) === 1) {
+            return ((int) $m[1] * 60) + (int) $m[2];
+        }
+
+        if (preg_match('/^\d+$/', $raw) === 1) {
+            return (int) $raw;
+        }
+
+        return 0;
     }
 
     /**
