@@ -148,11 +148,11 @@ class TopAttendanceController extends Controller
             return $fallback;
         }
 
-        if (preg_match('/^(\d{1,2}):(\d{2})(?::\d{2})?$/', $raw, $m) === 1) {
+        if (preg_match('/^(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/', $raw, $m) === 1) {
             return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
         }
 
-        if (preg_match('/\d{4}-\d{2}-\d{2}\s+(\d{1,2}):(\d{2})(?::\d{2})?/', $raw, $m) === 1) {
+        if (preg_match('/\d{4}-\d{2}-\d{2}\s+(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?/', $raw, $m) === 1) {
             return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
         }
 
