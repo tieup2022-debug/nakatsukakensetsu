@@ -18,7 +18,7 @@
                             <th style="width: 12rem;">送信日時</th>
                             <th style="width: 10rem;">送信者</th>
                             <th>内容</th>
-                            <th style="width: 5rem;" class="text-end">操作</th>
+                            <th style="width: 14rem;" class="text-end">操作</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -33,11 +33,28 @@
                             </td>
                             <td class="small text-break" style="white-space: pre-wrap;">{{ $r->body }}</td>
                             <td class="text-end">
-                                <form method="post" action="{{ route('setting.inquiry.destroy', $r->id) }}" class="d-inline" onsubmit="return confirm('このお問い合わせを削除しますか？');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">削除</button>
-                                </form>
+                                <div class="d-inline-flex flex-wrap align-items-center justify-content-end gap-1">
+                                    <form method="post" action="{{ route('setting.inquiry.status', $r->id) }}" class="d-inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <select
+                                            name="status"
+                                            class="form-select form-select-sm"
+                                            style="width: auto; min-width: 6.5rem;"
+                                            aria-label="対応状況"
+                                            onchange="this.form.submit()"
+                                        >
+                                            @foreach ($inquiry_status_labels as $value => $label)
+                                                <option value="{{ $value }}" @selected(\App\Services\SystemInquiryService::normalizeStatus(data_get($r, 'status')) === $value)>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </form>
+                                    <form method="post" action="{{ route('setting.inquiry.destroy', $r->id) }}" class="d-inline" onsubmit="return confirm('このお問い合わせを削除しますか？');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">削除</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty

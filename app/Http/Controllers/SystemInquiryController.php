@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\SystemInquiryService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SystemInquiryController extends Controller
@@ -66,7 +67,28 @@ class SystemInquiryController extends Controller
         return view('system_inquiry.index', [
             'title' => 'お問い合わせ一覧',
             'rows' => $rows,
+            'inquiry_status_labels' => SystemInquiryService::statusLabels(),
         ]);
+    }
+
+    /**
+     * 管理者（権限1）のみ。
+     */
+    public function adminUpdateStatus(Request $request, int $id)
+    {
+        if ($redirect = $this->redirectUnlessMaster($request)) {
+            return $redirect;
+        }
+
+        $request->validate([
+            'status' => ['required', 'string', Rule::in(array_keys(SystemInquiryService::statusLabels()))],
+        ]);
+
+        if (! $this->systemInquiryService->updateStatus($id, $request->input('status'))) {
+            return redirect()->route('setting.inquiry.index')->with('error', '状態を更新できませんでした。');
+        }
+
+        return redirect()->route('setting.inquiry.index')->with('status', '対応状況を更新しました。');
     }
 
     /**
