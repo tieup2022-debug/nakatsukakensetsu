@@ -903,9 +903,6 @@ class AttendanceService
                 ->whereNull('deleted_at')
                 ->orderBy('sort_number')
                 ->get();
-            $workplaceMap = DB::table('m_workplace')
-                ->whereNull('deleted_at')
-                ->pluck('workplace_name', 'id');
 
             $onePageData = [];
             $cnt = 0;
@@ -919,13 +916,11 @@ class AttendanceService
                     $attendanceDataList[$fullDate]['week_day'] = $weekdays[date('N', strtotime($fullDate)) - 1];
                     $attendanceDataList[$fullDate]['staff_name'] = $staff->staff_name;
 
-                    // 月次表は v_attendance_all を主に使い、時刻が空のときだけ t_attendance から補完する。
-                    $attendanceData = DB::table('v_attendance_all')
-                        ->where('staff_id', '=', $staff->id)
-                        ->where('work_date', '=', $fullDate)
-                        ->first();
-
                     $attendanceRaw = DB::table('t_attendance')
+                        ->leftJoin('m_workplace as mw', function ($join) {
+                            $join->on('mw.id', '=', 't_attendance.workplace_id')
+                                ->whereNull('mw.deleted_at');
+                        })
                         ->where('staff_id', '=', $staff->id)
                         ->where('work_date', '=', $fullDate)
                         ->whereNull('deleted_at')
@@ -938,16 +933,21 @@ class AttendanceService
                         ")
                         ->orderByDesc('updated_at')
                         ->orderByDesc('id')
-                        ->first(['workplace_id', 'start_time', 'end_time', 'break_time', 'absence_flg']);
+                        ->first([
+                            't_attendance.workplace_id',
+                            't_attendance.start_time',
+                            't_attendance.end_time',
+                            't_attendance.break_time',
+                            't_attendance.absence_flg',
+                            DB::raw('COALESCE(mw.workplace_name, "") as workplace_name'),
+                        ]);
 
-                    if (! $attendanceData && $attendanceRaw) {
-                        $attendanceData = (object) [
-                            'workplace_name' => (string) ($workplaceMap[$attendanceRaw->workplace_id] ?? ''),
-                            'start_time' => $attendanceRaw->start_time ?? '',
-                            'end_time' => $attendanceRaw->end_time ?? '',
-                            'break_time' => $attendanceRaw->break_time ?? '',
-                            'absence_flg' => (int) ($attendanceRaw->absence_flg ?? 0),
-                        ];
+                    $attendanceData = $attendanceRaw;
+                    if (! $attendanceData) {
+                        $attendanceData = DB::table('v_attendance_all')
+                            ->where('staff_id', '=', $staff->id)
+                            ->where('work_date', '=', $fullDate)
+                            ->first();
                     }
 
                     if ($attendanceData && !$attendanceData->absence_flg) {
@@ -955,15 +955,6 @@ class AttendanceService
                         $startTime = $this->formatTimeShort($attendanceData->start_time);
                         $endTime = $this->formatTimeShort($attendanceData->end_time);
                         $breakTime = $this->formatTimeShort($attendanceData->break_time);
-                        if ($startTime === '' && $attendanceRaw) {
-                            $startTime = $this->formatTimeShort($attendanceRaw->start_time ?? '');
-                        }
-                        if ($endTime === '' && $attendanceRaw) {
-                            $endTime = $this->formatTimeShort($attendanceRaw->end_time ?? '');
-                        }
-                        if ($breakTime === '' && $attendanceRaw) {
-                            $breakTime = $this->formatTimeShort($attendanceRaw->break_time ?? '');
-                        }
                         $attendanceDataList[$fullDate]['start_time'] = $startTime;
                         $attendanceDataList[$fullDate]['end_time'] = $endTime;
                         $attendanceDataList[$fullDate]['break_time'] = $breakTime;
@@ -1236,10 +1227,11 @@ class AttendanceService
 
             $summaryList = [];
             foreach ($staffList as $staff) {
-                $dailyRows = DB::table('v_attendance_all')
+                $dailyRows = DB::table('t_attendance')
                     ->where('staff_id', '=', $staff->id)
                     ->whereYear('work_date', '=', $year)
                     ->whereMonth('work_date', '=', $month)
+                    ->whereNull('deleted_at')
                     ->orderBy('work_date')
                     ->get()
                     ->keyBy('work_date');
