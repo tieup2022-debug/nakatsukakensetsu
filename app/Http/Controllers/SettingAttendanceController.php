@@ -333,7 +333,6 @@ class SettingAttendanceController extends Controller
 
         return view('setting.attendance.absence_workdate')->with([
             'default_date' => $workDate ?: defaultWorkDate(),
-            'result' => null,
         ]);
     }
 
@@ -343,10 +342,10 @@ class SettingAttendanceController extends Controller
     public function absenceInputStaff(Request $request)
     {
         $workDate = $request->input('work_date');
-        if (!$workDate) {
+        if (! $workDate) {
             return view('setting.attendance.absence_workdate')->with([
                 'default_date' => defaultWorkDate(),
-                'result' => false,
+                'needs_work_date' => true,
             ]);
         }
 
@@ -356,7 +355,6 @@ class SettingAttendanceController extends Controller
         return view('setting.attendance.absence_staff')->with([
             'work_date' => $workDate,
             'staff_list' => $staffList,
-            'result' => null,
         ]);
     }
 
@@ -368,18 +366,18 @@ class SettingAttendanceController extends Controller
         $workDate = $request->input('work_date');
         $staffList = $request->input('staff_list', []);
 
-        if (!$workDate) {
+        if (! $workDate) {
             return view('setting.attendance.absence_workdate')->with([
                 'default_date' => defaultWorkDate(),
-                'result' => false,
+                'needs_work_date' => true,
             ]);
         }
 
-        $result = $this->attendanceService->UpdateAbsence($workDate, $staffList);
+        $saveOutcome = $this->attendanceService->UpdateAbsence($workDate, $staffList);
 
         return view('setting.attendance.absence_workdate')->with([
             'default_date' => $workDate,
-            'result' => $result,
+            'save_outcome' => $saveOutcome,
         ]);
     }
 

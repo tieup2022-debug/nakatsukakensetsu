@@ -11,11 +11,19 @@
         </div>
     </div>
 
-    @if (!empty($result) || $result === false)
-        @if ($result)
-            <div class="alert alert-success mb-3">保存しました</div>
+    @if (!empty($needs_work_date))
+        <div class="alert alert-warning mb-3">作業日を指定してください。</div>
+    @endif
+
+    @if (isset($save_outcome))
+        @if ($save_outcome === 'success')
+            <div class="alert alert-success mb-3">保存しました。</div>
+        @elseif ($save_outcome === 'attendance_conflict')
+            <div class="alert alert-warning mb-3">
+                その作業日にすでに勤怠が登録されている社員は、欠勤に設定できません。該当社員の勤怠を削除するか、欠勤のチェックを外してから保存してください。
+            </div>
         @else
-            <div class="alert alert-danger mb-3">保存に失敗しました</div>
+            <div class="alert alert-danger mb-3">保存に失敗しました。しばらくしてから再度お試しください。</div>
         @endif
     @endif
 

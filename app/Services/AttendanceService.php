@@ -413,21 +413,36 @@ class AttendanceService
 
     /**
      * 欠勤者一覧更新
+     *
+     * @param  array<string, mixed>  $staffList
+     * @return 'success'|'attendance_conflict'|'failed'
      */
     public function UpdateAbsence($workDate, $staffList)
     {
         try {
             DB::beginTransaction();
 
-            foreach ($staffList as $staffId => $absenceFlg) {
+            foreach ($staffList as $staffId => $absenceRaw) {
+                $staffId = (int) $staffId;
+                if ($staffId <= 0) {
+                    continue;
+                }
+
+                $absenceFlgRaw = $absenceRaw;
+                if (is_array($absenceFlgRaw)) {
+                    $absenceFlgRaw = end($absenceFlgRaw);
+                }
+                $absenceFlg = (int) $absenceFlgRaw;
+
                 $existsCheck = DB::table('v_attendance_all')
                     ->where('staff_id', '=', $staffId)
                     ->where('work_date', '=', $workDate)
                     ->exists();
 
-                if ($existsCheck && intval($absenceFlg) === 1) {
+                if ($existsCheck && $absenceFlg === 1) {
                     DB::rollback();
-                    return false;
+
+                    return 'attendance_conflict';
                 }
 
                 $absence = DB::table('t_absence')
@@ -436,7 +451,7 @@ class AttendanceService
                     ->whereNull('deleted_at')
                     ->first();
 
-                if (intval($absenceFlg) === 1) {
+                if ($absenceFlg === 1) {
                     if ($absence) {
                         DB::table('t_absence')
                             ->where('staff_id', '=', $staffId)
@@ -451,10 +466,11 @@ class AttendanceService
                             'staff_id' => $staffId,
                             'work_date' => $workDate,
                             'absence_flg' => 1,
+                            'created_at' => now(),
                             'updated_at' => now(),
                         ]);
                     }
-                } elseif (intval($absenceFlg) === 0) {
+                } elseif ($absenceFlg === 0) {
                     if ($absence) {
                         DB::table('t_absence')
                             ->where('staff_id', '=', $staffId)
@@ -466,11 +482,13 @@ class AttendanceService
             }
 
             DB::commit();
-            return true;
+
+            return 'success';
         } catch (\Exception $e) {
             DB::rollback();
             error($e, __FILE__, __METHOD__, __LINE__);
-            return false;
+
+            return 'failed';
         }
     }
 
