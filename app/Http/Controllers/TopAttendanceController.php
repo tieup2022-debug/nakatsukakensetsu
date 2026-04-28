@@ -97,8 +97,15 @@ class TopAttendanceController extends Controller
         $endTimes = $request->input('end_time', []);
         $breakTimes = $request->input('break_time', []);
         $absenceFlags = $request->input('absence_flg', []);
+        $staffIdsFromForm = $request->input('staff_ids', []);
+
+        $defaults = $this->attendanceService->GetDefaults();
+        $defaultStart = $this->normalizeTimeInput($defaults->start_time ?? null, '08:00');
+        $defaultEnd = $this->normalizeTimeInput($defaults->end_time ?? null, '17:00');
+        $defaultBreak = $this->normalizeTimeInput($defaults->break_time ?? null, '01:00');
 
         $staffIds = array_values(array_unique(array_merge(
+            array_keys($staffIdsFromForm),
             array_keys($startTimes),
             array_keys($endTimes),
             array_keys($breakTimes),
@@ -107,9 +114,9 @@ class TopAttendanceController extends Controller
 
         $result = true;
         foreach ($staffIds as $staffId) {
-            $start = $startTimes[$staffId] ?? '';
-            $end = $endTimes[$staffId] ?? '';
-            $break = $breakTimes[$staffId] ?? '';
+            $start = $this->normalizeTimeInput($startTimes[$staffId] ?? null, $defaultStart);
+            $end = $this->normalizeTimeInput($endTimes[$staffId] ?? null, $defaultEnd);
+            $break = $this->normalizeTimeInput($breakTimes[$staffId] ?? null, $defaultBreak);
 
             // チェックされていれば存在する（hidden併用で 0/1 を送ってもOK）
             $absenceFlg = array_key_exists($staffId, $absenceFlags) ? (bool)intval($absenceFlags[$staffId]) : false;
@@ -132,6 +139,24 @@ class TopAttendanceController extends Controller
         return redirect()
             ->route('top.attendance', ['workplace_id' => $workplaceId, 'work_date' => $workDate])
             ->with('status', $result ? '勤怠を保存しました' : '保存に失敗しました（内容をご確認ください）');
+    }
+
+    private function normalizeTimeInput($value, string $fallback): string
+    {
+        $raw = is_string($value) ? trim($value) : '';
+        if ($raw === '') {
+            return $fallback;
+        }
+
+        if (preg_match('/^(\d{1,2}):(\d{2})(?::\d{2})?$/', $raw, $m) === 1) {
+            return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
+        }
+
+        if (preg_match('/\d{4}-\d{2}-\d{2}\s+(\d{1,2}):(\d{2})(?::\d{2})?/', $raw, $m) === 1) {
+            return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
+        }
+
+        return $fallback;
     }
 }
 
