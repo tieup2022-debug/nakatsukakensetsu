@@ -919,6 +919,14 @@ class AttendanceService
                         ->where('staff_id', '=', $staff->id)
                         ->where('work_date', '=', $fullDate)
                         ->whereNull('deleted_at')
+                        // 同日複数行がある場合は「時刻が入っている行」を優先して採用する
+                        ->orderByRaw("
+                            CASE
+                                WHEN COALESCE(start_time, '') <> '' OR COALESCE(end_time, '') <> '' OR COALESCE(break_time, '') <> '' THEN 0
+                                ELSE 1
+                            END ASC
+                        ")
+                        ->orderByDesc('updated_at')
                         ->orderByDesc('id')
                         ->first(['workplace_id', 'start_time', 'end_time', 'break_time', 'absence_flg']);
 
