@@ -91,6 +91,29 @@ class AttendanceService
             return '';
         }
 
+        // 旧/環境差異の互換:
+        // - "90"   => 01:30（分）
+        // - "1.5"  => 01:30（時間）
+        // - "1"    => 01:00（時間）
+        if (is_numeric($s)) {
+            $num = (float) $s;
+            if ($num < 0) {
+                return '';
+            }
+            $minutes = str_contains($s, '.') ? (int) round($num * 60) : (int) $num;
+            if ($minutes <= 0) {
+                return '00:00';
+            }
+            // 整数で 0-23 は「時間」扱い（旧データ互換）
+            if (!str_contains($s, '.') && $minutes <= 23) {
+                $minutes *= 60;
+            }
+            $hours = intdiv($minutes, 60);
+            $mins = $minutes % 60;
+
+            return sprintf('%02d:%02d', $hours, $mins);
+        }
+
         if (preg_match('/\d{4}-\d{2}-\d{2}\s+(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?/', $s, $m) === 1) {
             return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
         }
