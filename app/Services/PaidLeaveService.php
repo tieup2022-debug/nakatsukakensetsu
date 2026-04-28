@@ -170,7 +170,7 @@ class PaidLeaveService
         }
     }
 
-    public function approve(int $requestId, int $approverStaffId, bool $allowBypassApproverCheck = false): bool
+    public function approve(int $requestId, int $approverStaffId, ?int $approverUserId = null, bool $allowBypassApproverCheck = false): bool
     {
         if (! $allowBypassApproverCheck && ! $this->isApproverStaffId($approverStaffId)) {
             return false;
@@ -199,19 +199,21 @@ class PaidLeaveService
 
             DB::table('t_paid_leave_requests')
                 ->where('id', '=', $requestId)
-                ->update([
+                ->update(array_merge([
                     'status' => 'approved',
                     'approved_by_staff_id' => $approverStaffId > 0 ? $approverStaffId : null,
                     'approved_at' => now(),
                     'updated_at' => now(),
-                ]);
+                ], Schema::hasColumn('t_paid_leave_requests', 'approved_by_user_id') ? [
+                    'approved_by_user_id' => ($approverUserId && $approverUserId > 0) ? $approverUserId : null,
+                ] : []));
 
             $updated = DB::table('t_paid_leave_requests')->where('id', '=', $requestId)->first();
 
             DB::commit();
 
             if ($updated) {
-                $this->dispatchApprovedNotifications($updated, $approverStaffId);
+                $this->dispatchApprovedNotifications($updated, $approverStaffId, $approverUserId);
             }
 
             return true;
@@ -223,10 +225,10 @@ class PaidLeaveService
         }
     }
 
-    private function dispatchApprovedNotifications(object $request, int $approverStaffId): void
+    private function dispatchApprovedNotifications(object $request, int $approverStaffId, ?int $approverUserId = null): void
     {
         $applicantStaffId = (int) $request->applicant_staff_id;
-        $approverName = $this->staffDisplayName($approverStaffId);
+        $approverName = $this->resolveApproverDisplayName($approverStaffId, $approverUserId);
         $range = $this->formatRange($request);
 
         $applicantUserId = (int) ($request->applicant_user_id ?? 0);
@@ -318,18 +320,47 @@ class PaidLeaveService
                     $join->on('ap.id', '=', 'r.approved_by_staff_id')
                         ->whereNull('ap.deleted_at');
                 })
+                ->leftJoin('m_user as au', function ($join) {
+                    $join->on('au.id', '=', 'r.approved_by_user_id')
+                        ->whereNull('au.deleted_at');
+                })
                 ->orderByDesc('r.id')
                 ->limit($limit)
                 ->get([
                     'r.*',
                     DB::raw('COALESCE(s.staff_name, CONCAT("社員ID ", r.applicant_staff_id)) as target_staff_name'),
                     DB::raw('COALESCE(u.user_name, CONCAT("ユーザーID ", r.applicant_user_id)) as requester_user_name'),
-                    DB::raw('COALESCE(ap.staff_name, "") as approver_staff_name'),
+                    DB::raw('COALESCE(ap.staff_name, au.user_name, "") as approver_display_name'),
                 ]);
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
 
             return false;
         }
+    }
+
+    private function resolveApproverDisplayName(int $approverStaffId, ?int $approverUserId = null): string
+    {
+        if ($approverStaffId > 0) {
+            return $this->staffDisplayName($approverStaffId);
+        }
+
+        if ($approverUserId && $approverUserId > 0) {
+            try {
+                $userName = DB::table('m_user')
+                    ->where('id', '=', $approverUserId)
+                    ->whereNull('deleted_at')
+                    ->value('user_name');
+                if (is_string($userName) && $userName !== '') {
+                    return $userName;
+                }
+            } catch (\Exception $e) {
+                error($e, __FILE__, __METHOD__, __LINE__);
+            }
+
+            return 'ユーザーID '.$approverUserId;
+        }
+
+        return '承認者';
     }
 }

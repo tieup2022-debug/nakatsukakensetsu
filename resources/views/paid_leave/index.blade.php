@@ -81,8 +81,8 @@
                             <td>
                                 @if($r->status === 'approved')
                                     <span class="badge text-bg-success">承認済</span>
-                                    @if(!empty($r->approver_staff_name))
-                                        <div class="small text-muted mt-1">承認: {{ $r->approver_staff_name }}</div>
+                                    @if(!empty($r->approver_display_name))
+                                        <div class="small text-muted mt-1">承認: {{ $r->approver_display_name }}</div>
                                     @endif
                                 @else
                                     <span class="badge text-bg-warning text-dark">申請中</span>

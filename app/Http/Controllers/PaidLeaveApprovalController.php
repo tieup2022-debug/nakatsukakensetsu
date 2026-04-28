@@ -45,7 +45,7 @@ class PaidLeaveApprovalController extends Controller
             abort(403, '承認権限がありません。');
         }
 
-        $ok = $this->paidLeaveService->approve($id, (int) ($staff->id ?? 0), $isMaster);
+        $ok = $this->paidLeaveService->approve($id, (int) ($staff->id ?? 0), $uid, $isMaster);
 
         if ($ok) {
             return redirect()->route('paid-leave.index')->with('status', '承認しました。');
