@@ -102,7 +102,8 @@ class PaidLeaveService
      */
     public function createRequest(int $applicantStaffId, int $applicantUserId, Carbon $startsAt, Carbon $endsAt, ?string $reason)
     {
-        if ($endsAt->lte($startsAt)) {
+        // 1日単位申請（開始日=終了日）を許可する。
+        if ($endsAt->lt($startsAt)) {
             return false;
         }
 
