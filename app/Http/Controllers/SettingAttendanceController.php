@@ -221,19 +221,30 @@ class SettingAttendanceController extends Controller
 
         $staffId = $request->input('staff_id');
 
-        if (!$mode || !$workplaceId || !$workDate || is_null($startTime) || is_null($endTime) || is_null($breakMinutes) && is_null($breakTime)) {
+        $breakEffectivelyMissing = ($breakMinutes === null || $breakMinutes === '') && ($breakTime === null || $breakTime === '');
+        if (!$mode || !$workplaceId || !$workDate || $startTime === null || $endTime === null) {
+            return redirect()->route('setting.attendance.manage')->with('status', false);
+        }
+        // 一括登録では休憩が必須。個別編集では未入力可（後段で既定値へ寄せる）
+        if ($mode === 'create' && $breakEffectivelyMissing) {
             return redirect()->route('setting.attendance.manage')->with('status', false);
         }
 
         // 休憩は画面では「分」で受け、DBへは break_time（HH:MM 文字列）として保存する
         $breakTimeFinal = null;
-        if (!is_null($breakMinutes) && $breakMinutes !== '') {
+        if ($breakMinutes !== null && $breakMinutes !== '') {
             $mins = max(0, (int)$breakMinutes);
             $hours = intdiv($mins, 60);
             $minutesOnly = $mins % 60;
             $breakTimeFinal = sprintf('%02d:%02d', $hours, $minutesOnly);
-        } elseif (!is_null($breakTime) && $breakTime !== '') {
+        } elseif ($breakTime !== null && $breakTime !== '') {
             $breakTimeFinal = (string)$breakTime;
+        } elseif ($mode === 'update') {
+            $defaults = $this->attendanceService->GetDefaults();
+            $defBreak = is_object($defaults) ? ($defaults->break_time ?? null) : null;
+            $breakTimeFinal = $defBreak !== null && (string)$defBreak !== ''
+                ? (string)$defBreak
+                : '01:00';
         }
 
         $result = false;
@@ -257,9 +268,9 @@ class SettingAttendanceController extends Controller
                 $staffId,
                 $workplaceId,
                 $workDate,
-                $startTime,
-                $endTime,
-                $breakTime,
+                (string)$startTime,
+                (string)$endTime,
+                (string)($breakTimeFinal ?? '01:00'),
                 $absenceFlg
             );
         }

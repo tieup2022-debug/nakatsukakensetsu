@@ -40,6 +40,7 @@
                 <div class="mb-3">
                     <label class="form-label small text-muted">欠勤</label>
                     <div class="form-check">
+                        <input type="hidden" name="absence_flg" value="0">
                         <input
                             type="checkbox"
                             class="form-check-input"

@@ -165,63 +165,62 @@ class AttendanceService
     public function AttendanceUpdate($staffId, $workplaceId, $workDate, $startTime, $endTime, $breakTime, $absenceFlg = false)
     {
         try {
-            if (
-                isset($staffId) &&
-                isset($workplaceId) &&
-                isset($workDate) &&
-                isset($startTime) &&
-                isset($endTime) &&
-                isset($breakTime)
-            ) {
-                $attendanceData = DB::table('t_attendance')
-                    ->where('staff_id', '=', $staffId)
-                    ->where('work_date', '=', $workDate)
-                    ->whereNull('deleted_at')
-                    ->first();
-
-                $breakTimeForStorage = $this->prepareBreakTimeForStorage($breakTime);
-
-                DB::beginTransaction();
-
-                if ($attendanceData) {
-                    DB::table('t_attendance')
-                        ->where('id', '=', $attendanceData->id)
-                        ->whereNull('deleted_at')
-                        ->update([
-                            'staff_id' => $staffId,
-                            'workplace_id' => $workplaceId,
-                            'work_date' => $workDate,
-                            'start_time' => $startTime,
-                            'end_time' => $endTime,
-                            'break_time' => $breakTimeForStorage,
-                            'absence_flg' => $absenceFlg,
-                            'updated_at' => now(),
-                        ]);
-                } else {
-                    DB::table('t_attendance')->upsert(
-                        [[
-                            'staff_id' => $staffId,
-                            'workplace_id' => $workplaceId,
-                            'work_date' => $workDate,
-                            'start_time' => $startTime,
-                            'end_time' => $endTime,
-                            'break_time' => $breakTimeForStorage,
-                            'absence_flg' => $absenceFlg,
-                            'deleted_at' => null,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]],
-                        ['staff_id', 'work_date'],
-                        ['workplace_id', 'start_time', 'end_time', 'break_time', 'absence_flg', 'deleted_at', 'updated_at']
-                    );
-                }
-
-                DB::commit();
-
-                return true;
+            // 個別編集では休憩未入力や type=time の未送信で null になり得るため、時刻は空文字に正規化して扱う
+            if ($staffId === null || $staffId === '' || $workplaceId === null || $workplaceId === '' || $workDate === null || $workDate === '') {
+                return false;
             }
 
-            return false;
+            $startTime = (string) ($startTime ?? '');
+            $endTime = (string) ($endTime ?? '');
+            $breakTime = (string) ($breakTime ?? '');
+
+            $attendanceData = DB::table('t_attendance')
+                ->where('staff_id', '=', $staffId)
+                ->where('work_date', '=', $workDate)
+                ->whereNull('deleted_at')
+                ->first();
+
+            $breakTimeForStorage = $this->prepareBreakTimeForStorage($breakTime);
+            $absenceForDb = (int) ((bool) $absenceFlg);
+
+            DB::beginTransaction();
+
+            if ($attendanceData) {
+                DB::table('t_attendance')
+                    ->where('id', '=', $attendanceData->id)
+                    ->whereNull('deleted_at')
+                    ->update([
+                        'staff_id' => $staffId,
+                        'workplace_id' => $workplaceId,
+                        'work_date' => $workDate,
+                        'start_time' => $startTime,
+                        'end_time' => $endTime,
+                        'break_time' => $breakTimeForStorage,
+                        'absence_flg' => $absenceForDb,
+                        'updated_at' => now(),
+                    ]);
+            } else {
+                DB::table('t_attendance')->upsert(
+                    [[
+                        'staff_id' => $staffId,
+                        'workplace_id' => $workplaceId,
+                        'work_date' => $workDate,
+                        'start_time' => $startTime,
+                        'end_time' => $endTime,
+                        'break_time' => $breakTimeForStorage,
+                        'absence_flg' => $absenceForDb,
+                        'deleted_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]],
+                    ['staff_id', 'work_date'],
+                    ['workplace_id', 'start_time', 'end_time', 'break_time', 'absence_flg', 'deleted_at', 'updated_at']
+                );
+            }
+
+            DB::commit();
+
+            return true;
         } catch (\Exception $e) {
             DB::rollback();
             error($e, __FILE__, __METHOD__, __LINE__);
