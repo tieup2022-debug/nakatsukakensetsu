@@ -79,6 +79,69 @@ class AttendanceService
     }
 
     /**
+     * ビュー由来の一覧行に、実テーブル t_attendance の時刻を上書きする。
+     *
+     * v_attendance_all は「配置現場と t_attendance.workplace_id が一致」で JOIN するため、
+     * 現場が変わった直後など JOIN が外れて時刻が NULL → 画面既定(08:00等)になることがある。
+     * 保存後も古い表示のままに見える原因になるため、staff_id + work_date で実レコードを優先する。
+     *
+     * @param  iterable<int, object>  $rows
+     * @return Collection<int, object>
+     */
+    public function overlayTAttendanceTimes(iterable $rows, string $workDate): Collection
+    {
+        $collection = collect($rows);
+        if ($collection->isEmpty()) {
+            return $collection;
+        }
+
+        try {
+            $workDateNorm = Carbon::parse($workDate)->format('Y-m-d');
+        } catch (\Throwable) {
+            return $collection;
+        }
+
+        $ids = $collection->pluck('staff_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($ids === []) {
+            return $collection;
+        }
+
+        try {
+            $byStaff = DB::table('t_attendance')
+                ->where('work_date', '=', $workDateNorm)
+                ->whereIn('staff_id', $ids)
+                ->whereNull('deleted_at')
+                ->get()
+                ->keyBy(fn ($r) => (int) $r->staff_id);
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return $collection;
+        }
+
+        return $collection->map(function ($row) use ($byStaff) {
+            $sid = (int) ($row->staff_id ?? 0);
+            $raw = $byStaff->get($sid);
+            if (! $raw) {
+                return $row;
+            }
+
+            $row->start_time = $raw->start_time;
+            $row->end_time = $raw->end_time;
+            $row->break_time = $raw->break_time;
+            $row->absence_flg = $raw->absence_flg;
+
+            return $row;
+        })->values();
+    }
+
+    /**
      * 勤怠一覧・帳票向け: DB の時刻値を HH:MM に正規化（日時型や TIME 文字列に対応）
      */
     public function formatTimeForDisplay($time): string

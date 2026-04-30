@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\AttendanceService;
 use App\Services\WorkplaceService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class TopAttendanceController extends Controller
@@ -60,6 +61,13 @@ class TopAttendanceController extends Controller
             }
         }
 
+        $hasAttendanceRows = is_array($attendanceItems)
+            ? count($attendanceItems) > 0
+            : (is_object($attendanceItems) && method_exists($attendanceItems, 'count') && $attendanceItems->count() > 0);
+        if ($resolvedWorkDate && $hasAttendanceRows) {
+            $attendanceItems = $this->attendanceService->overlayTAttendanceTimes($attendanceItems, $resolvedWorkDate);
+        }
+
         // 月次表表示（以前のPDF出力をWebページ表示へ変更）
         if ($request->has('output_pdf')) {
             $monthlyData = $this->attendanceService->GetPdfData($resolvedWorkDate ?: date('Y-m-d'));
@@ -91,7 +99,17 @@ class TopAttendanceController extends Controller
         }
 
         $workplaceId = $request->input('workplace_id');
-        $workDate = $request->input('work_date');
+        $workDateInput = $request->input('work_date');
+        try {
+            $workDate = Carbon::parse($workDateInput, config('app.timezone'))->format('Y-m-d');
+        } catch (\Throwable) {
+            return redirect()
+                ->route('top.attendance', [
+                    'workplace_id' => $workplaceId,
+                    'work_date' => is_string($workDateInput) && $workDateInput !== '' ? $workDateInput : date('Y-m-d'),
+                ])
+                ->with('error', '作業日の形式が正しくありません。');
+        }
 
         $startTimes = $request->input('start_time', []);
         $endTimes = $request->input('end_time', []);
@@ -104,13 +122,22 @@ class TopAttendanceController extends Controller
         $defaultEnd = $this->normalizeTimeInput($defaults->end_time ?? null, '17:00');
         $defaultBreak = $this->normalizeTimeInput($defaults->break_time ?? null, '01:00');
 
-        $staffIds = array_values(array_unique(array_merge(
-            array_keys($staffIdsFromForm),
-            array_keys($startTimes),
-            array_keys($endTimes),
-            array_keys($breakTimes),
-            array_keys($absenceFlags),
-        )));
+        $staffIds = array_values(array_unique(array_filter(array_map(
+            'intval',
+            array_merge(
+                array_keys($staffIdsFromForm),
+                array_keys($startTimes),
+                array_keys($endTimes),
+                array_keys($breakTimes),
+                array_keys($absenceFlags),
+            )
+        ), fn ($id) => (int) $id > 0)));
+
+        if ($staffIds === []) {
+            return redirect()
+                ->route('top.attendance', ['workplace_id' => $workplaceId, 'work_date' => $workDate])
+                ->with('error', '保存対象の社員が取得できませんでした。画面を再表示してからお試しください。');
+        }
 
         $result = true;
         foreach ($staffIds as $staffId) {

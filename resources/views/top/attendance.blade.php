@@ -108,13 +108,13 @@
                                             <input type="hidden" name="staff_ids[{{ $row->staff_id }}]" value="{{ $row->staff_id }}">
                                         </td>
                                         <td>
-                                            <input type="time" class="form-control form-control-sm" name="start_time[{{ $row->staff_id }}]" value="{{ $startVal }}">
+                                            <input type="time" step="60" class="form-control form-control-sm" name="start_time[{{ $row->staff_id }}]" value="{{ $startVal }}">
                                         </td>
                                         <td>
-                                            <input type="time" class="form-control form-control-sm" name="end_time[{{ $row->staff_id }}]" value="{{ $endVal }}">
+                                            <input type="time" step="60" class="form-control form-control-sm" name="end_time[{{ $row->staff_id }}]" value="{{ $endVal }}">
                                         </td>
                                         <td>
-                                            <input type="time" class="form-control form-control-sm" name="break_time[{{ $row->staff_id }}]" value="{{ $breakVal }}">
+                                            <input type="time" step="60" class="form-control form-control-sm" name="break_time[{{ $row->staff_id }}]" value="{{ $breakVal }}">
                                         </td>
                                         <td>
                                             <input
