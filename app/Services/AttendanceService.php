@@ -114,7 +114,7 @@ class AttendanceService
 
         try {
             $byStaff = DB::table('t_attendance')
-                ->where('work_date', '=', $workDateNorm)
+                ->whereDate('work_date', '=', $workDateNorm)
                 ->whereIn('staff_id', $ids)
                 ->whereNull('deleted_at')
                 ->get()
@@ -233,41 +233,44 @@ class AttendanceService
                 return false;
             }
 
+            try {
+                $workDateNorm = Carbon::parse((string) $workDate)->format('Y-m-d');
+            } catch (\Throwable) {
+                return false;
+            }
+
             $startTime = (string) ($startTime ?? '');
             $endTime = (string) ($endTime ?? '');
             $breakTime = (string) ($breakTime ?? '');
 
-            $attendanceData = DB::table('t_attendance')
-                ->where('staff_id', '=', $staffId)
-                ->where('work_date', '=', $workDate)
-                ->whereNull('deleted_at')
-                ->first();
+            $startTime = $this->normalizeClockForSqlTime($startTime);
+            $endTime = $this->normalizeClockForSqlTime($endTime);
 
             $breakTimeForStorage = $this->prepareBreakTimeForStorage($breakTime);
             $absenceForDb = (int) ((bool) $absenceFlg);
 
             DB::beginTransaction();
 
-            if ($attendanceData) {
-                DB::table('t_attendance')
-                    ->where('id', '=', $attendanceData->id)
-                    ->whereNull('deleted_at')
-                    ->update([
-                        'staff_id' => $staffId,
-                        'workplace_id' => $workplaceId,
-                        'work_date' => $workDate,
-                        'start_time' => $startTime,
-                        'end_time' => $endTime,
-                        'break_time' => $breakTimeForStorage,
-                        'absence_flg' => $absenceForDb,
-                        'updated_at' => now(),
-                    ]);
-            } else {
+            $updated = DB::table('t_attendance')
+                ->where('staff_id', '=', $staffId)
+                ->whereDate('work_date', '=', $workDateNorm)
+                ->whereNull('deleted_at')
+                ->update([
+                    'workplace_id' => $workplaceId,
+                    'work_date' => $workDateNorm,
+                    'start_time' => $startTime,
+                    'end_time' => $endTime,
+                    'break_time' => $breakTimeForStorage,
+                    'absence_flg' => $absenceForDb,
+                    'updated_at' => now(),
+                ]);
+
+            if ($updated === 0) {
                 DB::table('t_attendance')->upsert(
                     [[
                         'staff_id' => $staffId,
                         'workplace_id' => $workplaceId,
-                        'work_date' => $workDate,
+                        'work_date' => $workDateNorm,
                         'start_time' => $startTime,
                         'end_time' => $endTime,
                         'break_time' => $breakTimeForStorage,
@@ -1269,6 +1272,25 @@ class AttendanceService
     {
         // 月次表も一覧と同じロジックで時刻を正規化する（H:MM / HH:MM / HH:MM:SS / datetime すべて対応）
         return $this->formatTimeForDisplay($time);
+    }
+
+    /**
+     * MySQL TIME 向けに H:i または H:i:s を統一する。
+     */
+    private function normalizeClockForSqlTime(string $time): string
+    {
+        $time = trim($time);
+        if ($time === '') {
+            return '';
+        }
+        if (preg_match('/^(\d{1,2}):(\d{2})$/', $time, $m) === 1) {
+            return sprintf('%02d:%02d:00', (int) $m[1], (int) $m[2]);
+        }
+        if (preg_match('/^(\d{1,2}):(\d{2}):(\d{2})(?:\.\d+)?$/', $time, $m) === 1) {
+            return sprintf('%02d:%02d:%02d', (int) $m[1], (int) $m[2], (int) $m[3]);
+        }
+
+        return $time;
     }
 
     private function prepareBreakTimeForStorage($breakTime)

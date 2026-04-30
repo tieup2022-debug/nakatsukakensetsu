@@ -42,6 +42,13 @@ class TopAttendanceController extends Controller
         $attendanceItems = [];
         $resolvedWorkplaceId = is_array($attendanceData) ? ($attendanceData['workplace_id'] ?? $workplaceId) : $workplaceId;
         $resolvedWorkDate = is_array($attendanceData) ? ($attendanceData['work_date'] ?? $workDate) : $workDate;
+        if ($resolvedWorkDate) {
+            try {
+                $resolvedWorkDate = Carbon::parse((string) $resolvedWorkDate, config('app.timezone'))->format('Y-m-d');
+            } catch (\Throwable) {
+                // そのまま（後段で表示・保存が失敗する場合はユーザーが日付を選び直す）
+            }
+        }
 
         if (is_array($attendanceData) && isset($attendanceData['attendance_data'])) {
             $attendanceItems = $attendanceData['attendance_data'];
@@ -141,12 +148,13 @@ class TopAttendanceController extends Controller
 
         $result = true;
         foreach ($staffIds as $staffId) {
-            $start = $this->normalizeTimeInput($startTimes[$staffId] ?? null, $defaultStart);
-            $end = $this->normalizeTimeInput($endTimes[$staffId] ?? null, $defaultEnd);
-            $break = $this->normalizeTimeInput($breakTimes[$staffId] ?? null, $defaultBreak);
+            $start = $this->normalizeTimeInput($this->timeFromKeyedArray($startTimes, $staffId), $defaultStart);
+            $end = $this->normalizeTimeInput($this->timeFromKeyedArray($endTimes, $staffId), $defaultEnd);
+            $break = $this->normalizeTimeInput($this->timeFromKeyedArray($breakTimes, $staffId), $defaultBreak);
 
             // チェックされていれば存在する（hidden併用で 0/1 を送ってもOK）
-            $absenceFlg = array_key_exists($staffId, $absenceFlags) ? (bool)intval($absenceFlags[$staffId]) : false;
+            $absenceRaw = $this->timeFromKeyedArray($absenceFlags, $staffId);
+            $absenceFlg = $absenceRaw !== null ? (bool) intval($absenceRaw) : false;
 
             $ok = $this->attendanceService->AttendanceUpdate(
                 $staffId,
@@ -170,7 +178,16 @@ class TopAttendanceController extends Controller
 
     private function normalizeTimeInput($value, string $fallback): string
     {
-        $raw = is_string($value) ? trim($value) : '';
+        if ($value === null) {
+            return $fallback;
+        }
+        if (is_string($value)) {
+            $raw = trim($value);
+        } elseif (is_numeric($value)) {
+            $raw = (string) $value;
+        } else {
+            $raw = '';
+        }
         if ($raw === '') {
             return $fallback;
         }
@@ -184,6 +201,24 @@ class TopAttendanceController extends Controller
         }
 
         return $fallback;
+    }
+
+    /**
+     * POST の name="field[社員ID]" はキーが文字列になることが多い。int/string の両方で参照する。
+     *
+     * @param  array<string|int, mixed>  $arr
+     */
+    private function timeFromKeyedArray(array $arr, int $staffId): mixed
+    {
+        if (array_key_exists($staffId, $arr)) {
+            return $arr[$staffId];
+        }
+        $sk = (string) $staffId;
+        if (array_key_exists($sk, $arr)) {
+            return $arr[$sk];
+        }
+
+        return null;
     }
 }
 
