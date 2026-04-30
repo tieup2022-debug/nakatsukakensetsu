@@ -23,6 +23,7 @@ class SystemInquiryController extends Controller
         return view('system_inquiry.create', [
             'title' => 'お問い合わせ',
             'current_user_name' => $user ? (string) $user->user_name : '',
+            'can_view_inquiry_list' => $user && (int) $user->permission === 1,
         ]);
     }
 

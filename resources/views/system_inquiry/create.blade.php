@@ -8,6 +8,11 @@
                 システムの不具合や追加要望をご連絡ください。送信者名と送信日時は送信時に自動で記録されます。
             </div>
         </div>
+        @if (!empty($can_view_inquiry_list))
+            <div class="text-md-end">
+                <a href="{{ route('setting.inquiry.index') }}" class="btn btn-outline-primary btn-sm">お問い合わせ一覧</a>
+            </div>
+        @endif
     </div>
 
     @if (!empty($current_user_name))
