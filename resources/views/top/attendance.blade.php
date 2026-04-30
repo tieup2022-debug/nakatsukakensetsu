@@ -79,6 +79,12 @@
                         $attendanceService = app(\App\Services\AttendanceService::class);
                     @endphp
 
+                    <div class="alert alert-warning small mb-3" role="note">
+                        <strong>欠勤にチェックが入っている行</strong>は、出勤・退勤として記録する場合は
+                        <strong>先に「欠勤」のチェックを外してから</strong>時刻を直し、「保存」してください。
+                        （チェックが入ったままだと、画面上は時刻を変えても欠勤扱いのままです。）
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead>
@@ -117,6 +123,7 @@
                                             <input type="time" step="60" class="form-control form-control-sm" name="break_time[{{ $row->staff_id }}]" value="{{ $breakVal }}">
                                         </td>
                                         <td>
+                                            <input type="hidden" name="absence_flg[{{ $row->staff_id }}]" value="0">
                                             <input
                                                 type="checkbox"
                                                 class="form-check-input"
