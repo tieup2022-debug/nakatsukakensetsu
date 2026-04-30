@@ -42,8 +42,10 @@ class SystemInquiryService
     }
 
     /**
-     * DB の datetime（タイムゾーンなし）をアプリの表示用タイムゾーンとして解釈して整形する。
-     * （サーバの date.timezone が UTC でも、保存値は APP_TIMEZONE 基準で解釈する）
+     * DB の datetime（タイムゾーンなし）を、保存時の意味づけ（datetime_storage_timezone）で読み、
+     * 画面用（display_timezone）へ変換して整形する。
+     *
+     * 例: APP_TIMEZONE=UTC で now() が UTC の壁時計で保存されているのに、表示だけ JST にしたい場合。
      */
     public static function formatStoredAt(mixed $value, string $pattern = 'Y/m/d H:i'): string
     {
@@ -51,9 +53,10 @@ class SystemInquiryService
             return '—';
         }
 
-        $tz = config('app.timezone');
+        $storedTz = (string) config('app.datetime_storage_timezone', config('app.timezone'));
+        $displayTz = (string) config('app.display_timezone', config('app.timezone'));
 
-        return Carbon::parse($value, $tz)->format($pattern);
+        return Carbon::parse($value, $storedTz)->timezone($displayTz)->format($pattern);
     }
 
     public function create(int $userId, string $userName, string $body): ?object

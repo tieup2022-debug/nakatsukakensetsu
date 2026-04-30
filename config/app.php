@@ -72,6 +72,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Display timezone (user-facing datetimes)
+    |--------------------------------------------------------------------------
+    |
+    | MySQL DATETIME 等はオフセットを持たないため、保存時の意味（datetime_storage_timezone）から
+    | ここへ変換して表示する。本番で APP_TIMEZONE=UTC としつつ画面上は日本時間にしたい場合は
+    | APP_DISPLAY_TIMEZONE=Asia/Tokyo のままにする。
+    |
+    */
+
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE', 'Asia/Tokyo'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Naive datetime storage meaning (wall clock in DB)
+    |--------------------------------------------------------------------------
+    |
+    | Laravel の now() は APP_TIMEZONE に従うため、通常は APP_TIMEZONE と同じでよい。
+    |
+    */
+
+    'datetime_storage_timezone' => env('APP_DATETIME_STORAGE_TIMEZONE', env('APP_TIMEZONE', 'Asia/Tokyo')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |
