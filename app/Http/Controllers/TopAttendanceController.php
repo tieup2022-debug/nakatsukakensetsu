@@ -73,6 +73,7 @@ class TopAttendanceController extends Controller
             : (is_object($attendanceItems) && method_exists($attendanceItems, 'count') && $attendanceItems->count() > 0);
         if ($resolvedWorkDate && $hasAttendanceRows) {
             $attendanceItems = $this->attendanceService->overlayTAttendanceTimes($attendanceItems, $resolvedWorkDate);
+            $attendanceItems = $this->attendanceService->uniqueAttendanceRowsForForm($attendanceItems);
         }
 
         // 月次表表示（以前のPDF出力をWebページ表示へ変更）

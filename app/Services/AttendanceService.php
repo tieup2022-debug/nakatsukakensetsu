@@ -142,6 +142,24 @@ class AttendanceService
     }
 
     /**
+     * 勤怠トップのフォーム用: 同一 staff_id の行が複数あると input name が重複し、
+     * POST では最後の行の値だけが送られるため、社員1人1行にまとめる。
+     *
+     * @param  iterable<int, object>  $rows
+     * @return Collection<int, object>
+     */
+    public function uniqueAttendanceRowsForForm(iterable $rows): Collection
+    {
+        return collect($rows)
+            ->filter(fn ($r) => (int) ($r->staff_id ?? 0) > 0)
+            ->sortBy(function ($r) {
+                return [(int) ($r->sort_number ?? 99999), (int) ($r->staff_id ?? 0)];
+            })
+            ->unique(fn ($r) => (int) ($r->staff_id ?? 0))
+            ->values();
+    }
+
+    /**
      * 勤怠一覧・帳票向け: DB の時刻値を HH:MM に正規化（日時型や TIME 文字列に対応）
      */
     public function formatTimeForDisplay($time): string
