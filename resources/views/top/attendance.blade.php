@@ -79,8 +79,9 @@
                         （チェックが入ったままだと、画面上は時刻を変えても欠勤扱いのままです。）
                     </div>
                     <div class="alert alert-secondary small mb-3 py-2" role="note">
-                        時刻は「<span class="font-monospace">17:30</span>」のようにコロン区切りが基本です。
-                        スマホなどで打ちにくい場合は <span class="font-monospace">1730</span>（4桁）や <span class="font-monospace">930</span>（3桁＝9:30）でも保存できます。
+                        時刻は「<span class="font-monospace">17:35</span>」のように <strong>時と分の2桁</strong>（コロン区切り）が確実です。
+                        出勤・退勤だけ、分だけ変える場合は <span class="font-monospace">35</span> のように1〜2桁でも保存できます（直前の時刻の「時」をそのまま使います）。
+                        4桁 <span class="font-monospace">1735</span> や3桁 <span class="font-monospace">930</span>（9:30）も使えます。
                     </div>
 
                     <div class="table-responsive">

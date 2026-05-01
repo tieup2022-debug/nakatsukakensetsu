@@ -241,11 +241,52 @@ class TopAttendanceController extends Controller
 
         // POST は全角数字などで届くことがあり、解析に失敗すると $default（例: 17:00）で上書きされ「保存しても変わらない」ように見える
         $parsed = $this->tryParseTimeInput($bucket[$key]);
+        // 「35分だけ直す」等で 1〜2 桁だけ送られると解析不能→既存の 17:30 のままになる。出勤・退勤は時を既存から継承して分だけ置換
+        if ($parsed === null && ($key === 'start' || $key === 'end')) {
+            $parsed = $this->tryParseTimeMinutesOnlyWithExisting($bucket[$key], $existingRaw, $default);
+        }
         if ($parsed === null) {
             return $this->timeFromExistingOrDefault($existingRaw, $default);
         }
 
         return $parsed;
+    }
+
+    /**
+     * 「35」のように分だけ入力された場合、既存時刻（または既定）の「時」と組み合わせる。休憩は HH:MM 想定のため対象外。
+     */
+    private function tryParseTimeMinutesOnlyWithExisting(mixed $value, mixed $existingRaw, string $defaultClock): ?string
+    {
+        $value = $this->unwrapPostedScalar($value);
+        if ($value === null) {
+            return null;
+        }
+        $raw = trim((string) $value);
+        if ($raw !== '' && function_exists('mb_convert_kana')) {
+            $raw = mb_convert_kana($raw, 'asn', 'UTF-8');
+        }
+        $raw = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $raw);
+        if ($raw === '' || preg_match('/^\d{1,2}$/', $raw) !== 1) {
+            return null;
+        }
+        $min = (int) $raw;
+        if ($min < 0 || $min > 59) {
+            return null;
+        }
+
+        $base = $this->tryParseTimeInput($existingRaw);
+        if ($base === null) {
+            $display = $this->attendanceService->formatTimeForDisplay($existingRaw);
+            $base = $this->tryParseTimeInput($display !== '' ? $display : null);
+        }
+        if ($base === null) {
+            $base = $this->tryParseTimeInput($defaultClock);
+        }
+        if ($base === null || preg_match('/^(\d{1,2}):(\d{2})$/', $base, $m) !== 1) {
+            return null;
+        }
+
+        return sprintf('%02d:%02d', (int) $m[1], $min);
     }
 
     private function timeFromExistingOrDefault(mixed $existingRaw, string $default): string
