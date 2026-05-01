@@ -5,6 +5,7 @@ namespace App\Services;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class AttendanceService
@@ -374,9 +375,11 @@ class AttendanceService
                 ->orderByDesc('id')
                 ->first();
 
+            $rowId = null;
             if ($row) {
+                $rowId = (int) $row->id;
                 $affected = DB::table('t_attendance')
-                    ->where('id', '=', (int) $row->id)
+                    ->where('id', '=', $rowId)
                     ->update($payload);
                 if ($affected === 0) {
                     DB::rollBack();
@@ -384,11 +387,48 @@ class AttendanceService
                     return false;
                 }
             } else {
-                DB::table('t_attendance')->insert(array_merge($payload, [
+                $rowId = (int) DB::table('t_attendance')->insertGetId(array_merge($payload, [
                     'staff_id' => (int) $staffId,
                     'deleted_at' => null,
                     'created_at' => now(),
                 ]));
+                if ($rowId <= 0) {
+                    DB::rollBack();
+
+                    return false;
+                }
+            }
+
+            $fresh = DB::table('t_attendance')->where('id', '=', $rowId)->first();
+            if (! $fresh) {
+                DB::rollBack();
+
+                return false;
+            }
+
+            foreach (['start_time' => $startTime, 'end_time' => $endTime] as $column => $expected) {
+                if ($expected === '') {
+                    continue;
+                }
+                $got = $this->normalizeClockForSqlTime($this->formatTimeForDisplay($fresh->{$column} ?? ''));
+                if ($got !== $expected) {
+                    $conn = (string) config('database.default');
+                    $dbName = (string) data_get(config('database.connections.'.$conn), 'database', '');
+                    Log::warning('AttendanceUpdate: DB上の時刻が保存値と一致しません（接続先・トリガ・権限を確認）', [
+                        'connection' => $conn,
+                        'database' => $dbName,
+                        'row_id' => $rowId,
+                        'staff_id' => (int) $staffId,
+                        'work_date' => $workDateNorm,
+                        'column' => $column,
+                        'expected' => $expected,
+                        'actual_raw' => $fresh->{$column} ?? null,
+                        'actual_norm' => $got,
+                    ]);
+                    DB::rollBack();
+
+                    return false;
+                }
             }
 
             DB::commit();
