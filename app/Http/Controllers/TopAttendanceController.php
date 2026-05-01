@@ -206,9 +206,11 @@ class TopAttendanceController extends Controller
             }
         }
 
+        $ctx = $this->attendanceSaveContextSuffix();
+
         return redirect()
             ->route('top.attendance', ['workplace_id' => $workplaceId, 'work_date' => $workDate])
-            ->with('status', $result ? '勤怠を保存しました' : '保存に失敗しました（内容をご確認ください）');
+            ->with('status', $result ? '勤怠を保存しました '.$ctx : '保存に失敗しました（内容をご確認ください） '.$ctx);
     }
 
     /**
@@ -316,5 +318,24 @@ class TopAttendanceController extends Controller
         }
 
         return $fallback;
+    }
+
+    /**
+     * 保存直後メッセージ用: 実際に接続している DB 名と、デプロイ時に書き込んだコミット短縮形（未デプロイ環境では省略）。
+     */
+    private function attendanceSaveContextSuffix(): string
+    {
+        $connectionName = (string) config('database.default', 'mysql');
+        $database = (string) data_get(config("database.connections.{$connectionName}"), 'database', '(不明)');
+        $revPath = base_path('bootstrap/cache/deploy_revision');
+        $rev = is_file($revPath) ? trim((string) file_get_contents($revPath)) : '';
+        $revShort = $rev !== '' ? substr($rev, 0, 7) : '';
+
+        $parts = ["接続DB: {$database}"];
+        if ($revShort !== '') {
+            $parts[] = "アプリ版: {$revShort}";
+        }
+
+        return '（'.implode(' ', $parts).'）';
     }
 }

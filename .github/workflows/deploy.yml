@@ -13,6 +13,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Write deploy revision marker
+        run: |
+          mkdir -p bootstrap/cache
+          echo "${{ github.sha }}" > bootstrap/cache/deploy_revision
+
       - name: Start SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -50,6 +55,4 @@ jobs:
           ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" \
             "cd '${{ secrets.XSERVER_DEPLOY_PATH }}' && \
              /opt/php-8.3/bin/php artisan migrate --no-interaction --force && \
-             /opt/php-8.3/bin/php artisan view:clear && \
-             /opt/php-8.3/bin/php artisan config:clear && \
-             /opt/php-8.3/bin/php artisan route:clear"
+             /opt/php-8.3/bin/php artisan optimize:clear"
