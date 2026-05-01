@@ -187,8 +187,8 @@ class TopAttendanceController extends Controller
             );
 
             // チェックされていれば存在する（hidden併用で 0/1 を送ってもOK）
-            $absenceRaw = $this->timeFromKeyedArray($absenceFlags, $staffId);
-            $absenceFlg = $absenceRaw !== null ? (bool) intval($absenceRaw) : false;
+            $absenceRaw = $this->unwrapPostedScalar($this->timeFromKeyedArray($absenceFlags, $staffId));
+            $absenceFlg = $absenceRaw !== null && $absenceRaw !== '' ? (bool) intval($absenceRaw) : false;
 
             $ok = $this->attendanceService->AttendanceUpdate(
                 $staffId,
@@ -241,8 +241,24 @@ class TopAttendanceController extends Controller
         return $this->normalizeTimeInput($display !== '' ? $display : $existingRaw, $default);
     }
 
+    /**
+     * name="end_time[90]" 等が配列で届くと is_string でもなくなり、以前は常に fallback（例: 17:00）になっていた。
+     */
+    private function unwrapPostedScalar(mixed $value): mixed
+    {
+        while (is_array($value)) {
+            if ($value === []) {
+                return null;
+            }
+            $value = end($value);
+        }
+
+        return $value;
+    }
+
     private function normalizeTimeInput($value, string $fallback): string
     {
+        $value = $this->unwrapPostedScalar($value);
         if ($value === null) {
             return $fallback;
         }
