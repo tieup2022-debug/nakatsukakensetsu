@@ -58,22 +58,18 @@ class TopAttendanceController extends Controller
             }
         }
 
-        if (is_array($attendanceData) && isset($attendanceData['attendance_data'])) {
-            $attendanceItems = $attendanceData['attendance_data'];
+        // 勤怠トップは「その現場・その日に配置されている全員」を編集対象にする。
+        // v_attendance だけだと 1 件など一部だけ返り、v_attendance_all へフォールバックされないため他社員が画面から消える。
+        if ($resolvedWorkplaceId && $resolvedWorkDate) {
+            $all = $this->attendanceService->GetAttendanceAllStaff($resolvedWorkplaceId, $resolvedWorkDate);
+            if ($this->attendanceRowCount($all) > 0) {
+                $attendanceItems = $all;
+            }
         }
 
-        // attendance が空でも、画面上は編集できるように v_attendance_all を試す
-        if ($resolvedWorkplaceId && $resolvedWorkDate && (empty($attendanceItems) || $attendanceItems->count() === 0)) {
-            $all = $this->attendanceService->GetAttendanceAllStaff($resolvedWorkplaceId, $resolvedWorkDate);
-            if ($all) {
-                if (is_array($all)) {
-                    if (count($all) > 0) {
-                        $attendanceItems = $all;
-                    }
-                } elseif (is_object($all) && method_exists($all, 'count') && $all->count() > 0) {
-                    $attendanceItems = $all;
-                }
-            }
+        // 配置ビューに誰もいない環境のみ、従来の v_attendance を使う
+        if ($this->attendanceRowCount($attendanceItems) === 0 && is_array($attendanceData) && isset($attendanceData['attendance_data'])) {
+            $attendanceItems = $attendanceData['attendance_data'];
         }
 
         $hasAttendanceRows = is_array($attendanceItems)
@@ -358,6 +354,24 @@ class TopAttendanceController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * @param  mixed  $rows
+     */
+    private function attendanceRowCount($rows): int
+    {
+        if ($rows === null || $rows === false) {
+            return 0;
+        }
+        if (is_array($rows)) {
+            return count($rows);
+        }
+        if (is_object($rows) && method_exists($rows, 'count')) {
+            return (int) $rows->count();
+        }
+
+        return 0;
     }
 
     /**
