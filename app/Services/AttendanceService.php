@@ -63,6 +63,7 @@ class AttendanceService
             ];
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
+
             return false;
         }
     }
@@ -89,6 +90,7 @@ class AttendanceService
             if (app()->environment('local')) {
                 return $this->getLocalAttendanceAllStaff((int) $workplaceId, (string) $workDate);
             }
+
             return false;
         }
     }
@@ -275,7 +277,7 @@ class AttendanceService
                 return '00:00';
             }
             // 整数で 0-23 は「時間」扱い（旧データ互換）
-            if (!str_contains($s, '.') && $minutes <= 23) {
+            if (! str_contains($s, '.') && $minutes <= 23) {
                 $minutes *= 60;
             }
             $hours = intdiv($minutes, 60);
@@ -367,13 +369,18 @@ class AttendanceService
 
             DB::beginTransaction();
 
-            // 複数行・whereDate の環境差で UPDATE が当たらない事例があるため、必ず主キー id で 1 行だけ更新する
-            $row = DB::table('t_attendance')
+            // 複数行・whereDate の環境差で UPDATE が当たらない事例があるため、必ず主キー id で 1 行だけ更新する。
+            // 行の選び方は overlay / getAttendanceRowsByStaffForDate と同じ（選択中の workplace_id 一致を最優先）。
+            // id 降順のみだと「別現場のより新しい行」だけが更新され、画面と phpMyAdmin で見ている行が更新されないことがある。
+            $candidateRows = DB::table('t_attendance')
                 ->where('staff_id', '=', (int) $staffId)
                 ->whereDate('work_date', '=', $workDateNorm)
                 ->whereNull('deleted_at')
                 ->orderByDesc('id')
-                ->first();
+                ->get();
+
+            $chosenByStaff = $this->pickBestAttendanceRowPerStaff($candidateRows, (int) $workplaceId);
+            $row = $chosenByStaff[(int) $staffId] ?? null;
 
             $rowId = null;
             if ($row) {
@@ -447,8 +454,10 @@ class AttendanceService
                     (string) $breakTime,
                     (int) $absenceFlg
                 );
+
                 return true;
             }
+
             return false;
         }
     }
@@ -475,6 +484,7 @@ class AttendanceService
             if (app()->environment('local')) {
                 return $this->getLocalAttendanceStaff((int) $staffId, (int) $workplaceId, (string) $workDate);
             }
+
             return false;
         }
     }
@@ -543,10 +553,12 @@ class AttendanceService
                 }
 
                 DB::commit();
+
                 return true;
             }
 
             DB::rollback();
+
             return false;
         } catch (\Exception $e) {
             DB::rollback();
@@ -554,7 +566,7 @@ class AttendanceService
             // ローカルDB未接続時は、ローカルJSONへ保存して画面反映できるようにする
             if (app()->environment('local')) {
                 $assignedStaffIds = $this->getLocalAssignedStaffIds((int) $workplaceId, (string) $workDate);
-                if (!empty($assignedStaffIds)) {
+                if (! empty($assignedStaffIds)) {
                     foreach (array_keys($assignedStaffIds) as $staffId) {
                         $absenceRaw = $absenceStaffList[$staffId] ?? 0;
                         if (is_array($absenceRaw)) {
@@ -572,8 +584,10 @@ class AttendanceService
                         );
                     }
                 }
+
                 return true;
             }
+
             return false;
         }
     }
@@ -595,6 +609,7 @@ class AttendanceService
                     ->delete();
 
                 DB::commit();
+
                 return true;
             }
 
@@ -604,8 +619,10 @@ class AttendanceService
             error($e, __FILE__, __METHOD__, __LINE__);
             if (app()->environment('local')) {
                 $this->deleteLocalAttendance((int) $staffId, (int) $workplaceId, (string) $workDate);
+
                 return true;
             }
+
             return false;
         }
     }
@@ -618,7 +635,7 @@ class AttendanceService
         try {
             $staffList = [];
 
-            if (!isset($workDate)) {
+            if (! isset($workDate)) {
                 return false;
             }
 
@@ -653,6 +670,7 @@ class AttendanceService
             return $staffList;
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
+
             return false;
         }
     }
@@ -753,15 +771,16 @@ class AttendanceService
             }
 
             // DBに初期値テーブルが無い/無効化の場合も最低限の値を返す
-            return (object)[
+            return (object) [
                 'start_time' => '08:00:00',
                 'end_time' => '17:00:00',
                 'break_time' => '01:00:00',
             ];
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
+
             // ローカルDB未接続でも一括入力が使えるようにフォールバック
-            return (object)[
+            return (object) [
                 // 添付イメージの初期値（出退勤/休憩）
                 'start_time' => '08:00:00',
                 'end_time' => '17:00:00',
@@ -1095,29 +1114,31 @@ class AttendanceService
     private function readLocalJson(string $relativePath): array
     {
         $path = storage_path($relativePath);
-        if (!is_file($path)) {
+        if (! is_file($path)) {
             return [];
         }
         $json = @file_get_contents($path);
-        if (!is_string($json) || $json === '') {
+        if (! is_string($json) || $json === '') {
             return [];
         }
         $data = json_decode($json, true);
+
         return is_array($data) ? $data : [];
     }
 
     /**
-     * @param array<int, array<string, mixed>> $rows
+     * @param  array<int, array<string, mixed>>  $rows
      */
     private function writeLocalJson(string $relativePath, array $rows): bool
     {
         $path = storage_path($relativePath);
         $dir = dirname($path);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             @mkdir($dir, 0775, true);
         }
 
         $payload = json_encode(array_values($rows), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
         return @file_put_contents($path, $payload) !== false;
     }
 
@@ -1155,7 +1176,7 @@ class AttendanceService
                 $attendanceDataList = [];
 
                 for ($day = 1; $day <= $daysInMonth; $day++) {
-                    $fullDate = "$year-$month-" . sprintf('%02d', $day);
+                    $fullDate = "$year-$month-".sprintf('%02d', $day);
                     $attendanceDataList[$fullDate]['work_date'] = $fullDate;
                     $attendanceDataList[$fullDate]['week_day'] = $weekdays[date('N', strtotime($fullDate)) - 1];
                     $attendanceDataList[$fullDate]['staff_name'] = $staff->staff_name;
@@ -1184,7 +1205,7 @@ class AttendanceService
                         ];
                     }
 
-                    if ($attendanceData && !$attendanceData->absence_flg) {
+                    if ($attendanceData && ! $attendanceData->absence_flg) {
                         $attendanceDataList[$fullDate]['workplace_name'] = $attendanceData->workplace_name;
                         $startTime = $this->formatTimeShort($attendanceData->start_time);
                         $endTime = $this->formatTimeShort($attendanceData->end_time);
@@ -1245,7 +1266,7 @@ class AttendanceService
                 }
             }
 
-            if (!empty($onePageData)) {
+            if (! empty($onePageData)) {
                 $attendanceTableList[] = $onePageData;
             }
 
@@ -1272,6 +1293,7 @@ class AttendanceService
             if (app()->environment('local')) {
                 return $this->getLocalPdfData($workDate);
             }
+
             return false;
         }
     }
@@ -1294,7 +1316,7 @@ class AttendanceService
         $workDate = (string) $workDate;
         $year = date('Y', strtotime($workDate));
         $month = date('m', strtotime($workDate));
-        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int)$month, (int)$year);
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int) $month, (int) $year);
 
         $workplaceNameById = [];
         foreach ($workplaces as $w) {
@@ -1351,7 +1373,7 @@ class AttendanceService
 
             $attendanceDataList = [];
             for ($day = 1; $day <= $daysInMonth; $day++) {
-                $fullDate = sprintf('%04d-%02d-%02d', (int)$year, (int)$month, (int)$day);
+                $fullDate = sprintf('%04d-%02d-%02d', (int) $year, (int) $month, (int) $day);
                 $attendanceDataList[$fullDate]['work_date'] = $fullDate;
                 $attendanceDataList[$fullDate]['week_day'] = $weekdays[date('N', strtotime($fullDate)) - 1] ?? '';
                 $attendanceDataList[$fullDate]['staff_name'] = $staffName;
@@ -1398,13 +1420,13 @@ class AttendanceService
             }
         }
 
-        if (!empty($onePageData)) {
+        if (! empty($onePageData)) {
             $attendanceTableList[] = $onePageData;
         }
 
         $dateList = [];
         for ($day = 1; $day <= $daysInMonth; $day++) {
-            $dateList[] = sprintf('%04d-%02d-%02d', (int)$year, (int)$month, (int)$day);
+            $dateList[] = sprintf('%04d-%02d-%02d', (int) $year, (int) $month, (int) $day);
         }
 
         return [
@@ -1497,7 +1519,7 @@ class AttendanceService
                 ->orderBy('staff_type')
                 ->orderBy('sort_number')
                 ->orderBy('id');
-            if (!empty($staffId)) {
+            if (! empty($staffId)) {
                 $staffQuery->where('id', '=', $staffId);
             }
             if ($staffType !== null && $staffType !== '') {
@@ -1546,7 +1568,7 @@ class AttendanceService
 
                     if ($row) {
                         $absence = intval($row->absence_flg ?? 0) === 1;
-                        if (!$absence) {
+                        if (! $absence) {
                             $startDisplay = $this->formatTimeShort((string) ($row->start_time ?? ''));
                             $endDisplay = $this->formatTimeShort((string) ($row->end_time ?? ''));
                             $breakDisplay = $this->formatTimeShort((string) ($row->break_time ?? ''));
@@ -1617,6 +1639,7 @@ class AttendanceService
             ];
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
+
             return false;
         }
     }
@@ -1634,6 +1657,7 @@ class AttendanceService
         }
 
         $breakMinutes = $this->timeToMinutes($breakTime, true) ?? 0;
+
         return max(0, ($end - $start) - $breakMinutes);
     }
 
@@ -1660,6 +1684,7 @@ class AttendanceService
     {
         $s = max($start, $rangeStart);
         $e = min($end, $rangeEnd);
+
         return max(0, $e - $s);
     }
 
@@ -1686,6 +1711,7 @@ class AttendanceService
             if ($intNum <= 23) {
                 return $intNum * 60;
             }
+
             return $intNum;
         }
 
@@ -1696,7 +1722,7 @@ class AttendanceService
         $h = (int) $m[1];
         $min = (int) $m[2];
 
-        if (!$allowDuration && ($h > 23 || $min > 59)) {
+        if (! $allowDuration && ($h > 23 || $min > 59)) {
             return null;
         }
         if ($allowDuration && $min > 59) {
@@ -1711,7 +1737,7 @@ class AttendanceService
         if ($minutes <= 0) {
             return '0.00';
         }
+
         return number_format($minutes / 60, 2, '.', '');
     }
 }
-
