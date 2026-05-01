@@ -385,14 +385,10 @@ class AttendanceService
             $rowId = null;
             if ($row) {
                 $rowId = (int) $row->id;
-                $affected = DB::table('t_attendance')
+                // rowCount は MySQL/PDO の設定次第で「値が変わった行」だけを数え 0 になり得る（誤ロールバックの原因になる）
+                DB::table('t_attendance')
                     ->where('id', '=', $rowId)
                     ->update($payload);
-                if ($affected === 0) {
-                    DB::rollBack();
-
-                    return false;
-                }
             } else {
                 $rowId = (int) DB::table('t_attendance')->insertGetId(array_merge($payload, [
                     'staff_id' => (int) $staffId,
