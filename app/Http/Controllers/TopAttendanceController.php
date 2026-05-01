@@ -25,7 +25,14 @@ class TopAttendanceController extends Controller
         }
 
         $workplaceId = $request->input('workplace_id');
-        $workDate = $request->input('work_date');
+        $workDateInput = $request->input('work_date');
+        try {
+            $workDate = ($workDateInput === null || $workDateInput === '')
+                ? date('Y-m-d')
+                : Carbon::parse((string) $workDateInput, config('app.timezone'))->format('Y-m-d');
+        } catch (\Throwable) {
+            $workDate = date('Y-m-d');
+        }
 
         $attendanceData = $this->attendanceService->GetAttendance($workplaceId, $workDate);
         $workplaceList = $this->workplaceService->getWorkplaceList(true);
@@ -106,17 +113,24 @@ class TopAttendanceController extends Controller
             return redirect()->route('login');
         }
 
-        $workplaceId = $request->input('workplace_id');
+        $workplaceIdRaw = $request->input('workplace_id');
+        $workplaceId = (int) $workplaceIdRaw;
         $workDateInput = $request->input('work_date');
         try {
             $workDate = Carbon::parse($workDateInput, config('app.timezone'))->format('Y-m-d');
         } catch (\Throwable) {
             return redirect()
                 ->route('top.attendance', [
-                    'workplace_id' => $workplaceId,
+                    'workplace_id' => $workplaceIdRaw,
                     'work_date' => is_string($workDateInput) && $workDateInput !== '' ? $workDateInput : date('Y-m-d'),
                 ])
                 ->with('error', '作業日の形式が正しくありません。');
+        }
+
+        if ($workplaceId <= 0) {
+            return redirect()
+                ->route('top.attendance', ['workplace_id' => $workplaceIdRaw, 'work_date' => $workDate])
+                ->with('error', '現場が取得できませんでした。画面を開き直してから保存してください。');
         }
 
         $startTimes = $request->input('start_time', []);
@@ -147,11 +161,29 @@ class TopAttendanceController extends Controller
                 ->with('error', '保存対象の社員が取得できませんでした。画面を再表示してからお試しください。');
         }
 
+        $existingByStaff = $this->attendanceService->getAttendanceRowsByStaffForDate($staffIds, $workDate);
+
         $result = true;
         foreach ($staffIds as $staffId) {
-            $start = $this->normalizeTimeInput($this->timeFromKeyedArray($startTimes, $staffId), $defaultStart);
-            $end = $this->normalizeTimeInput($this->timeFromKeyedArray($endTimes, $staffId), $defaultEnd);
-            $break = $this->normalizeTimeInput($this->timeFromKeyedArray($breakTimes, $staffId), $defaultBreak);
+            $existing = $existingByStaff[$staffId] ?? null;
+            $start = $this->resolveTimeForSave(
+                $startTimes,
+                $staffId,
+                $defaultStart,
+                $existing->start_time ?? null
+            );
+            $end = $this->resolveTimeForSave(
+                $endTimes,
+                $staffId,
+                $defaultEnd,
+                $existing->end_time ?? null
+            );
+            $break = $this->resolveTimeForSave(
+                $breakTimes,
+                $staffId,
+                $defaultBreak,
+                $existing->break_time ?? null
+            );
 
             // チェックされていれば存在する（hidden併用で 0/1 を送ってもOK）
             $absenceRaw = $this->timeFromKeyedArray($absenceFlags, $staffId);
@@ -177,6 +209,37 @@ class TopAttendanceController extends Controller
             ->with('status', $result ? '勤怠を保存しました' : '保存に失敗しました（内容をご確認ください）');
     }
 
+    /**
+     * POST に start_time[社員ID] 等が無い場合は DB の既存値を維持（ブラウザ差・入力欠落で既定 17:00 等に戻るのを防ぐ）。
+     */
+    private function resolveTimeForSave(array $postTimes, int $staffId, string $default, mixed $existingRaw): string
+    {
+        if (! $this->hasKeyedArrayKey($postTimes, $staffId)) {
+            return $this->timeFromExistingForForm($existingRaw, $default);
+        }
+
+        return $this->normalizeTimeInput($this->timeFromKeyedArray($postTimes, $staffId), $default);
+    }
+
+    /**
+     * @param  array<string|int, mixed>  $arr
+     */
+    private function hasKeyedArrayKey(array $arr, int $staffId): bool
+    {
+        return array_key_exists($staffId, $arr) || array_key_exists((string) $staffId, $arr);
+    }
+
+    private function timeFromExistingForForm(mixed $existingRaw, string $default): string
+    {
+        if ($existingRaw === null || $existingRaw === '') {
+            return $default;
+        }
+
+        $display = $this->attendanceService->formatTimeForDisplay($existingRaw);
+
+        return $this->normalizeTimeInput($display !== '' ? $display : $existingRaw, $default);
+    }
+
     private function normalizeTimeInput($value, string $fallback): string
     {
         if ($value === null) {
@@ -184,6 +247,11 @@ class TopAttendanceController extends Controller
         }
         if (is_string($value)) {
             $raw = trim($value);
+            if ($raw !== '' && function_exists('mb_convert_kana')) {
+                $raw = mb_convert_kana($raw, 'as', 'UTF-8');
+                $raw = str_replace(['：', '．'], [':', '.'], $raw);
+                $raw = trim($raw);
+            }
         } elseif (is_numeric($value)) {
             $raw = (string) $value;
         } else {

@@ -10,12 +10,6 @@
         </div>
     </div>
 
-    @if (session('status'))
-        <div class="alert alert-info mb-3">
-            {{ session('status') }}
-        </div>
-    @endif
-
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body">
             <form method="GET" action="{{ route('top.attendance') }}" class="row g-2 align-items-end">

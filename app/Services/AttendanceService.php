@@ -12,14 +12,27 @@ class AttendanceService
     private const LOCAL_ATTENDANCE_FILE = 'app/local_attendances.json';
 
     /**
+     * 一覧・更新クエリ用に作業日を Y-m-d へ揃える（空は今日、解釈不能も今日にフォールバック）。
+     */
+    private function coerceWorkDateYmd($workDate): string
+    {
+        if ($workDate === null || $workDate === '') {
+            return date('Y-m-d');
+        }
+        try {
+            return Carbon::parse((string) $workDate, config('app.timezone'))->format('Y-m-d');
+        } catch (\Throwable) {
+            return date('Y-m-d');
+        }
+    }
+
+    /**
      * 勤怠一覧 取得
      */
     public function GetAttendance($workplaceId = null, $workDate = null)
     {
         try {
-            if (is_null($workDate)) {
-                $workDate = date('Y-m-d');
-            }
+            $workDate = $this->coerceWorkDateYmd($workDate);
 
             if (is_null($workplaceId)) {
                 $attendanceData = DB::table('t_attendance')
@@ -59,15 +72,16 @@ class AttendanceService
     public function GetAttendanceAllStaff($workplaceId, $workDate)
     {
         try {
-            if (isset($workplaceId) && isset($workDate)) {
-                return DB::table('v_attendance_all')
-                    ->where('workplace_id', '=', $workplaceId)
-                    ->where('work_date', '=', $workDate)
-                    ->orderBy('staff_name')
-                    ->get();
+            if ($workplaceId === null || $workplaceId === '' || $workDate === null || $workDate === '') {
+                return false;
             }
+            $workDate = $this->coerceWorkDateYmd($workDate);
 
-            return false;
+            return DB::table('v_attendance_all')
+                ->where('workplace_id', '=', $workplaceId)
+                ->where('work_date', '=', $workDate)
+                ->orderBy('staff_name')
+                ->get();
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
             // ローカルDB未接続でも「勤怠一括入力」の対象社員リストを表示できるようにする
@@ -113,11 +127,14 @@ class AttendanceService
         }
 
         try {
+            // 同一 staff_id・日付の行が複数ある環境では、最新 id を優先して表示を安定させる
             $byStaff = DB::table('t_attendance')
                 ->whereDate('work_date', '=', $workDateNorm)
                 ->whereIn('staff_id', $ids)
                 ->whereNull('deleted_at')
+                ->orderByDesc('id')
                 ->get()
+                ->unique('staff_id')
                 ->keyBy(fn ($r) => (int) $r->staff_id);
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
@@ -157,6 +174,44 @@ class AttendanceService
             })
             ->unique(fn ($r) => (int) ($r->staff_id ?? 0))
             ->values();
+    }
+
+    /**
+     * トップ勤怠保存用: 同一日内の t_attendance を社員IDで引く（複数行は最新 id を採用）。
+     *
+     * @param  array<int>  $staffIds
+     * @return array<int, object>
+     */
+    public function getAttendanceRowsByStaffForDate(array $staffIds, string $workDate): array
+    {
+        if ($staffIds === []) {
+            return [];
+        }
+
+        $workDateNorm = $this->coerceWorkDateYmd($workDate);
+
+        try {
+            $rows = DB::table('t_attendance')
+                ->whereDate('work_date', '=', $workDateNorm)
+                ->whereIn('staff_id', $staffIds)
+                ->whereNull('deleted_at')
+                ->orderByDesc('id')
+                ->get();
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return [];
+        }
+
+        $map = [];
+        foreach ($rows as $r) {
+            $sid = (int) $r->staff_id;
+            if ($sid > 0 && ! array_key_exists($sid, $map)) {
+                $map[$sid] = $r;
+            }
+        }
+
+        return $map;
     }
 
     /**
