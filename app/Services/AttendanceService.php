@@ -1202,18 +1202,31 @@ class AttendanceService
                     }
 
                     if ($attendanceData && ! $attendanceData->absence_flg) {
-                        $attendanceDataList[$fullDate]['workplace_name'] = $attendanceData->workplace_name;
                         $startTime = $this->formatTimeShort($attendanceData->start_time);
                         $endTime = $this->formatTimeShort($attendanceData->end_time);
                         $breakTime = $this->formatTimeShort($attendanceData->break_time);
-                        if ($startTime === '' && $attendanceRaw) {
-                            $startTime = $this->formatTimeShort($attendanceRaw->start_time ?? '');
-                        }
-                        if ($endTime === '' && $attendanceRaw) {
-                            $endTime = $this->formatTimeShort($attendanceRaw->end_time ?? '');
-                        }
-                        if ($breakTime === '' && $attendanceRaw) {
-                            $breakTime = $this->formatTimeShort($attendanceRaw->break_time ?? '');
+
+                        // v_attendance_all は配置現場ベースのため、勤怠トップで保存した t_attendance と現場・時刻がずれる。
+                        // 実レコードがある日は t_attendance を優先して月次・PDF と入力内容を一致させる。
+                        if ($attendanceRaw) {
+                            $wpTa = (string) ($workplaceMap[(int) ($attendanceRaw->workplace_id ?? 0)] ?? '');
+                            $attendanceDataList[$fullDate]['workplace_name'] = $wpTa !== ''
+                                ? $wpTa
+                                : (string) ($attendanceData->workplace_name ?? '');
+                            $stR = $this->formatTimeShort($attendanceRaw->start_time ?? '');
+                            $enR = $this->formatTimeShort($attendanceRaw->end_time ?? '');
+                            $brR = $this->formatTimeShort($attendanceRaw->break_time ?? '');
+                            if ($stR !== '') {
+                                $startTime = $stR;
+                            }
+                            if ($enR !== '') {
+                                $endTime = $enR;
+                            }
+                            if ($brR !== '') {
+                                $breakTime = $brR;
+                            }
+                        } else {
+                            $attendanceDataList[$fullDate]['workplace_name'] = (string) ($attendanceData->workplace_name ?? '');
                         }
                         if ($startTime === '') {
                             $startTime = $fallbackStart;

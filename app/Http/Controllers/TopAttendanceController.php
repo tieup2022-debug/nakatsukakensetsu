@@ -93,6 +93,9 @@ class TopAttendanceController extends Controller
                     ->with('status', '表示できる勤怠データがありません。');
             }
 
+            $monthlyData['filter_workplace_id'] = $resolvedWorkplaceId;
+            $monthlyData['filter_work_date'] = $resolvedWorkDate;
+
             return view('top.attendance_monthly')->with($monthlyData);
         }
 

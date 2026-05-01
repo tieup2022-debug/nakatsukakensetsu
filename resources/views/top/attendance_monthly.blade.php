@@ -20,7 +20,10 @@
             <div class="text-muted small">添付イメージ形式の一覧表示</div>
         </div>
         <div>
-            <a class="btn btn-outline-secondary btn-sm" href="{{ route('top.attendance') }}">勤怠へ戻る</a>
+            <a
+                class="btn btn-outline-secondary btn-sm"
+                href="{{ route('top.attendance', array_filter(['workplace_id' => $filter_workplace_id ?? null, 'work_date' => $filter_work_date ?? null], fn ($v) => $v !== null && $v !== '')) }}"
+            >勤怠へ戻る</a>
         </div>
     </div>
 
