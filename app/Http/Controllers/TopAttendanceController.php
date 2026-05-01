@@ -79,7 +79,8 @@ class TopAttendanceController extends Controller
             ? count($attendanceItems) > 0
             : (is_object($attendanceItems) && method_exists($attendanceItems, 'count') && $attendanceItems->count() > 0);
         if ($resolvedWorkDate && $hasAttendanceRows) {
-            $attendanceItems = $this->attendanceService->overlayTAttendanceTimes($attendanceItems, $resolvedWorkDate);
+            $wpForOverlay = $resolvedWorkplaceId !== null && $resolvedWorkplaceId !== '' ? (int) $resolvedWorkplaceId : null;
+            $attendanceItems = $this->attendanceService->overlayTAttendanceTimes($attendanceItems, $resolvedWorkDate, $wpForOverlay);
             $attendanceItems = $this->attendanceService->uniqueAttendanceRowsForForm($attendanceItems);
         }
 
@@ -161,7 +162,7 @@ class TopAttendanceController extends Controller
                 ->with('error', '保存対象の社員が取得できませんでした。画面を再表示してからお試しください。');
         }
 
-        $existingByStaff = $this->attendanceService->getAttendanceRowsByStaffForDate($staffIds, $workDate);
+        $existingByStaff = $this->attendanceService->getAttendanceRowsByStaffForDate($staffIds, $workDate, $workplaceId);
 
         $result = true;
         foreach ($staffIds as $staffId) {

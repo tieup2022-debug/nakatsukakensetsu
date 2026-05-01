@@ -99,10 +99,14 @@ class AttendanceService
      * 現場が変わった直後など JOIN が外れて時刻が NULL → 画面既定(08:00等)になることがある。
      * 保存後も古い表示のままに見える原因になるため、staff_id + work_date で実レコードを優先する。
      *
+     * 同一日に複数行ある場合は「今開いている現場」と workplace_id が一致する行を最優先し、
+     * 無ければ id 降順（従来どおり）。DB が過去の別現場行と混在している環境での取り違えを防ぐ。
+     *
      * @param  iterable<int, object>  $rows
+     * @param  int|string|null  $preferredWorkplaceId  トップ画面で選択中の現場
      * @return Collection<int, object>
      */
-    public function overlayTAttendanceTimes(iterable $rows, string $workDate): Collection
+    public function overlayTAttendanceTimes(iterable $rows, string $workDate, $preferredWorkplaceId = null): Collection
     {
         $collection = collect($rows);
         if ($collection->isEmpty()) {
@@ -127,15 +131,14 @@ class AttendanceService
         }
 
         try {
-            // 同一 staff_id・日付の行が複数ある環境では、最新 id を優先して表示を安定させる
-            $byStaff = DB::table('t_attendance')
+            $dbRows = DB::table('t_attendance')
                 ->whereDate('work_date', '=', $workDateNorm)
                 ->whereIn('staff_id', $ids)
                 ->whereNull('deleted_at')
                 ->orderByDesc('id')
-                ->get()
-                ->unique('staff_id')
-                ->keyBy(fn ($r) => (int) $r->staff_id);
+                ->get();
+
+            $byStaff = collect($this->pickBestAttendanceRowPerStaff($dbRows, $preferredWorkplaceId));
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
 
@@ -177,12 +180,14 @@ class AttendanceService
     }
 
     /**
-     * トップ勤怠保存用: 同一日内の t_attendance を社員IDで引く（複数行は最新 id を採用）。
+     * トップ勤怠保存用: 同一日内の t_attendance を社員IDで引く。
+     * 複数行ある場合は preferredWorkplaceId に一致する行を優先（オーバーレイと同じ基準）。
      *
      * @param  array<int>  $staffIds
+     * @param  int|string|null  $preferredWorkplaceId
      * @return array<int, object>
      */
-    public function getAttendanceRowsByStaffForDate(array $staffIds, string $workDate): array
+    public function getAttendanceRowsByStaffForDate(array $staffIds, string $workDate, $preferredWorkplaceId = null): array
     {
         if ($staffIds === []) {
             return [];
@@ -203,11 +208,38 @@ class AttendanceService
             return [];
         }
 
+        return $this->pickBestAttendanceRowPerStaff($rows, $preferredWorkplaceId);
+    }
+
+    /**
+     * 同一 staff_id・同一日の t_attendance が複数あるとき 1 行に絞る。
+     *
+     * @param  iterable<int, object>  $rows
+     * @param  int|string|null  $preferredWorkplaceId
+     * @return array<int, object>
+     */
+    private function pickBestAttendanceRowPerStaff(iterable $rows, $preferredWorkplaceId): array
+    {
+        $wp = (int) ($preferredWorkplaceId ?? 0);
+
+        $grouped = collect($rows)->groupBy(fn ($r) => (int) ($r->staff_id ?? 0));
+
         $map = [];
-        foreach ($rows as $r) {
-            $sid = (int) $r->staff_id;
-            if ($sid > 0 && ! array_key_exists($sid, $map)) {
-                $map[$sid] = $r;
+        foreach ($grouped as $sidKey => $group) {
+            $sid = (int) $sidKey;
+            if ($sid <= 0) {
+                continue;
+            }
+            $list = $group->sortByDesc(fn ($r) => (int) ($r->id ?? 0))->values();
+            $chosen = null;
+            if ($wp > 0) {
+                $chosen = $list->first(fn ($r) => (int) ($r->workplace_id ?? 0) === $wp);
+            }
+            if (! $chosen) {
+                $chosen = $list->first();
+            }
+            if ($chosen) {
+                $map[$sid] = $chosen;
             }
         }
 
