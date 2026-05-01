@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 class TopAttendanceController extends Controller
 {
     private AttendanceService $attendanceService;
+
     private WorkplaceService $workplaceService;
 
     public function __construct(AttendanceService $attendanceService, WorkplaceService $workplaceService)
@@ -20,7 +21,7 @@ class TopAttendanceController extends Controller
 
     public function index(Request $request)
     {
-        if (!session()->has('login_user_id')) {
+        if (! session()->has('login_user_id')) {
             return redirect()->route('login');
         }
 
@@ -41,7 +42,7 @@ class TopAttendanceController extends Controller
         }
 
         // workplace_id が未決の場合は、現役場の先頭を使う
-        if (!$attendanceData || empty($attendanceData['workplace_id'])) {
+        if (! $attendanceData || empty($attendanceData['workplace_id'])) {
             $fallbackWorkplaceId = $workplaceList[0]->id ?? null;
             $attendanceData = $this->attendanceService->GetAttendance($fallbackWorkplaceId, $workDate);
         }
@@ -110,7 +111,7 @@ class TopAttendanceController extends Controller
 
     public function update(Request $request)
     {
-        if (!session()->has('login_user_id')) {
+        if (! session()->has('login_user_id')) {
             return redirect()->route('login');
         }
 
@@ -180,6 +181,7 @@ class TopAttendanceController extends Controller
             $bucket = $this->timesBucketForStaff($timesPayload, $staffId);
             if (! is_array($bucket)) {
                 $result = false;
+
                 continue;
             }
 
@@ -241,7 +243,13 @@ class TopAttendanceController extends Controller
             return $this->timeFromExistingOrDefault($existingRaw, $default);
         }
 
-        return $this->normalizeTimeInput($this->unwrapPostedScalar($bucket[$key]), $default);
+        // POST は全角数字などで届くことがあり、解析に失敗すると $default（例: 17:00）で上書きされ「保存しても変わらない」ように見える
+        $parsed = $this->tryParseTimeInput($bucket[$key]);
+        if ($parsed === null) {
+            return $this->timeFromExistingOrDefault($existingRaw, $default);
+        }
+
+        return $parsed;
     }
 
     private function timeFromExistingOrDefault(mixed $existingRaw, string $default): string
@@ -289,14 +297,23 @@ class TopAttendanceController extends Controller
 
     private function normalizeTimeInput($value, string $fallback): string
     {
+        return $this->tryParseTimeInput($value) ?? $fallback;
+    }
+
+    /**
+     * 時刻文字列を HH:MM に解釈できるときだけ返す（全角数字・全角コロンは正規化する）。
+     */
+    private function tryParseTimeInput(mixed $value): ?string
+    {
         $value = $this->unwrapPostedScalar($value);
         if ($value === null) {
-            return $fallback;
+            return null;
         }
         if (is_string($value)) {
             $raw = trim($value);
             if ($raw !== '' && function_exists('mb_convert_kana')) {
-                $raw = mb_convert_kana($raw, 'as', 'UTF-8');
+                // n: 全角数字 → 半角（「１７：３０」等）
+                $raw = mb_convert_kana($raw, 'asn', 'UTF-8');
                 $raw = str_replace(['：', '．'], [':', '.'], $raw);
                 $raw = trim($raw);
             }
@@ -306,7 +323,7 @@ class TopAttendanceController extends Controller
             $raw = '';
         }
         if ($raw === '') {
-            return $fallback;
+            return null;
         }
 
         if (preg_match('/^(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/', $raw, $m) === 1) {
@@ -317,7 +334,7 @@ class TopAttendanceController extends Controller
             return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
         }
 
-        return $fallback;
+        return null;
     }
 
     /**
