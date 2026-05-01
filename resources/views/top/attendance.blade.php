@@ -65,7 +65,7 @@
                     表示できる勤怠データがありません。
                 </div>
             @else
-                <form method="POST" action="{{ route('top.attendance.update') }}" id="top-attendance-save-form" autocomplete="off">
+                <form method="POST" action="{{ route('top.attendance.update') }}" id="top-attendance-save-form" autocomplete="off" novalidate>
                     @csrf
                     <input type="hidden" name="workplace_id" value="{{ $workplace_id }}">
                     <input type="hidden" name="work_date" value="{{ $work_date }}">
@@ -79,7 +79,8 @@
                         （チェックが入ったままだと、画面上は時刻を変えても欠勤扱いのままです。）
                     </div>
                     <div class="alert alert-secondary small mb-3 py-2" role="note">
-                        時刻は<strong>半角</strong>で「<span class="font-monospace">17:30</span>」のように入力してください（時と分の間はコロン「:」）。
+                        時刻は「<span class="font-monospace">17:30</span>」のようにコロン区切りが基本です。
+                        スマホなどで打ちにくい場合は <span class="font-monospace">1730</span>（4桁）や <span class="font-monospace">930</span>（3桁＝9:30）でも保存できます。
                     </div>
 
                     <div class="table-responsive">

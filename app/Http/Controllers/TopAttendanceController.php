@@ -326,6 +326,29 @@ class TopAttendanceController extends Controller
             return null;
         }
 
+        // コロンなし HHMM / HMM（inputmode=numeric で「:」が打ちにくい端末向け）例: 1730→17:30, 930→09:30
+        if (! str_contains($raw, ':') && ! str_contains($raw, '.') && preg_match('/^\d{3,4}$/', $raw) === 1) {
+            if (strlen($raw) === 4) {
+                $h = (int) substr($raw, 0, 2);
+                $mi = (int) substr($raw, 2, 2);
+            } else {
+                $h = (int) substr($raw, 0, 1);
+                $mi = (int) substr($raw, 1, 2);
+            }
+            if ($h >= 0 && $h <= 23 && $mi >= 0 && $mi <= 59) {
+                return sprintf('%02d:%02d', $h, $mi);
+            }
+        }
+
+        // 17.30（ピリオド区切り）
+        if (preg_match('/^(\d{1,2})\.(\d{2})$/', $raw, $m) === 1) {
+            $h = (int) $m[1];
+            $mi = (int) $m[2];
+            if ($h >= 0 && $h <= 23 && $mi >= 0 && $mi <= 59) {
+                return sprintf('%02d:%02d', $h, $mi);
+            }
+        }
+
         if (preg_match('/^(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/', $raw, $m) === 1) {
             return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
         }
