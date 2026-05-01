@@ -354,39 +354,41 @@ class AttendanceService
             $breakTimeForStorage = $this->prepareBreakTimeForStorage($breakTime);
             $absenceForDb = (int) ((bool) $absenceFlg);
 
+            $payload = [
+                'workplace_id' => (int) $workplaceId,
+                'work_date' => $workDateNorm,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'break_time' => $breakTimeForStorage,
+                'absence_flg' => $absenceForDb,
+                'updated_at' => now(),
+            ];
+
             DB::beginTransaction();
 
-            $updated = DB::table('t_attendance')
-                ->where('staff_id', '=', $staffId)
+            // 複数行・whereDate の環境差で UPDATE が当たらない事例があるため、必ず主キー id で 1 行だけ更新する
+            $row = DB::table('t_attendance')
+                ->where('staff_id', '=', (int) $staffId)
                 ->whereDate('work_date', '=', $workDateNorm)
                 ->whereNull('deleted_at')
-                ->update([
-                    'workplace_id' => $workplaceId,
-                    'work_date' => $workDateNorm,
-                    'start_time' => $startTime,
-                    'end_time' => $endTime,
-                    'break_time' => $breakTimeForStorage,
-                    'absence_flg' => $absenceForDb,
-                    'updated_at' => now(),
-                ]);
+                ->orderByDesc('id')
+                ->first();
 
-            if ($updated === 0) {
-                DB::table('t_attendance')->upsert(
-                    [[
-                        'staff_id' => $staffId,
-                        'workplace_id' => $workplaceId,
-                        'work_date' => $workDateNorm,
-                        'start_time' => $startTime,
-                        'end_time' => $endTime,
-                        'break_time' => $breakTimeForStorage,
-                        'absence_flg' => $absenceForDb,
-                        'deleted_at' => null,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]],
-                    ['staff_id', 'work_date'],
-                    ['workplace_id', 'start_time', 'end_time', 'break_time', 'absence_flg', 'deleted_at', 'updated_at']
-                );
+            if ($row) {
+                $affected = DB::table('t_attendance')
+                    ->where('id', '=', (int) $row->id)
+                    ->update($payload);
+                if ($affected === 0) {
+                    DB::rollBack();
+
+                    return false;
+                }
+            } else {
+                DB::table('t_attendance')->insert(array_merge($payload, [
+                    'staff_id' => (int) $staffId,
+                    'deleted_at' => null,
+                    'created_at' => now(),
+                ]));
             }
 
             DB::commit();
@@ -1401,7 +1403,11 @@ class AttendanceService
     private function prepareBreakTimeForStorage($breakTime)
     {
         $raw = trim((string) ($breakTime ?? ''));
-        $columnType = Schema::getColumnType('t_attendance', 'break_time');
+        try {
+            $columnType = Schema::getColumnType('t_attendance', 'break_time');
+        } catch (\Throwable) {
+            $columnType = 'integer';
+        }
         $isNumericBreak = in_array($columnType, ['integer', 'bigint', 'smallint', 'mediumint', 'tinyint', 'decimal', 'float', 'double'], true);
 
         if (! $isNumericBreak) {
