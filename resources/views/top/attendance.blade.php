@@ -194,7 +194,19 @@
                                 var hWd = saveForm.querySelector('input[name="work_date"]');
                                 var hWp = saveForm.querySelector('input[name="workplace_id"]');
                                 if (wd && hWd) {
-                                    hWd.value = wd.value;
+                                    // flatpickr はカレンダー表示と input.value がずれることがあるため、選択中の日付を優先する
+                                    var fp = wd._flatpickr;
+                                    if (fp && fp.selectedDates && fp.selectedDates.length > 0) {
+                                        if (typeof flatpickr !== 'undefined' && typeof flatpickr.formatDate === 'function') {
+                                            hWd.value = flatpickr.formatDate(fp.selectedDates[0], 'Y-m-d');
+                                        } else if (typeof fp.formatDate === 'function') {
+                                            hWd.value = fp.formatDate(fp.selectedDates[0], 'Y-m-d');
+                                        } else {
+                                            hWd.value = wd.value;
+                                        }
+                                    } else {
+                                        hWd.value = wd.value;
+                                    }
                                 }
                                 if (wp && hWp) {
                                     hWp.value = wp.value;
