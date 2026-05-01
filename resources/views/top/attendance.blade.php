@@ -107,9 +107,14 @@
                                         $isAbsent = isset($row->absence_flg) && intval($row->absence_flg) === 1;
                                     @endphp
                                     @if($sid > 0)
-                                    <tr>
+                                    <tr class="{{ $isAbsent ? 'table-warning' : '' }}">
                                         <td>
                                             <div class="fw-medium">{{ $row->staff_name ?? '' }}</div>
+                                            @if($isAbsent)
+                                                <div class="small text-danger mt-1">
+                                                    ※<strong>欠勤</strong>にチェックが入っています。出勤として記録する場合は<strong>チェックを外してから</strong>退勤などを直し、保存してください。
+                                                </div>
+                                            @endif
                                             <input type="hidden" name="staff_ids[{{ $sid }}]" value="{{ $sid }}">
                                         </td>
                                         <td>
@@ -175,6 +180,18 @@
                         <button class="btn btn-primary" type="submit">保存</button>
                     </div>
                 </form>
+                <script>
+                    (function () {
+                        var form = document.getElementById('top-attendance-save-form');
+                        if (!form) return;
+                        form.addEventListener('submit', function () {
+                            form.querySelectorAll('input[name^="times["]').forEach(function (el) {
+                                el.disabled = false;
+                                el.readOnly = false;
+                            });
+                        });
+                    })();
+                </script>
             @endif
         </div>
     </div>

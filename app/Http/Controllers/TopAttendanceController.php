@@ -173,6 +173,8 @@ class TopAttendanceController extends Controller
         $defaultEnd = $this->normalizeTimeInput($defaults->end_time ?? null, '17:00');
         $defaultBreak = $this->normalizeTimeInput($defaults->break_time ?? null, '01:00');
 
+        $existingByStaff = $this->attendanceService->getAttendanceRowsByStaffForDate($staffIds, $workDate, $workplaceId);
+
         $result = true;
         foreach ($staffIds as $staffId) {
             $bucket = $this->timesBucketForStaff($timesPayload, $staffId);
@@ -181,9 +183,10 @@ class TopAttendanceController extends Controller
                 continue;
             }
 
-            $start = $this->normalizeTimeInput($this->unwrapPostedScalar($bucket['start'] ?? null), $defaultStart);
-            $end = $this->normalizeTimeInput($this->unwrapPostedScalar($bucket['end'] ?? null), $defaultEnd);
-            $break = $this->normalizeTimeInput($this->unwrapPostedScalar($bucket['break'] ?? null), $defaultBreak);
+            $existing = $existingByStaff[$staffId] ?? null;
+            $start = $this->resolveNestedTimeField($bucket, 'start', $defaultStart, $existing->start_time ?? null);
+            $end = $this->resolveNestedTimeField($bucket, 'end', $defaultEnd, $existing->end_time ?? null);
+            $break = $this->resolveNestedTimeField($bucket, 'break', $defaultBreak, $existing->break_time ?? null);
 
             $absenceRaw = $this->unwrapPostedScalar($this->timeFromKeyedArray($absenceFlags, $staffId));
             $absenceFlg = $absenceRaw !== null && $absenceRaw !== '' ? (bool) intval($absenceRaw) : false;
@@ -223,6 +226,30 @@ class TopAttendanceController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * times[社員][end] 等が POST に無い（disabled 等で送られない）とき、既定 17:00 で上書きしない。
+     *
+     * @param  array<string, mixed>  $bucket
+     */
+    private function resolveNestedTimeField(array $bucket, string $key, string $default, mixed $existingRaw): string
+    {
+        if (! array_key_exists($key, $bucket)) {
+            return $this->timeFromExistingOrDefault($existingRaw, $default);
+        }
+
+        return $this->normalizeTimeInput($this->unwrapPostedScalar($bucket[$key]), $default);
+    }
+
+    private function timeFromExistingOrDefault(mixed $existingRaw, string $default): string
+    {
+        if ($existingRaw === null || $existingRaw === '') {
+            return $default;
+        }
+        $display = $this->attendanceService->formatTimeForDisplay($existingRaw);
+
+        return $this->normalizeTimeInput($display !== '' ? $display : $existingRaw, $default);
     }
 
     /**
