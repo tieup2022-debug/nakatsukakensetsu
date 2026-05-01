@@ -134,27 +134,28 @@ class TopAttendanceController extends Controller
                 ->with('error', '現場が取得できませんでした。画面を開き直してから保存してください。');
         }
 
-        $startTimes = $request->input('start_time', []);
-        $endTimes = $request->input('end_time', []);
-        $breakTimes = $request->input('break_time', []);
-        $absenceFlags = $request->input('absence_flg', []);
+        /**
+         * 1 人分の時刻を必ず times[社員ID][start|end|break] にまとめる（従来の start_time[] / end_time[] 並列は廃止）。
+         */
+        $timesPayload = $request->input('times', []);
+        if (! is_array($timesPayload) || $timesPayload === []) {
+            return redirect()
+                ->route('top.attendance', ['workplace_id' => $workplaceId, 'work_date' => $workDate])
+                ->with('error', '勤怠の入力データを取得できませんでした。画面を再表示してから保存してください。');
+        }
+
         $staffIdsFromForm = $request->input('staff_ids', []);
-
-        $defaults = $this->attendanceService->GetDefaults();
-        $defaultStart = $this->normalizeTimeInput($defaults->start_time ?? null, '08:00');
-        $defaultEnd = $this->normalizeTimeInput($defaults->end_time ?? null, '17:00');
-        $defaultBreak = $this->normalizeTimeInput($defaults->break_time ?? null, '01:00');
-
         $staffIds = array_values(array_unique(array_filter(array_map(
             'intval',
-            array_merge(
-                array_keys($staffIdsFromForm),
-                array_keys($startTimes),
-                array_keys($endTimes),
-                array_keys($breakTimes),
-                array_keys($absenceFlags),
-            )
+            array_keys(is_array($staffIdsFromForm) ? $staffIdsFromForm : [])
         ), fn ($id) => (int) $id > 0)));
+
+        if ($staffIds === []) {
+            $staffIds = array_values(array_unique(array_filter(array_map(
+                'intval',
+                array_keys($timesPayload)
+            ), fn ($id) => (int) $id > 0)));
+        }
 
         if ($staffIds === []) {
             return redirect()
@@ -162,31 +163,28 @@ class TopAttendanceController extends Controller
                 ->with('error', '保存対象の社員が取得できませんでした。画面を再表示してからお試しください。');
         }
 
-        $existingByStaff = $this->attendanceService->getAttendanceRowsByStaffForDate($staffIds, $workDate, $workplaceId);
+        $absenceFlags = $request->input('absence_flg', []);
+        if (! is_array($absenceFlags)) {
+            $absenceFlags = [];
+        }
+
+        $defaults = $this->attendanceService->GetDefaults();
+        $defaultStart = $this->normalizeTimeInput($defaults->start_time ?? null, '08:00');
+        $defaultEnd = $this->normalizeTimeInput($defaults->end_time ?? null, '17:00');
+        $defaultBreak = $this->normalizeTimeInput($defaults->break_time ?? null, '01:00');
 
         $result = true;
         foreach ($staffIds as $staffId) {
-            $existing = $existingByStaff[$staffId] ?? null;
-            $start = $this->resolveTimeForSave(
-                $startTimes,
-                $staffId,
-                $defaultStart,
-                $existing->start_time ?? null
-            );
-            $end = $this->resolveTimeForSave(
-                $endTimes,
-                $staffId,
-                $defaultEnd,
-                $existing->end_time ?? null
-            );
-            $break = $this->resolveTimeForSave(
-                $breakTimes,
-                $staffId,
-                $defaultBreak,
-                $existing->break_time ?? null
-            );
+            $bucket = $this->timesBucketForStaff($timesPayload, $staffId);
+            if (! is_array($bucket)) {
+                $result = false;
+                continue;
+            }
 
-            // チェックされていれば存在する（hidden併用で 0/1 を送ってもOK）
+            $start = $this->normalizeTimeInput($this->unwrapPostedScalar($bucket['start'] ?? null), $defaultStart);
+            $end = $this->normalizeTimeInput($this->unwrapPostedScalar($bucket['end'] ?? null), $defaultEnd);
+            $break = $this->normalizeTimeInput($this->unwrapPostedScalar($bucket['break'] ?? null), $defaultBreak);
+
             $absenceRaw = $this->unwrapPostedScalar($this->timeFromKeyedArray($absenceFlags, $staffId));
             $absenceFlg = $absenceRaw !== null && $absenceRaw !== '' ? (bool) intval($absenceRaw) : false;
 
@@ -200,7 +198,7 @@ class TopAttendanceController extends Controller
                 $absenceFlg
             );
 
-            if (!$ok) {
+            if (! $ok) {
                 $result = false;
             }
         }
@@ -211,34 +209,38 @@ class TopAttendanceController extends Controller
     }
 
     /**
-     * POST に start_time[社員ID] 等が無い場合は DB の既存値を維持（ブラウザ差・入力欠落で既定 17:00 等に戻るのを防ぐ）。
+     * @param  array<string|int, mixed>  $timesPayload
+     * @return array<string, mixed>|null
      */
-    private function resolveTimeForSave(array $postTimes, int $staffId, string $default, mixed $existingRaw): string
+    private function timesBucketForStaff(array $timesPayload, int $staffId): ?array
     {
-        if (! $this->hasKeyedArrayKey($postTimes, $staffId)) {
-            return $this->timeFromExistingForForm($existingRaw, $default);
+        if (array_key_exists($staffId, $timesPayload) && is_array($timesPayload[$staffId])) {
+            return $timesPayload[$staffId];
+        }
+        $sk = (string) $staffId;
+        if (array_key_exists($sk, $timesPayload) && is_array($timesPayload[$sk])) {
+            return $timesPayload[$sk];
         }
 
-        return $this->normalizeTimeInput($this->timeFromKeyedArray($postTimes, $staffId), $default);
+        return null;
     }
 
     /**
+     * POST の name="field[社員ID]" はキーが文字列になることが多い。int/string の両方で参照する。
+     *
      * @param  array<string|int, mixed>  $arr
      */
-    private function hasKeyedArrayKey(array $arr, int $staffId): bool
+    private function timeFromKeyedArray(array $arr, int $staffId): mixed
     {
-        return array_key_exists($staffId, $arr) || array_key_exists((string) $staffId, $arr);
-    }
-
-    private function timeFromExistingForForm(mixed $existingRaw, string $default): string
-    {
-        if ($existingRaw === null || $existingRaw === '') {
-            return $default;
+        if (array_key_exists($staffId, $arr)) {
+            return $arr[$staffId];
+        }
+        $sk = (string) $staffId;
+        if (array_key_exists($sk, $arr)) {
+            return $arr[$sk];
         }
 
-        $display = $this->attendanceService->formatTimeForDisplay($existingRaw);
-
-        return $this->normalizeTimeInput($display !== '' ? $display : $existingRaw, $default);
+        return null;
     }
 
     /**
@@ -288,23 +290,4 @@ class TopAttendanceController extends Controller
 
         return $fallback;
     }
-
-    /**
-     * POST の name="field[社員ID]" はキーが文字列になることが多い。int/string の両方で参照する。
-     *
-     * @param  array<string|int, mixed>  $arr
-     */
-    private function timeFromKeyedArray(array $arr, int $staffId): mixed
-    {
-        if (array_key_exists($staffId, $arr)) {
-            return $arr[$staffId];
-        }
-        $sk = (string) $staffId;
-        if (array_key_exists($sk, $arr)) {
-            return $arr[$sk];
-        }
-
-        return null;
-    }
 }
-

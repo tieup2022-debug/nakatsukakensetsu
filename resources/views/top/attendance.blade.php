@@ -65,7 +65,7 @@
                     表示できる勤怠データがありません。
                 </div>
             @else
-                <form method="POST" action="{{ route('top.attendance.update') }}">
+                <form method="POST" action="{{ route('top.attendance.update') }}" id="top-attendance-save-form" autocomplete="off">
                     @csrf
                     <input type="hidden" name="workplace_id" value="{{ $workplace_id }}">
                     <input type="hidden" name="work_date" value="{{ $work_date }}">
@@ -96,6 +96,7 @@
                             <tbody>
                                 @foreach($attendance_data as $row)
                                     @php
+                                        $sid = (int) ($row->staff_id ?? 0);
                                         // 未入力時は一括登録と同じ初期値（08:00 / 17:00 / 休憩60分=01:00）
                                         $startVal = $attendanceService->formatTimeForDisplay($row->start_time ?? null);
                                         $endVal = $attendanceService->formatTimeForDisplay($row->end_time ?? null);
@@ -105,23 +106,23 @@
                                         $breakVal = $breakVal !== '' ? $breakVal : '01:00';
                                         $isAbsent = isset($row->absence_flg) && intval($row->absence_flg) === 1;
                                     @endphp
+                                    @if($sid > 0)
                                     <tr>
                                         <td>
                                             <div class="fw-medium">{{ $row->staff_name ?? '' }}</div>
-                                            <input type="hidden" name="staff_ids[{{ $row->staff_id }}]" value="{{ $row->staff_id }}">
+                                            <input type="hidden" name="staff_ids[{{ $sid }}]" value="{{ $sid }}">
                                         </td>
                                         <td>
                                             <input
                                                 type="text"
                                                 class="form-control form-control-sm font-monospace"
-                                                name="start_time[{{ $row->staff_id }}]"
+                                                name="times[{{ $sid }}][start]"
                                                 value="{{ $startVal }}"
                                                 inputmode="numeric"
                                                 maxlength="5"
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
                                                 title="半角 時:分 例 08:00"
                                                 placeholder="08:00"
-                                                autocomplete="off"
                                                 required
                                             >
                                         </td>
@@ -129,14 +130,13 @@
                                             <input
                                                 type="text"
                                                 class="form-control form-control-sm font-monospace"
-                                                name="end_time[{{ $row->staff_id }}]"
+                                                name="times[{{ $sid }}][end]"
                                                 value="{{ $endVal }}"
                                                 inputmode="numeric"
                                                 maxlength="5"
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
                                                 title="半角 時:分 例 17:30"
                                                 placeholder="17:00"
-                                                autocomplete="off"
                                                 required
                                             >
                                         </td>
@@ -144,28 +144,28 @@
                                             <input
                                                 type="text"
                                                 class="form-control form-control-sm font-monospace"
-                                                name="break_time[{{ $row->staff_id }}]"
+                                                name="times[{{ $sid }}][break]"
                                                 value="{{ $breakVal }}"
                                                 inputmode="numeric"
                                                 maxlength="5"
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
                                                 title="半角 時:分 例 01:00"
                                                 placeholder="01:00"
-                                                autocomplete="off"
                                                 required
                                             >
                                         </td>
                                         <td>
-                                            <input type="hidden" name="absence_flg[{{ $row->staff_id }}]" value="0">
+                                            <input type="hidden" name="absence_flg[{{ $sid }}]" value="0">
                                             <input
                                                 type="checkbox"
                                                 class="form-check-input"
-                                                name="absence_flg[{{ $row->staff_id }}]"
+                                                name="absence_flg[{{ $sid }}]"
                                                 value="1"
                                                 {{ $isAbsent ? 'checked' : '' }}
                                             >
                                         </td>
                                     </tr>
+                                    @endif
                                 @endforeach
                             </tbody>
                         </table>
@@ -179,4 +179,3 @@
         </div>
     </div>
 @endsection
-
