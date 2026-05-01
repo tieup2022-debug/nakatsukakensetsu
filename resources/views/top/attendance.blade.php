@@ -73,17 +73,6 @@
                         $attendanceService = app(\App\Services\AttendanceService::class);
                     @endphp
 
-                    <div class="alert alert-warning small mb-3" role="note">
-                        <strong>欠勤にチェックが入っている行</strong>は、出勤・退勤として記録する場合は
-                        <strong>先に「欠勤」のチェックを外してから</strong>時刻を直し、「保存」してください。
-                        （チェックが入ったままだと、画面上は時刻を変えても欠勤扱いのままです。）
-                    </div>
-                    <div class="alert alert-secondary small mb-3 py-2" role="note">
-                        時刻は「<span class="font-monospace">17:35</span>」のように <strong>時と分の2桁</strong>（コロン区切り）が確実です。
-                        出勤・退勤だけ、分だけ変える場合は <span class="font-monospace">35</span> のように1〜2桁でも保存できます（直前の時刻の「時」をそのまま使います）。
-                        4桁 <span class="font-monospace">1735</span> や3桁 <span class="font-monospace">930</span>（9:30）も使えます。
-                    </div>
-
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead>
