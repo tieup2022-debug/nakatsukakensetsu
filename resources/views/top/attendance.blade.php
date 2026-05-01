@@ -78,6 +78,9 @@
                         <strong>先に「欠勤」のチェックを外してから</strong>時刻を直し、「保存」してください。
                         （チェックが入ったままだと、画面上は時刻を変えても欠勤扱いのままです。）
                     </div>
+                    <div class="alert alert-secondary small mb-3 py-2" role="note">
+                        時刻は<strong>半角</strong>で「<span class="font-monospace">17:30</span>」のように入力してください（時と分の間はコロン「:」）。
+                    </div>
 
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
@@ -108,13 +111,49 @@
                                             <input type="hidden" name="staff_ids[{{ $row->staff_id }}]" value="{{ $row->staff_id }}">
                                         </td>
                                         <td>
-                                            <input type="time" step="60" class="form-control form-control-sm" name="start_time[{{ $row->staff_id }}]" value="{{ $startVal }}">
+                                            <input
+                                                type="text"
+                                                class="form-control form-control-sm font-monospace"
+                                                name="start_time[{{ $row->staff_id }}]"
+                                                value="{{ $startVal }}"
+                                                inputmode="numeric"
+                                                maxlength="5"
+                                                pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                                                title="半角 時:分 例 08:00"
+                                                placeholder="08:00"
+                                                autocomplete="off"
+                                                required
+                                            >
                                         </td>
                                         <td>
-                                            <input type="time" step="60" class="form-control form-control-sm" name="end_time[{{ $row->staff_id }}]" value="{{ $endVal }}">
+                                            <input
+                                                type="text"
+                                                class="form-control form-control-sm font-monospace"
+                                                name="end_time[{{ $row->staff_id }}]"
+                                                value="{{ $endVal }}"
+                                                inputmode="numeric"
+                                                maxlength="5"
+                                                pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                                                title="半角 時:分 例 17:30"
+                                                placeholder="17:00"
+                                                autocomplete="off"
+                                                required
+                                            >
                                         </td>
                                         <td>
-                                            <input type="time" step="60" class="form-control form-control-sm" name="break_time[{{ $row->staff_id }}]" value="{{ $breakVal }}">
+                                            <input
+                                                type="text"
+                                                class="form-control form-control-sm font-monospace"
+                                                name="break_time[{{ $row->staff_id }}]"
+                                                value="{{ $breakVal }}"
+                                                inputmode="numeric"
+                                                maxlength="5"
+                                                pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                                                title="半角 時:分 例 01:00"
+                                                placeholder="01:00"
+                                                autocomplete="off"
+                                                required
+                                            >
                                         </td>
                                         <td>
                                             <input type="hidden" name="absence_flg[{{ $row->staff_id }}]" value="0">
