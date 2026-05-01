@@ -1466,7 +1466,11 @@ class AttendanceService
         } catch (\Throwable) {
             $columnType = 'integer';
         }
-        $isNumericBreak = in_array($columnType, ['integer', 'bigint', 'smallint', 'mediumint', 'tinyint', 'decimal', 'float', 'double'], true);
+        // MySQL の INT は getColumnType が "int" になることがあり、従来リストに無いと TIME 文字列のまま送って
+        // break_time が整数（分）の列で Data truncated → 例外 → ロールバックし end_time も保存されない。
+        $columnTypeLower = strtolower((string) $columnType);
+        $isNumericBreak = str_contains($columnTypeLower, 'int')
+            || in_array($columnTypeLower, ['decimal', 'float', 'double', 'real', 'numeric'], true);
 
         if (! $isNumericBreak) {
             return $raw;
