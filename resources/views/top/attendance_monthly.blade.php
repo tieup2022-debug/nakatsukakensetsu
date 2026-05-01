@@ -17,7 +17,6 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <div>
             <h1 class="h4 mb-1 fw-semibold">勤怠（月次表）</h1>
-            <div class="text-muted small">添付イメージ形式の一覧表示</div>
         </div>
         <div>
             <a

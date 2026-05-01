@@ -1281,7 +1281,8 @@ class AttendanceService
 
             $dateList = [];
             for ($day = 1; $day <= $daysInMonth; $day++) {
-                $dateList[] = "$year-$month-$day";
+                // セル参照キーは $fullDate（Y-m-d ゼロ埋め）と一致させる（2026-05-1 だと blade 側でヒットしない）
+                $dateList[] = "$year-$month-".sprintf('%02d', $day);
             }
 
             $payload = [

@@ -207,11 +207,14 @@ class TopAttendanceController extends Controller
             }
         }
 
-        $ctx = $this->attendanceSaveContextSuffix();
+        $status = $result ? '勤怠を保存しました。' : '保存に失敗しました（内容をご確認ください）。';
+        if (config('app.debug')) {
+            $status .= ' '.$this->attendanceSaveContextSuffix();
+        }
 
         return redirect()
             ->route('top.attendance', ['workplace_id' => $workplaceId, 'work_date' => $workDate])
-            ->with('status', $result ? '勤怠を保存しました '.$ctx : '保存に失敗しました（内容をご確認ください） '.$ctx);
+            ->with('status', $status);
     }
 
     /**
