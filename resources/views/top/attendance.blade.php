@@ -12,7 +12,7 @@
 
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body">
-            <form method="GET" action="{{ route('top.attendance') }}" class="row g-2 align-items-end">
+            <form method="GET" action="{{ route('top.attendance') }}" id="top-attendance-filter-form" class="row g-2 align-items-end">
                 <div class="col-md-4">
                     <label class="form-label small text-muted">現場</label>
                     <select class="form-select" name="workplace_id" onchange="this.form.submit()">
@@ -183,10 +183,24 @@
                 </form>
                 <script>
                     (function () {
-                        var form = document.getElementById('top-attendance-save-form');
-                        if (!form) return;
-                        form.addEventListener('submit', function () {
-                            form.querySelectorAll('input[name^="times["]').forEach(function (el) {
+                        var saveForm = document.getElementById('top-attendance-save-form');
+                        var filterForm = document.getElementById('top-attendance-filter-form');
+                        if (!saveForm) return;
+                        saveForm.addEventListener('submit', function () {
+                            // 画面上の「現場・作業日」と保存用 hidden がずれると、別日・別現場の t_attendance が更新される
+                            if (filterForm) {
+                                var wd = filterForm.querySelector('input[name="work_date"]');
+                                var wp = filterForm.querySelector('select[name="workplace_id"]');
+                                var hWd = saveForm.querySelector('input[name="work_date"]');
+                                var hWp = saveForm.querySelector('input[name="workplace_id"]');
+                                if (wd && hWd) {
+                                    hWd.value = wd.value;
+                                }
+                                if (wp && hWp) {
+                                    hWp.value = wp.value;
+                                }
+                            }
+                            saveForm.querySelectorAll('input[name^="times["]').forEach(function (el) {
                                 el.disabled = false;
                                 el.readOnly = false;
                             });
