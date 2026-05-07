@@ -4,7 +4,7 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <div>
             <h1 class="h4 mb-1 fw-semibold">有給申請</h1>
-            <div class="text-muted small">有給対象者を選択して期間を登録します。下部で全員の申請状況を確認できます。</div>
+            <div class="text-muted small">有給対象者を選び、<strong>休む日</strong>とその日の<strong>開始・終了時刻</strong>を入力します（1日単位）。下部で全員の申請状況を確認できます。</div>
         </div>
     </div>
 
@@ -25,28 +25,44 @@
                     @enderror
                 </div>
                 <div class="col-lg-2 col-md-6">
-                    <label class="form-label small text-muted">開始日時</label>
+                    <label class="form-label small text-muted">休む日</label>
                     <input
-                        type="datetime-local"
-                        name="starts_at"
-                        class="form-control @error('starts_at') is-invalid @enderror"
-                        value="{{ old('starts_at') ? str_replace(' ', 'T', substr((string) old('starts_at'), 0, 16)) : '' }}"
+                        type="text"
+                        name="leave_date"
+                        class="form-control js-datepicker @error('leave_date') is-invalid @enderror"
+                        value="{{ old('leave_date') }}"
+                        readonly
                         required
+                        autocomplete="off"
+                        placeholder="日付を選択"
                     >
-                    @error('starts_at')
+                    @error('leave_date')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
                 <div class="col-lg-2 col-md-6">
-                    <label class="form-label small text-muted">終了日時</label>
+                    <label class="form-label small text-muted">開始時刻</label>
                     <input
-                        type="datetime-local"
-                        name="ends_at"
-                        class="form-control @error('ends_at') is-invalid @enderror"
-                        value="{{ old('ends_at') ? str_replace(' ', 'T', substr((string) old('ends_at'), 0, 16)) : '' }}"
+                        type="time"
+                        name="start_time"
+                        class="form-control @error('start_time') is-invalid @enderror"
+                        value="{{ old('start_time') }}"
                         required
                     >
-                    @error('ends_at')
+                    @error('start_time')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <label class="form-label small text-muted">終了時刻</label>
+                    <input
+                        type="time"
+                        name="end_time"
+                        class="form-control @error('end_time') is-invalid @enderror"
+                        value="{{ old('end_time') }}"
+                        required
+                    >
+                    @error('end_time')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>

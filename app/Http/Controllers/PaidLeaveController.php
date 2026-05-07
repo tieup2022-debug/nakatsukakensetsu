@@ -49,8 +49,9 @@ class PaidLeaveController extends Controller
     {
         $validated = $request->validate([
             'applicant_staff_id' => ['required', 'integer', 'min:1'],
-            'starts_at' => ['required', 'string', 'max:32'],
-            'ends_at' => ['required', 'string', 'max:32'],
+            'leave_date' => ['required', 'date_format:Y-m-d'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'end_time' => ['required', 'date_format:H:i'],
             'reason' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -61,10 +62,15 @@ class PaidLeaveController extends Controller
         }
 
         try {
-            $startsAt = Carbon::parse($validated['starts_at'], config('app.timezone'));
-            $endsAt = Carbon::parse($validated['ends_at'], config('app.timezone'));
+            $tz = config('app.timezone');
+            $startsAt = Carbon::parse($validated['leave_date'].' '.$validated['start_time'], $tz);
+            $endsAt = Carbon::parse($validated['leave_date'].' '.$validated['end_time'], $tz);
         } catch (\Throwable) {
-            return back()->with('error', '日時の形式が正しくありません。');
+            return back()->with('error', '日付・時刻の形式が正しくありません。');
+        }
+
+        if ($endsAt->lte($startsAt)) {
+            return back()->withInput()->with('error', '終了時刻は開始時刻より後を指定してください。');
         }
 
         $result = $this->paidLeaveService->createRequest(
@@ -76,7 +82,7 @@ class PaidLeaveController extends Controller
         );
 
         if (! $result) {
-            return back()->withInput()->with('error', '申請に失敗しました。終了日は開始日以降を指定してください。');
+            return back()->withInput()->with('error', '申請に失敗しました。時間をご確認ください。');
         }
 
         return back()->with('status', '有給申請を送信しました。承認者に通知しました。');

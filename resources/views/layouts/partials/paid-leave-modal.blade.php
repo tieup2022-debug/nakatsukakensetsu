@@ -8,14 +8,18 @@
             <form method="POST" action="{{ route('paid-leave.store') }}">
                 @csrf
                 <div class="modal-body">
-                    <p class="text-muted small">複数日にまたがる場合は、<strong>開始日時</strong>と<strong>終了日時</strong>に全体の範囲を指定してください。承認は指定された承認者のうち<strong>いずれか1名</strong>が行います。</p>
+                    <p class="text-muted small">休む日とその日の開始・終了時刻を入力してください（1日単位）。承認は指定された承認者のうちいずれか1名が行います。</p>
                     <div class="mb-3">
-                        <label class="form-label small text-muted">開始日時</label>
-                        <input type="text" name="starts_at" class="form-control js-paid-leave-datetime" required autocomplete="off" placeholder="日時を選択">
+                        <label class="form-label small text-muted">休む日</label>
+                        <input type="date" name="leave_date" class="form-control" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small text-muted">終了日時</label>
-                        <input type="text" name="ends_at" class="form-control js-paid-leave-datetime" required autocomplete="off" placeholder="日時を選択">
+                        <label class="form-label small text-muted">開始時刻</label>
+                        <input type="time" name="start_time" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">終了時刻</label>
+                        <input type="time" name="end_time" class="form-control" required>
                     </div>
                     <div class="mb-0">
                         <label class="form-label small text-muted">事由（任意）</label>
