@@ -19,7 +19,8 @@
                     <thead class="table-light">
                         <tr>
                             <th>申請者</th>
-                            <th>期間</th>
+                            <th>休む日（開始〜終了）</th>
+                            <th>申請日時</th>
                             <th>事由</th>
                             <th style="width: 120px;"></th>
                         </tr>
@@ -37,6 +38,7 @@
                                 〜
                                 {{ \Carbon\Carbon::parse($r->ends_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}
                             </td>
+                            <td class="small">{{ \Carbon\Carbon::parse($r->created_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}</td>
                             <td class="small text-muted">{{ \Illuminate\Support\Str::limit($r->reason ?? '—', 48) }}</td>
                             <td class="text-end">
                                 <form method="POST" action="{{ route('paid-leave.approve', ['id' => $r->id]) }}" class="d-inline" onsubmit="return confirm('この申請を承認しますか？');">
@@ -47,7 +49,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">承認待ちの申請はありません。</td>
+                            <td colspan="5" class="text-center text-muted py-4">承認待ちの申請はありません。</td>
                         </tr>
                     @endforelse
                     </tbody>

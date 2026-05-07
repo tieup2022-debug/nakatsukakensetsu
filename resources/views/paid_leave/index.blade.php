@@ -59,7 +59,8 @@
                     <thead class="table-light">
                         <tr>
                             <th>有給対象者</th>
-                            <th>期間</th>
+                            <th>休む日（開始〜終了）</th>
+                            <th>申請日時</th>
                             <th>申請者</th>
                             <th>状態</th>
                             <th>備考</th>
@@ -73,10 +74,11 @@
                         <tr>
                             <td class="fw-medium">{{ $r->target_staff_name }}</td>
                             <td class="small">
-                                {{ \Carbon\Carbon::parse($r->starts_at)->timezone(config('app.timezone'))->format('Y/m/d') }}
+                                {{ \Carbon\Carbon::parse($r->starts_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}
                                 〜
-                                {{ \Carbon\Carbon::parse($r->ends_at)->timezone(config('app.timezone'))->format('Y/m/d') }}
+                                {{ \Carbon\Carbon::parse($r->ends_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}
                             </td>
+                            <td class="small">{{ \Carbon\Carbon::parse($r->created_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}</td>
                             <td class="small">{{ $r->requester_user_name }}</td>
                             <td>
                                 @if($r->status === 'approved')
@@ -102,7 +104,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ !empty($can_approve_paid_leave) ? 6 : 5 }}" class="text-center text-muted py-4">申請はまだありません。</td>
+                            <td colspan="{{ !empty($can_approve_paid_leave) ? 7 : 6 }}" class="text-center text-muted py-4">申請はまだありません。</td>
                         </tr>
                     @endforelse
                     </tbody>

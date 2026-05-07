@@ -14,7 +14,8 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>期間</th>
+                            <th>休む日（開始〜終了）</th>
+                            <th>申請日時</th>
                             <th>状態</th>
                             <th>事由</th>
                         </tr>
@@ -27,6 +28,7 @@
                                 〜
                                 {{ \Carbon\Carbon::parse($r->ends_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}
                             </td>
+                            <td class="small">{{ \Carbon\Carbon::parse($r->created_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}</td>
                             <td>
                                 @if($r->status === 'approved')
                                     <span class="badge text-bg-success">承認済</span>
@@ -38,7 +40,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="text-center text-muted py-4">申請はまだありません。</td>
+                            <td colspan="4" class="text-center text-muted py-4">申請はまだありません。</td>
                         </tr>
                     @endforelse
                     </tbody>
