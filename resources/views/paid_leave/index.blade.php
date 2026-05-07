@@ -25,15 +25,27 @@
                     @enderror
                 </div>
                 <div class="col-lg-2 col-md-6">
-                    <label class="form-label small text-muted">開始日</label>
-                    <input type="text" name="starts_at" class="form-control js-datepicker @error('starts_at') is-invalid @enderror" value="{{ old('starts_at') }}" readonly required>
+                    <label class="form-label small text-muted">開始日時</label>
+                    <input
+                        type="datetime-local"
+                        name="starts_at"
+                        class="form-control @error('starts_at') is-invalid @enderror"
+                        value="{{ old('starts_at') ? str_replace(' ', 'T', substr((string) old('starts_at'), 0, 16)) : '' }}"
+                        required
+                    >
                     @error('starts_at')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
                 <div class="col-lg-2 col-md-6">
-                    <label class="form-label small text-muted">終了日</label>
-                    <input type="text" name="ends_at" class="form-control js-datepicker @error('ends_at') is-invalid @enderror" value="{{ old('ends_at') }}" readonly required>
+                    <label class="form-label small text-muted">終了日時</label>
+                    <input
+                        type="datetime-local"
+                        name="ends_at"
+                        class="form-control @error('ends_at') is-invalid @enderror"
+                        value="{{ old('ends_at') ? str_replace(' ', 'T', substr((string) old('ends_at'), 0, 16)) : '' }}"
+                        required
+                    >
                     @error('ends_at')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
