@@ -88,14 +88,20 @@
                                 @foreach($attendance_data as $row)
                                     @php
                                         $sid = (int) ($row->staff_id ?? 0);
-                                        // 未入力時は一括登録と同じ初期値（08:00 / 17:00 / 休憩60分=01:00）
-                                        $startVal = $attendanceService->formatTimeForDisplay($row->start_time ?? null);
-                                        $endVal = $attendanceService->formatTimeForDisplay($row->end_time ?? null);
-                                        $breakVal = $attendanceService->formatTimeForDisplay($row->break_time ?? null);
-                                        $startVal = $startVal !== '' ? $startVal : '08:00';
-                                        $endVal = $endVal !== '' ? $endVal : '17:00';
-                                        $breakVal = $breakVal !== '' ? $breakVal : '01:00';
+                                        $startFmt = $attendanceService->formatTimeForDisplay($row->start_time ?? null);
+                                        $endFmt = $attendanceService->formatTimeForDisplay($row->end_time ?? null);
+                                        $breakFmt = $attendanceService->formatTimeForDisplay($row->break_time ?? null);
                                         $isAbsent = isset($row->absence_flg) && intval($row->absence_flg) === 1;
+                                        // 欠勤は常に時刻欄を空に（DB に残った時刻は見せない）。出勤のみ既定値を補完。
+                                        if ($isAbsent) {
+                                            $startVal = '';
+                                            $endVal = '';
+                                            $breakVal = '';
+                                        } else {
+                                            $startVal = $startFmt !== '' ? $startFmt : '08:00';
+                                            $endVal = $endFmt !== '' ? $endFmt : '17:00';
+                                            $breakVal = $breakFmt !== '' ? $breakFmt : '01:00';
+                                        }
                                     @endphp
                                     @if($sid > 0)
                                     <tr class="{{ $isAbsent ? 'table-warning' : '' }}">
@@ -119,7 +125,7 @@
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
                                                 title="半角 時:分 例 08:00"
                                                 placeholder="08:00"
-                                                required
+                                                @unless($isAbsent) required @endunless
                                             >
                                         </td>
                                         <td>
@@ -133,7 +139,7 @@
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
                                                 title="半角 時:分 例 17:30"
                                                 placeholder="17:00"
-                                                required
+                                                @unless($isAbsent) required @endunless
                                             >
                                         </td>
                                         <td>
@@ -147,7 +153,7 @@
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
                                                 title="半角 時:分 例 01:00"
                                                 placeholder="01:00"
-                                                required
+                                                @unless($isAbsent) required @endunless
                                             >
                                         </td>
                                         <td>

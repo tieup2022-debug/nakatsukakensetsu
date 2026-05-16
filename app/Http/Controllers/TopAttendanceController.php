@@ -185,12 +185,20 @@ class TopAttendanceController extends Controller
             }
 
             $existing = $existingByStaff[$staffId] ?? null;
-            $start = $this->resolveNestedTimeField($bucket, 'start', $defaultStart, $existing->start_time ?? null);
-            $end = $this->resolveNestedTimeField($bucket, 'end', $defaultEnd, $existing->end_time ?? null);
-            $break = $this->resolveNestedTimeField($bucket, 'break', $defaultBreak, $existing->break_time ?? null);
 
             $absenceRaw = $this->unwrapPostedScalar($this->timeFromKeyedArray($absenceFlags, $staffId));
             $absenceFlg = $absenceRaw !== null && $absenceRaw !== '' ? (bool) intval($absenceRaw) : false;
+
+            // 欠勤は DB 上も時刻なしに揃える（空 POST が既定時刻へ戻るのを防ぐ）
+            if ($absenceFlg) {
+                $start = '';
+                $end = '';
+                $break = '';
+            } else {
+                $start = $this->resolveNestedTimeField($bucket, 'start', $defaultStart, $existing->start_time ?? null);
+                $end = $this->resolveNestedTimeField($bucket, 'end', $defaultEnd, $existing->end_time ?? null);
+                $break = $this->resolveNestedTimeField($bucket, 'break', $defaultBreak, $existing->break_time ?? null);
+            }
 
             $ok = $this->attendanceService->AttendanceUpdate(
                 $staffId,
