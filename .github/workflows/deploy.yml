@@ -32,14 +32,13 @@ jobs:
             echo "::error::GitHub Secrets の XSERVER_HOST または XSERVER_PORT が空です。"
             exit 1
           fi
-          # 接続できないと ssh-keyscan が失敗する（Xserver の SSH 許可IP・ポート番号・ホスト名を要確認）
           if ! timeout 45 ssh-keyscan -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_HOST }}" >> ~/.ssh/known_hosts 2>ssh-keyscan.err; then
             echo "::error::ssh-keyscan に失敗しました。Xserver の SSH 接続元制限・ホスト名・ポート（例: 10022）を確認してください。"
             head -30 ssh-keyscan.err 2>/dev/null || true
             exit 1
           fi
 
-      - name: Sync files to Xserver
+      - name: Sync files to Xserver (primary)
         run: |
           rsync -az --checksum \
             --exclude ".git/" \
@@ -50,7 +49,73 @@ jobs:
             -e "ssh -p ${{ secrets.XSERVER_PORT }}" \
             ./ "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}:${{ secrets.XSERVER_DEPLOY_PATH }}/"
 
-      - name: Run migrate and Laravel clear commands
+      - name: Resolve staging Laravel root on server
+        id: staging
+        run: |
+          set -eo pipefail
+          STAGE_PATH=$(ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" bash -s <<'REMOTE'
+          set -euo pipefail
+          PRIMARY='${{ secrets.XSERVER_DEPLOY_PATH }}'
+          is_laravel_root() {
+            local d="$1"
+            [ -f "$d/artisan" ] && [ -f "$d/bootstrap/app.php" ]
+          }
+          has_stage_public() {
+            local d="$1"
+            [ -f "$d/stage/index.php" ]
+          }
+          PARENT="$(dirname "$PRIMARY")"
+          HOME_DIR="${HOME:-}"
+          CANDIDATES=()
+          if [ -n "$HOME_DIR" ]; then
+            CANDIDATES+=(
+              "$HOME_DIR/nakatsuka.online/public_html"
+              "$HOME_DIR/domains/nakatsuka.online/public_html"
+            )
+          fi
+          CANDIDATES+=(
+            "$PARENT/nakatsuka.online/public_html"
+            "$PARENT/public_html"
+          )
+          for cand in "${CANDIDATES[@]}"; do
+            if is_laravel_root "$cand" && has_stage_public "$cand"; then
+              echo "$cand"
+              exit 0
+            fi
+          done
+          # primary がステージング本体の場合（stage サブディレクトリ運用）
+          if is_laravel_root "$PRIMARY" && has_stage_public "$PRIMARY"; then
+            echo "$PRIMARY"
+            exit 0
+          fi
+          exit 1
+          REMOTE
+          ) || true
+          if [ -n "${STAGE_PATH:-}" ]; then
+            echo "path=${STAGE_PATH}" >> "$GITHUB_OUTPUT"
+            echo "Staging Laravel root: ${STAGE_PATH}"
+          else
+            echo "path=" >> "$GITHUB_OUTPUT"
+            echo "::warning::ステージング用ディレクトリを自動検出できませんでした（stage.nakatsuka.online は未更新の可能性があります）"
+          fi
+
+      - name: Sync files to Xserver (staging)
+        if: steps.staging.outputs.path != ''
+        run: |
+          STAGE_PATH='${{ steps.staging.outputs.path }}'
+          rsync -az --checksum \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            --exclude "node_modules/" \
+            --exclude ".env" \
+            --exclude "storage/logs/*" \
+            -e "ssh -p ${{ secrets.XSERVER_PORT }}" \
+            ./ "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}:${STAGE_PATH}/"
+          ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" \
+            "cd '${STAGE_PATH}' && \
+             if [ -d public ] && [ -d stage ]; then rsync -a public/ stage/; fi"
+
+      - name: Run migrate and Laravel clear commands (primary)
         run: |
           ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" \
             "cd '${{ secrets.XSERVER_DEPLOY_PATH }}' && \
@@ -58,3 +123,14 @@ jobs:
              /opt/php-8.3/bin/php artisan view:clear && \
              /opt/php-8.3/bin/php artisan optimize:clear && \
              test -f resources/views/top/attendance.blade.php && grep -q 'display_start' resources/views/top/attendance.blade.php"
+
+      - name: Run migrate and Laravel clear commands (staging)
+        if: steps.staging.outputs.path != ''
+        run: |
+          ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" \
+            "cd '${{ steps.staging.outputs.path }}' && \
+             /opt/php-8.3/bin/php artisan migrate --no-interaction --force && \
+             /opt/php-8.3/bin/php artisan view:clear && \
+             /opt/php-8.3/bin/php artisan optimize:clear && \
+             test -f resources/views/top/attendance.blade.php && grep -q 'display_start' resources/views/top/attendance.blade.php && \
+             echo 'staging deploy ok'"
