@@ -156,7 +156,7 @@ class AttendanceService
             }
 
             $row->absence_flg = $raw->absence_flg;
-            $absent = isset($raw->absence_flg) && (int) $raw->absence_flg === 1;
+            $absent = isset($raw->absence_flg) && (int) $raw->absence_flg !== 0;
             if ($absent) {
                 $row->start_time = null;
                 $row->end_time = null;
@@ -316,7 +316,7 @@ class AttendanceService
         $fallbackBreak = $this->formatTimeForDisplay($defaults->break_time ?? null) ?: '01:00';
 
         return $rows->map(function ($row) use ($fallbackStart, $fallbackEnd, $fallbackBreak) {
-            $absent = isset($row->absence_flg) && (int) $row->absence_flg === 1;
+            $absent = isset($row->absence_flg) && (int) $row->absence_flg !== 0;
             if ($absent) {
                 $row->display_start = '';
                 $row->display_end = '';

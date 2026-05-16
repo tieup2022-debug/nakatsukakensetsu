@@ -84,13 +84,22 @@
                                 @foreach($attendance_data as $row)
                                     @php
                                         $sid = (int) ($row->staff_id ?? 0);
-                                        $isAbsent = isset($row->absence_flg) && (int) $row->absence_flg === 1;
-                                        $startVal = $row->display_start ?? '';
-                                        $endVal = $row->display_end ?? '';
-                                        $breakVal = $row->display_break ?? '';
+                                        $isAbsent = isset($row->absence_flg) && (int) $row->absence_flg !== 0;
+                                        if ($isAbsent) {
+                                            $startVal = '';
+                                            $endVal = '';
+                                            $breakVal = '';
+                                        } else {
+                                            $startVal = (string) ($row->display_start ?? '');
+                                            $endVal = (string) ($row->display_end ?? '');
+                                            $breakVal = (string) ($row->display_break ?? '');
+                                            $startVal = $startVal !== '' ? $startVal : '08:00';
+                                            $endVal = $endVal !== '' ? $endVal : '17:00';
+                                            $breakVal = $breakVal !== '' ? $breakVal : '01:00';
+                                        }
                                     @endphp
                                     @if($sid > 0)
-                                    <tr class="{{ $isAbsent ? 'table-warning' : '' }}">
+                                    <tr class="{{ $isAbsent ? 'table-warning' : '' }}" data-absent-row="{{ $isAbsent ? '1' : '0' }}">
                                         <td>
                                             <div class="fw-medium">{{ $row->staff_name ?? '' }}</div>
                                             @if($isAbsent)
@@ -103,42 +112,45 @@
                                         <td>
                                             <input
                                                 type="text"
-                                                class="form-control form-control-sm font-monospace"
+                                                class="form-control form-control-sm font-monospace js-attendance-time"
                                                 name="times[{{ $sid }}][start]"
                                                 value="{{ $startVal }}"
                                                 inputmode="numeric"
                                                 maxlength="5"
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
                                                 title="半角 時:分 例 08:00"
-                                                placeholder="08:00"
+                                                placeholder="{{ $isAbsent ? '' : '08:00' }}"
+                                                autocomplete="off"
                                                 @unless($isAbsent) required @endunless
                                             >
                                         </td>
                                         <td>
                                             <input
                                                 type="text"
-                                                class="form-control form-control-sm font-monospace"
+                                                class="form-control form-control-sm font-monospace js-attendance-time"
                                                 name="times[{{ $sid }}][end]"
                                                 value="{{ $endVal }}"
                                                 inputmode="numeric"
                                                 maxlength="5"
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
                                                 title="半角 時:分 例 17:30"
-                                                placeholder="17:00"
+                                                placeholder="{{ $isAbsent ? '' : '17:00' }}"
+                                                autocomplete="off"
                                                 @unless($isAbsent) required @endunless
                                             >
                                         </td>
                                         <td>
                                             <input
                                                 type="text"
-                                                class="form-control form-control-sm font-monospace"
+                                                class="form-control form-control-sm font-monospace js-attendance-time"
                                                 name="times[{{ $sid }}][break]"
                                                 value="{{ $breakVal }}"
                                                 inputmode="numeric"
                                                 maxlength="5"
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
                                                 title="半角 時:分 例 01:00"
-                                                placeholder="01:00"
+                                                placeholder="{{ $isAbsent ? '' : '01:00' }}"
+                                                autocomplete="off"
                                                 @unless($isAbsent) required @endunless
                                             >
                                         </td>
@@ -168,6 +180,29 @@
                         var saveForm = document.getElementById('top-attendance-save-form');
                         var filterForm = document.getElementById('top-attendance-filter-form');
                         if (!saveForm) return;
+
+                        function syncAbsentRowTimes(tr) {
+                            var absentCb = tr.querySelector('input[type="checkbox"][name^="absence_flg"]');
+                            var isAbsent = absentCb && absentCb.checked;
+                            tr.querySelectorAll('input.js-attendance-time').forEach(function (el) {
+                                if (isAbsent) {
+                                    el.value = '';
+                                    el.placeholder = '';
+                                }
+                            });
+                        }
+
+                        saveForm.querySelectorAll('tbody tr[data-absent-row]').forEach(syncAbsentRowTimes);
+
+                        saveForm.querySelectorAll('input[type="checkbox"][name^="absence_flg"]').forEach(function (cb) {
+                            cb.addEventListener('change', function () {
+                                var tr = cb.closest('tr');
+                                if (tr) {
+                                    syncAbsentRowTimes(tr);
+                                }
+                            });
+                        });
+
                         saveForm.addEventListener('submit', function () {
                             // 画面上の「現場・作業日」と保存用 hidden がずれると、別日・別現場の t_attendance が更新される
                             if (filterForm) {
