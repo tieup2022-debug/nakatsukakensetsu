@@ -55,4 +55,6 @@ jobs:
           ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" \
             "cd '${{ secrets.XSERVER_DEPLOY_PATH }}' && \
              /opt/php-8.3/bin/php artisan migrate --no-interaction --force && \
-             /opt/php-8.3/bin/php artisan optimize:clear"
+             /opt/php-8.3/bin/php artisan view:clear && \
+             /opt/php-8.3/bin/php artisan optimize:clear && \
+             test -f resources/views/top/attendance.blade.php && grep -q 'display_start' resources/views/top/attendance.blade.php"

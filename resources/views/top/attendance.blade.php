@@ -69,10 +69,6 @@
                     @csrf
                     <input type="hidden" name="workplace_id" value="{{ $workplace_id }}">
                     <input type="hidden" name="work_date" value="{{ $work_date }}">
-                    @php
-                        $attendanceService = app(\App\Services\AttendanceService::class);
-                    @endphp
-
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead>
@@ -88,20 +84,10 @@
                                 @foreach($attendance_data as $row)
                                     @php
                                         $sid = (int) ($row->staff_id ?? 0);
-                                        $startFmt = $attendanceService->formatTimeForDisplay($row->start_time ?? null);
-                                        $endFmt = $attendanceService->formatTimeForDisplay($row->end_time ?? null);
-                                        $breakFmt = $attendanceService->formatTimeForDisplay($row->break_time ?? null);
-                                        $isAbsent = isset($row->absence_flg) && intval($row->absence_flg) === 1;
-                                        // 欠勤は常に時刻欄を空に（DB に残った時刻は見せない）。出勤のみ既定値を補完。
-                                        if ($isAbsent) {
-                                            $startVal = '';
-                                            $endVal = '';
-                                            $breakVal = '';
-                                        } else {
-                                            $startVal = $startFmt !== '' ? $startFmt : '08:00';
-                                            $endVal = $endFmt !== '' ? $endFmt : '17:00';
-                                            $breakVal = $breakFmt !== '' ? $breakFmt : '01:00';
-                                        }
+                                        $isAbsent = isset($row->absence_flg) && (int) $row->absence_flg === 1;
+                                        $startVal = $row->display_start ?? '';
+                                        $endVal = $row->display_end ?? '';
+                                        $breakVal = $row->display_break ?? '';
                                     @endphp
                                     @if($sid > 0)
                                     <tr class="{{ $isAbsent ? 'table-warning' : '' }}">

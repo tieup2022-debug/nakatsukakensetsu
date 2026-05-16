@@ -155,10 +155,17 @@ class AttendanceService
                 return $row;
             }
 
-            $row->start_time = $raw->start_time;
-            $row->end_time = $raw->end_time;
-            $row->break_time = $raw->break_time;
             $row->absence_flg = $raw->absence_flg;
+            $absent = isset($raw->absence_flg) && (int) $raw->absence_flg === 1;
+            if ($absent) {
+                $row->start_time = null;
+                $row->end_time = null;
+                $row->break_time = null;
+            } else {
+                $row->start_time = $raw->start_time;
+                $row->end_time = $raw->end_time;
+                $row->break_time = $raw->break_time;
+            }
 
             return $row;
         })->values();

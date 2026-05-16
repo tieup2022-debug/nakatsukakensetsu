@@ -79,6 +79,11 @@ class TopAttendanceController extends Controller
             $wpForOverlay = $resolvedWorkplaceId !== null && $resolvedWorkplaceId !== '' ? (int) $resolvedWorkplaceId : null;
             $attendanceItems = $this->attendanceService->overlayTAttendanceTimes($attendanceItems, $resolvedWorkDate, $wpForOverlay);
             $attendanceItems = $this->attendanceService->uniqueAttendanceRowsForForm($attendanceItems);
+            $defaults = $this->attendanceService->GetDefaults();
+            if ($defaults === false || $defaults === null) {
+                $defaults = (object) [];
+            }
+            $attendanceItems = $this->attendanceService->withListDisplayTimes($attendanceItems, $defaults);
         }
 
         // 月次表表示（以前のPDF出力をWebページ表示へ変更）
