@@ -102,11 +102,6 @@
                                     <tr class="{{ $isAbsent ? 'table-warning' : '' }}" data-absent-row="{{ $isAbsent ? '1' : '0' }}">
                                         <td>
                                             <div class="fw-medium">{{ $row->staff_name ?? '' }}</div>
-                                            @if($isAbsent)
-                                                <div class="small text-danger mt-1">
-                                                    ※<strong>欠勤</strong>にチェックが入っています。出勤として記録する場合は<strong>チェックを外してから</strong>退勤などを直し、保存してください。
-                                                </div>
-                                            @endif
                                             <input type="hidden" name="staff_ids[{{ $sid }}]" value="{{ $sid }}">
                                         </td>
                                         <td>
