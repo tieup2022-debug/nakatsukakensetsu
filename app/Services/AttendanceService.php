@@ -1290,14 +1290,19 @@ class AttendanceService
                             || $this->formatTimeShort($attendanceRaw->break_time ?? '') !== ''
                         );
                         if ($wpNameForFallback !== '' && ! $hasStoredTimes) {
+                            // 過去日は参考表示に従来の内蔵初期値（8:00〜17:00）を使い、今日以降だけ現在の初期時間マスタを使う
+                            $isPastDate = $fullDate < date('Y-m-d');
+                            $refStart = $isPastDate ? '08:00' : $fallbackStart;
+                            $refEnd = $isPastDate ? '17:00' : $fallbackEnd;
+                            $refBreak = $isPastDate ? '01:00' : $fallbackBreak;
                             if ($startTime === '') {
-                                $startTime = $fallbackStart;
+                                $startTime = $refStart;
                             }
                             if ($endTime === '') {
-                                $endTime = $fallbackEnd;
+                                $endTime = $refEnd;
                             }
                             if ($breakTime === '') {
-                                $breakTime = $fallbackBreak;
+                                $breakTime = $refBreak;
                             }
                         }
 
