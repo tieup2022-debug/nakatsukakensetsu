@@ -849,6 +849,28 @@ class AttendanceService
     }
 
     /**
+     * m_attendance_defaults.break_time の列型に合わせて休憩値を整形（INT 列には分の整数）
+     */
+    private function prepareAttendanceDefaultsBreakForStorage(int $breakMinutes): int|string
+    {
+        $mins = max(0, $breakMinutes);
+        try {
+            $columnType = Schema::getColumnType('m_attendance_defaults', 'break_time');
+        } catch (\Throwable) {
+            $columnType = 'integer';
+        }
+        $columnTypeLower = strtolower((string) $columnType);
+        $isNumericBreak = str_contains($columnTypeLower, 'int')
+            || in_array($columnTypeLower, ['decimal', 'float', 'double', 'real', 'numeric'], true);
+
+        if ($isNumericBreak) {
+            return $mins;
+        }
+
+        return $this->minutesToBreakStoreValue($mins);
+    }
+
+    /**
      * m_attendance_defaults を更新（有効行が無ければ先頭行、無ければ新規作成）
      */
     public function saveAttendanceDefaults(string $startTimeInput, string $endTimeInput, int $breakMinutes, bool $isEnabled): bool
@@ -856,7 +878,7 @@ class AttendanceService
         try {
             $startHms = $this->normalizeTimeInputToHms($startTimeInput);
             $endHms = $this->normalizeTimeInputToHms($endTimeInput);
-            $breakHms = $this->minutesToBreakStoreValue($breakMinutes);
+            $breakForStorage = $this->prepareAttendanceDefaultsBreakForStorage($breakMinutes);
 
             DB::beginTransaction();
 
@@ -872,7 +894,7 @@ class AttendanceService
             $payload = [
                 'start_time' => $startHms,
                 'end_time' => $endHms,
-                'break_time' => $breakHms,
+                'break_time' => $breakForStorage,
                 'is_enabled' => $isEnabled,
                 'updated_at' => now(),
             ];
