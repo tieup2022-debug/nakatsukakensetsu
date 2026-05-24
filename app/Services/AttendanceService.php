@@ -257,6 +257,34 @@ class AttendanceService
     }
 
     /**
+     * 月次表向け: staff+日付の t_attendance から最適な1行を選ぶ（配置現場優先、別現場に時刻だけある行も拾う）
+     */
+    private function resolveAttendanceRawForMonthly(int $staffId, string $fullDate, $preferredWorkplaceId): ?object
+    {
+        $rawRows = DB::table('t_attendance')
+            ->where('staff_id', '=', $staffId)
+            ->where('work_date', '=', $fullDate)
+            ->whereNull('deleted_at')
+            ->orderByDesc('id')
+            ->get(['id', 'workplace_id', 'start_time', 'end_time', 'break_time', 'absence_flg']);
+
+        if ($rawRows->isEmpty()) {
+            return null;
+        }
+
+        $bestMap = $this->pickBestAttendanceRowPerStaff($rawRows, $preferredWorkplaceId);
+        $chosen = $bestMap[$staffId] ?? null;
+
+        if ($chosen && $this->formatTimeShort($chosen->start_time ?? '') !== '') {
+            return $chosen;
+        }
+
+        $withTimes = $rawRows->first(fn ($r) => $this->formatTimeShort($r->start_time ?? '') !== '');
+
+        return $withTimes ?? $chosen;
+    }
+
+    /**
      * 勤怠一覧・帳票向け: DB の時刻値を HH:MM に正規化（日時型や TIME 文字列に対応）
      */
     public function formatTimeForDisplay($time): string
@@ -1175,6 +1203,11 @@ class AttendanceService
         try {
             $weekdays = getJapaneseWeekdaysShort();
 
+            $defaults = $this->GetDefaults();
+            $fallbackStart = $this->formatTimeShort((string) ($defaults->start_time ?? '')) ?: '08:00';
+            $fallbackEnd = $this->formatTimeShort((string) ($defaults->end_time ?? '')) ?: '17:00';
+            $fallbackBreak = $this->formatTimeShort((string) ($defaults->break_time ?? '')) ?: '01:00';
+
             $year = date('Y', strtotime($workDate));
             $month = date('m', strtotime($workDate));
             $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
@@ -1207,16 +1240,12 @@ class AttendanceService
                         ->where('work_date', '=', $fullDate)
                         ->first();
 
-                    $attendanceRaw = DB::table('t_attendance')
-                        ->where('staff_id', '=', $staff->id)
-                        ->where('work_date', '=', $fullDate)
-                        ->whereNull('deleted_at')
-                        ->orderByDesc('updated_at')
-                        ->orderByDesc('id')
-                        ->first(['workplace_id', 'start_time', 'end_time', 'break_time', 'absence_flg']);
+                    $preferredWp = (int) ($attendanceData->workplace_id ?? 0);
+                    $attendanceRaw = $this->resolveAttendanceRawForMonthly((int) $staff->id, $fullDate, $preferredWp);
 
                     if (! $attendanceData && $attendanceRaw) {
                         $attendanceData = (object) [
+                            'workplace_id' => (int) ($attendanceRaw->workplace_id ?? 0),
                             'workplace_name' => (string) ($workplaceMap[$attendanceRaw->workplace_id] ?? ''),
                             'start_time' => $attendanceRaw->start_time ?? '',
                             'end_time' => $attendanceRaw->end_time ?? '',
@@ -1252,7 +1281,26 @@ class AttendanceService
                         } else {
                             $attendanceDataList[$fullDate]['workplace_name'] = (string) ($attendanceData->workplace_name ?? '');
                         }
-                        // 月次表は記録済みの時刻のみ表示（未入力に現在の初期値を埋めない）
+
+                        // 現場はあるが DB に保存済みの時刻が無い日だけ、月次表では参考として初期時間を表示
+                        $wpNameForFallback = (string) ($attendanceDataList[$fullDate]['workplace_name'] ?? '');
+                        $hasStoredTimes = $attendanceRaw && (
+                            $this->formatTimeShort($attendanceRaw->start_time ?? '') !== ''
+                            || $this->formatTimeShort($attendanceRaw->end_time ?? '') !== ''
+                            || $this->formatTimeShort($attendanceRaw->break_time ?? '') !== ''
+                        );
+                        if ($wpNameForFallback !== '' && ! $hasStoredTimes) {
+                            if ($startTime === '') {
+                                $startTime = $fallbackStart;
+                            }
+                            if ($endTime === '') {
+                                $endTime = $fallbackEnd;
+                            }
+                            if ($breakTime === '') {
+                                $breakTime = $fallbackBreak;
+                            }
+                        }
+
                         $attendanceDataList[$fullDate]['start_time'] = $startTime;
                         $attendanceDataList[$fullDate]['end_time'] = $endTime;
                         $attendanceDataList[$fullDate]['break_time'] = $breakTime;
