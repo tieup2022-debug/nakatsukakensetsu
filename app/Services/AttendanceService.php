@@ -1175,11 +1175,6 @@ class AttendanceService
         try {
             $weekdays = getJapaneseWeekdaysShort();
 
-            $defaults = $this->GetDefaults();
-            $fallbackStart = $this->formatTimeShort((string) ($defaults->start_time ?? '')) ?: '08:00';
-            $fallbackEnd = $this->formatTimeShort((string) ($defaults->end_time ?? '')) ?: '17:00';
-            $fallbackBreak = $this->formatTimeShort((string) ($defaults->break_time ?? '')) ?: '01:00';
-
             $year = date('Y', strtotime($workDate));
             $month = date('m', strtotime($workDate));
             $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
@@ -1257,15 +1252,7 @@ class AttendanceService
                         } else {
                             $attendanceDataList[$fullDate]['workplace_name'] = (string) ($attendanceData->workplace_name ?? '');
                         }
-                        if ($startTime === '') {
-                            $startTime = $fallbackStart;
-                        }
-                        if ($endTime === '') {
-                            $endTime = $fallbackEnd;
-                        }
-                        if ($breakTime === '') {
-                            $breakTime = $fallbackBreak;
-                        }
+                        // 月次表は記録済みの時刻のみ表示（未入力に現在の初期値を埋めない）
                         $attendanceDataList[$fullDate]['start_time'] = $startTime;
                         $attendanceDataList[$fullDate]['end_time'] = $endTime;
                         $attendanceDataList[$fullDate]['break_time'] = $breakTime;
@@ -1542,11 +1529,6 @@ class AttendanceService
     public function GetPersonalMonthlySummary($workDate, $staffId = null, $staffType = null)
     {
         try {
-            $defaults = $this->GetDefaults();
-            $fallbackStart = $this->formatTimeShort((string) ($defaults->start_time ?? '')) ?: '08:00';
-            $fallbackEnd = $this->formatTimeShort((string) ($defaults->end_time ?? '')) ?: '17:00';
-            $fallbackBreak = $this->formatTimeShort((string) ($defaults->break_time ?? '')) ?: '01:00';
-
             $baseDate = $workDate ?: date('Y-m-d');
             $year = (int) date('Y', strtotime($baseDate));
             $month = (int) date('m', strtotime($baseDate));
@@ -1615,15 +1597,6 @@ class AttendanceService
                             $startDisplay = $this->formatTimeShort((string) ($row->start_time ?? ''));
                             $endDisplay = $this->formatTimeShort((string) ($row->end_time ?? ''));
                             $breakDisplay = $this->formatTimeShort((string) ($row->break_time ?? ''));
-                            if ($startDisplay === '') {
-                                $startDisplay = $fallbackStart;
-                            }
-                            if ($endDisplay === '') {
-                                $endDisplay = $fallbackEnd;
-                            }
-                            if ($breakDisplay === '') {
-                                $breakDisplay = $fallbackBreak;
-                            }
                             $breakMinutes = $this->timeToMinutes($breakDisplay, true) ?? 0;
                             $workedMinutes = $this->calcWorkedMinutes(
                                 $startDisplay,
