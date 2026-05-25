@@ -124,7 +124,7 @@ jobs:
              /opt/php-8.3/bin/php artisan view:clear && \
              /opt/php-8.3/bin/php artisan optimize:clear && \
              /opt/php-8.3/bin/php -r 'if (function_exists(\"opcache_reset\")) { opcache_reset(); }' && \
-             test -f resources/views/top/attendance.blade.php && grep -q 'data-absent-row' resources/views/top/attendance.blade.php"
+             test -f resources/views/top/attendance.blade.php && grep -q 'absence_active' resources/views/top/attendance.blade.php"
 
       - name: Run migrate and Laravel clear commands (staging)
         if: steps.staging.outputs.path != ''
@@ -134,6 +134,6 @@ jobs:
              /opt/php-8.3/bin/php artisan migrate --no-interaction --force && \
              /opt/php-8.3/bin/php artisan view:clear && \
              /opt/php-8.3/bin/php artisan optimize:clear && \
-             test -f resources/views/top/attendance.blade.php && grep -q 'data-absent-row' resources/views/top/attendance.blade.php && \
+             test -f resources/views/top/attendance.blade.php && grep -q 'absence_active' resources/views/top/attendance.blade.php && \
              /opt/php-8.3/bin/php -r 'if (function_exists(\"opcache_reset\")) { opcache_reset(); }' && \
              echo 'staging deploy ok'"

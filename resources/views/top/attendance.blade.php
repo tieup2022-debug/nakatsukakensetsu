@@ -99,7 +99,7 @@
                                         }
                                     @endphp
                                     @if($sid > 0)
-                                    <tr class="{{ $isAbsent ? 'table-warning' : '' }}" data-absent-row="{{ $isAbsent ? '1' : '0' }}">
+                                    <tr class="{{ $isAbsent ? 'table-warning' : '' }}" data-absent-row="{{ $isAbsent ? '1' : '0' }}" data-staff-id="{{ $sid }}">
                                         <td>
                                             <div class="fw-medium">{{ $row->staff_name ?? '' }}</div>
                                             <input type="hidden" name="staff_ids[{{ $sid }}]" value="{{ $sid }}">
@@ -198,6 +198,23 @@
                         });
 
                         saveForm.addEventListener('submit', function () {
+                            saveForm.querySelectorAll('input[name="absence_active[]"]').forEach(function (el) {
+                                el.remove();
+                            });
+                            saveForm.querySelectorAll('tbody tr[data-absent-row]').forEach(function (tr) {
+                                var cb = tr.querySelector('input[type="checkbox"][name^="absence_flg"]');
+                                if (cb && cb.checked) {
+                                    var sid = tr.getAttribute('data-staff-id') || '';
+                                    if (sid !== '') {
+                                        var marker = document.createElement('input');
+                                        marker.type = 'hidden';
+                                        marker.name = 'absence_active[]';
+                                        marker.value = sid;
+                                        saveForm.appendChild(marker);
+                                    }
+                                }
+                            });
+
                             // 画面上の「現場・作業日」と保存用 hidden がずれると、別日・別現場の t_attendance が更新される
                             if (filterForm) {
                                 var wd = filterForm.querySelector('input[name="work_date"]');
