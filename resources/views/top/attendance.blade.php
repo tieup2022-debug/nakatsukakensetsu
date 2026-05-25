@@ -150,7 +150,6 @@
                                             >
                                         </td>
                                         <td>
-                                            <input type="hidden" name="absence_flg[{{ $sid }}]" value="0">
                                             <input
                                                 type="checkbox"
                                                 class="form-check-input"
@@ -227,6 +226,12 @@
                             saveForm.querySelectorAll('input[name^="times["]').forEach(function (el) {
                                 el.disabled = false;
                                 el.readOnly = false;
+                            });
+                            saveForm.querySelectorAll('tbody tr[data-absent-row]').forEach(function (tr) {
+                                var cb = tr.querySelector('input[type="checkbox"][name^="absence_flg"]');
+                                if (cb && cb.checked) {
+                                    syncAbsentRowTimes(tr);
+                                }
                             });
                         });
                     })();

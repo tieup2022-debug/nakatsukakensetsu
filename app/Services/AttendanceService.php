@@ -275,6 +275,12 @@ class AttendanceService
         $bestMap = $this->pickBestAttendanceRowPerStaff($rawRows, $preferredWorkplaceId);
         $chosen = $bestMap[$staffId] ?? null;
 
+        // 欠勤行（時刻なし）を、別現場の出勤時刻あり行より優先する
+        $absentRow = $rawRows->first(fn ($r) => (int) ($r->absence_flg ?? 0) !== 0);
+        if ($absentRow) {
+            return $absentRow;
+        }
+
         if ($chosen && $this->formatTimeShort($chosen->start_time ?? '') !== '') {
             return $chosen;
         }
@@ -1254,7 +1260,10 @@ class AttendanceService
                         ];
                     }
 
-                    if ($attendanceData && ! $attendanceData->absence_flg) {
+                    $isAbsentDay = ($attendanceRaw && (int) ($attendanceRaw->absence_flg ?? 0) !== 0)
+                        || ($attendanceData && (int) ($attendanceData->absence_flg ?? 0) !== 0);
+
+                    if ($attendanceData && ! $isAbsentDay) {
                         $startTime = $this->formatTimeShort($attendanceData->start_time);
                         $endTime = $this->formatTimeShort($attendanceData->end_time);
                         $breakTime = $this->formatTimeShort($attendanceData->break_time);
@@ -1324,8 +1333,11 @@ class AttendanceService
                         ->whereNull('deleted_at')
                         ->exists();
 
-                    if ($attendanceData && $attendanceData->absence_flg) {
+                    if ($isAbsentDay) {
                         $attendanceDataList[$fullDate]['workplace_name'] = '#absence';
+                        $attendanceDataList[$fullDate]['start_time'] = '';
+                        $attendanceDataList[$fullDate]['end_time'] = '';
+                        $attendanceDataList[$fullDate]['break_time'] = '';
                     }
                     if ($absenceExists) {
                         $attendanceDataList[$fullDate]['workplace_name'] = '#absence';

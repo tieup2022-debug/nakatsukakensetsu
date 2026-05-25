@@ -191,8 +191,8 @@ class TopAttendanceController extends Controller
 
             $existing = $existingByStaff[$staffId] ?? null;
 
-            $absenceRaw = $this->unwrapPostedScalar($this->timeFromKeyedArray($absenceFlags, $staffId));
-            $absenceFlg = $absenceRaw !== null && $absenceRaw !== '' ? (bool) intval($absenceRaw) : false;
+            // hidden(0) と checkbox(1) が同名のため、環境によって先頭の 0 だけが届くことがある
+            $absenceFlg = $this->isPostedAbsent($request, $absenceFlags, $staffId);
 
             // 欠勤は DB 上も時刻なしに揃える（空 POST が既定時刻へ戻るのを防ぐ）
             if ($absenceFlg) {
@@ -316,6 +316,29 @@ class TopAttendanceController extends Controller
         $display = $this->attendanceService->formatTimeForDisplay($existingRaw);
 
         return $this->normalizeTimeInput($display !== '' ? $display : $existingRaw, $default);
+    }
+
+    /**
+     * 欠勤チェック ON を判定（設定の個別編集と同様に boolean を優先し、配列 POST も考慮）
+     */
+    private function isPostedAbsent(Request $request, array $absenceFlags, int $staffId): bool
+    {
+        if ($request->boolean('absence_flg.'.$staffId)) {
+            return true;
+        }
+
+        $raw = $this->timeFromKeyedArray($absenceFlags, $staffId);
+        if ($raw === null) {
+            return false;
+        }
+
+        foreach (is_array($raw) ? $raw : [$raw] as $value) {
+            if ((int) $this->unwrapPostedScalar($value) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
