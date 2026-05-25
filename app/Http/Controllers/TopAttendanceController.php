@@ -173,9 +173,13 @@ class TopAttendanceController extends Controller
             $absenceFlags = [];
         }
 
+        $absenceActiveRaw = $request->input('absence_active', []);
+        if (! is_array($absenceActiveRaw)) {
+            $absenceActiveRaw = $absenceActiveRaw !== null && $absenceActiveRaw !== '' ? [$absenceActiveRaw] : [];
+        }
         $absenceActiveIds = array_values(array_unique(array_filter(array_map(
             'intval',
-            is_array($request->input('absence_active')) ? $request->input('absence_active') : []
+            $absenceActiveRaw
         ), fn ($id) => $id > 0)));
 
         $defaults = $this->attendanceService->GetDefaults();
@@ -186,6 +190,7 @@ class TopAttendanceController extends Controller
         $existingByStaff = $this->attendanceService->getAttendanceRowsByStaffForDate($staffIds, $workDate, $workplaceId);
 
         $result = true;
+        $savedAnyAbsent = false;
         foreach ($staffIds as $staffId) {
             $bucket = $this->timesBucketForStaff($timesPayload, $staffId);
             if (! is_array($bucket)) {
@@ -196,9 +201,13 @@ class TopAttendanceController extends Controller
 
             $existing = $existingByStaff[$staffId] ?? null;
 
-            // absence_active[] は JS が欠勤ON時だけ付与（checkbox 単体が届かない環境対策）
+            // absence_active[] / checkbox に加え、出退勤がすべて空なら欠勤扱い（UIで時刻を空にしたケース）
             $absenceFlg = in_array($staffId, $absenceActiveIds, true)
-                || $this->isPostedAbsent($request, $absenceFlags, $staffId);
+                || $this->isPostedAbsent($request, $absenceFlags, $staffId)
+                || $this->postedTimesAllEmpty($bucket);
+            if ($absenceFlg) {
+                $savedAnyAbsent = true;
+            }
 
             // 欠勤は DB 上も時刻なしに揃える（空 POST が既定時刻へ戻るのを防ぐ）
             if ($absenceFlg) {
@@ -226,7 +235,9 @@ class TopAttendanceController extends Controller
             }
         }
 
-        $status = $result ? '勤怠を保存しました。' : '保存に失敗しました（内容をご確認ください）。';
+        $status = $result
+            ? ($savedAnyAbsent ? '勤怠を保存しました（欠勤）。' : '勤怠を保存しました。')
+            : '保存に失敗しました（内容をご確認ください）。';
         if (config('app.debug')) {
             $status .= ' '.$this->attendanceSaveContextSuffix();
         }
@@ -325,7 +336,27 @@ class TopAttendanceController extends Controller
     }
 
     /**
-     * 欠勤チェック ON を判定（設定の個別編集と同様に boolean を優先し、配列 POST も考慮）
+     * POST の出退勤・休憩がすべて空文字か（欠勤UIで時刻を空にしたとき）
+     *
+     * @param  array<string, mixed>  $bucket
+     */
+    private function postedTimesAllEmpty(array $bucket): bool
+    {
+        foreach (['start', 'end', 'break'] as $key) {
+            if (! array_key_exists($key, $bucket)) {
+                return false;
+            }
+            $value = trim((string) $this->unwrapPostedScalar($bucket[$key] ?? ''));
+            if ($value !== '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * 欠勤チェック ON を判定（配列 POST で value=1 が含まれるか）
      */
     private function isPostedAbsent(Request $request, array $absenceFlags, int $staffId): bool
     {

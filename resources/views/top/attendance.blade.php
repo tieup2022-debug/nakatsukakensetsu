@@ -178,7 +178,10 @@
                         function syncAbsentRowTimes(tr) {
                             var absentCb = tr.querySelector('input[type="checkbox"][name^="absence_flg"]');
                             var isAbsent = absentCb && absentCb.checked;
+                            tr.classList.toggle('table-warning', isAbsent);
+                            tr.setAttribute('data-absent-row', isAbsent ? '1' : '0');
                             tr.querySelectorAll('input.js-attendance-time').forEach(function (el) {
+                                el.required = !isAbsent;
                                 if (isAbsent) {
                                     el.value = '';
                                     el.placeholder = '';
