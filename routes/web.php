@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\InAppNotificationController;
+use App\Http\Controllers\MachineScheduleController;
 use App\Http\Controllers\MonthlyAssignmentController;
 use App\Http\Controllers\MonthlyAttendanceController;
 use App\Http\Controllers\GratitudePointController;
@@ -40,6 +41,11 @@ Route::post('/top/attendance/update', [TopAttendanceController::class, 'update']
 Route::get('/top/assignment', [TopAssignmentController::class, 'index'])->name('top.assignment');
 Route::post('/top/assignment/update', [TopAssignmentController::class, 'update'])->name('top.assignment.update');
 Route::post('/top/assignment/copy', [TopAssignmentController::class, 'copy'])->name('top.assignment.copy');
+
+// 機械（車両・重機）配置予定表（ガント形式）
+Route::get('/top/machine-schedule', [MachineScheduleController::class, 'index'])->name('top.machine.schedule');
+Route::post('/top/machine-schedule/place', [MachineScheduleController::class, 'place'])->name('top.machine.schedule.place');
+Route::post('/top/machine-schedule/clear', [MachineScheduleController::class, 'clear'])->name('top.machine.schedule.clear');
 
 Route::get('/top/setting', [TopSettingController::class, 'index'])->middleware('nakatsuka.auth')->name('top.setting');
 

@@ -16,6 +16,11 @@
             <span class="me-2">📋</span> 配置一覧
         </a>
     </li>
+    <li class="nav-item">
+        <a href="{{ route('top.machine.schedule') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('top.machine.schedule') ? 'active' : 'text-white-50' }}">
+            <span class="me-2">🛠️</span> 機械予定表
+        </a>
+    </li>
     <li class="nav-item mt-3">
         <div class="small text-uppercase text-gray-400 mb-1">設定</div>
     </li>
