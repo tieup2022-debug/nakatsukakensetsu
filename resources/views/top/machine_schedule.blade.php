@@ -109,6 +109,75 @@
         }
         table.ms-grid th.ms-sat, table.ms-grid td.ms-sat { background: #dbeafe; }
         table.ms-grid th.ms-sun, table.ms-grid td.ms-sun { background: #fce7f3; }
+
+        /* ===== スマホ最適化（PC は触らない） ===== */
+        @media (max-width: 768px) {
+            .ms-toolbar { padding: .5rem .75rem; }
+            .ms-toolbar form.row > .col-auto { width: 100%; }
+            .ms-toolbar form.row > .col-auto > input,
+            .ms-toolbar form.row > .col-auto > select {
+                width: 100% !important;
+            }
+            .ms-toolbar .ms-legend { display: none !important; }
+
+            /* グリッドはスマホで縦も広く使う */
+            .ms-grid-wrap {
+                max-height: calc(100vh - 200px);
+            }
+
+            /* 機械列: 200px → 140px */
+            .ms-col-machine {
+                width: 140px;
+                min-width: 140px;
+                max-width: 140px;
+            }
+            /* 日付列: タップ面確保のため 36px のまま */
+
+            table.ms-grid { font-size: 11px; }
+            table.ms-grid td.ms-machine-cell {
+                padding: 3px 6px;
+                font-size: 11px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            table.ms-grid td.ms-machine-cell .ms-type {
+                font-size: 9px;
+                padding: 0 4px;
+                margin-right: 3px;
+            }
+
+            /* ヘッダ行をやや低く */
+            table.ms-grid thead th.ms-month-row { height: 20px; font-size: 10px; }
+            table.ms-grid thead th.ms-day-row   { height: 30px; font-size: 11px; }
+            table.ms-grid thead th.ms-day-row,
+            table.ms-grid thead th.ms-month-row {
+                top: 0;
+            }
+            table.ms-grid thead th.ms-day-row { top: 20px; }
+
+            /* バー（指タップ用に少しふっくら） */
+            td.ms-cell-filled .ms-bar {
+                height: 26px;
+                line-height: 26px;
+                margin: 3px 0;
+                font-size: 10px;
+            }
+
+            /* ヘッダーのナビ・タイトル類を詰める */
+            h1.h4 { font-size: 1.1rem; }
+            .ms-quick-nav .btn { padding: .25rem .5rem; font-size: .8rem; }
+        }
+
+        /* さらに極小幅(iPhone SE 等)向け: 機械列をもう一段圧縮 */
+        @media (max-width: 420px) {
+            .ms-col-machine {
+                width: 110px;
+                min-width: 110px;
+                max-width: 110px;
+            }
+            table.ms-grid td.ms-machine-cell { font-size: 10px; padding: 3px 4px; }
+        }
         td.ms-cell-empty:hover { background: #fef9c3; cursor: pointer; }
         td.ms-cell-filled { cursor: pointer; position: relative; }
         td.ms-cell-filled .ms-bar {
