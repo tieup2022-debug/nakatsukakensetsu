@@ -6,6 +6,7 @@ use App\Services\AssignmentService;
 use App\Services\NewsService;
 use App\Services\WorkplaceService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class TopAssignmentController extends Controller
@@ -79,23 +80,61 @@ class TopAssignmentController extends Controller
 
         // PDF出力（旧システムと同じ「指定日の全現場＋欠勤予定者」レイアウト）
         if ($request->has('output_pdf')) {
-            // DomPDF + 日本語フォントでメモリ不足になりやすいため、出力時のみ上限を引き上げる
+            // DomPDF + 日本語フォント subsetting は数十秒・数百MB 規模になりがちなので、
+            // 出力時のみメモリ/実行時間を引き上げ、途中で切断されても最後まで処理させる
             @ini_set('memory_limit', '512M');
+            @set_time_limit(180);
+            @ignore_user_abort(true);
 
-            $viewData = $this->assignmentService->getPdf($resolvedWorkDate);
-            if ($viewData === false || empty($viewData['pdf_data_list'] ?? [])) {
+            $pdfStartedAt = microtime(true);
+            $pages = 0;
+
+            try {
+                $viewData = $this->assignmentService->getPdf($resolvedWorkDate);
+                if ($viewData === false || empty($viewData['pdf_data_list'] ?? [])) {
+                    return redirect()
+                        ->route('top.assignment', [
+                            'workplace_id' => $resolvedWorkplaceId,
+                            'work_date' => $resolvedWorkDate,
+                        ])
+                        ->with('status', 'PDF出力できる配置データがありません。');
+                }
+
+                $dataFetchedAt = microtime(true);
+                // pdf_data_list には欠勤情報も同居しているのでページ数からは除外する
+                $pages = max(0, count($viewData['pdf_data_list']) - 1);
+
+                $pdf = Pdf::loadView('pdf.assignment_all', $viewData)->setPaper('A4', 'landscape');
+                $fileName = "配置一覧_{$resolvedWorkDate}.pdf";
+                $response = $pdf->download($fileName);
+
+                Log::info('assignment.pdf generated', [
+                    'work_date' => $resolvedWorkDate,
+                    'pages' => $pages,
+                    'data_fetch_sec' => round($dataFetchedAt - $pdfStartedAt, 3),
+                    'render_sec' => round(microtime(true) - $dataFetchedAt, 3),
+                    'total_sec' => round(microtime(true) - $pdfStartedAt, 3),
+                    'peak_memory_mb' => round(memory_get_peak_usage(true) / 1024 / 1024, 1),
+                ]);
+
+                return $response;
+            } catch (\Throwable $e) {
+                Log::error('assignment.pdf failed', [
+                    'work_date' => $resolvedWorkDate,
+                    'pages' => $pages,
+                    'elapsed_sec' => round(microtime(true) - $pdfStartedAt, 3),
+                    'peak_memory_mb' => round(memory_get_peak_usage(true) / 1024 / 1024, 1),
+                    'message' => $e->getMessage(),
+                    'trace_top' => array_slice(explode("\n", $e->getTraceAsString()), 0, 6),
+                ]);
+
                 return redirect()
                     ->route('top.assignment', [
                         'workplace_id' => $resolvedWorkplaceId,
                         'work_date' => $resolvedWorkDate,
                     ])
-                    ->with('status', 'PDF出力できる配置データがありません。');
+                    ->with('status', 'PDF出力に失敗しました。少し時間をおいて再度お試しください（解消しない場合は管理者へご連絡ください）。');
             }
-
-            $pdf = Pdf::loadView('pdf.assignment_all', $viewData)->setPaper('A4', 'landscape');
-            $fileName = "配置一覧_{$resolvedWorkDate}.pdf";
-
-            return $pdf->download($fileName);
         }
 
         // getAssignment で既に同一条件の一覧を取っている場合は再クエリしない（重複 SQL が最大のボトルネックだった）
