@@ -476,6 +476,223 @@
             .doc-title { font-size: 22px; }
         }
 
+        /* === Mobile cards (default hidden on desktop) === */
+        .mobile-cards { display: none; }
+        .desktop-grid { display: block; }
+
+        @media (max-width: 900px) {
+            body {
+                min-width: 0 !important;
+                padding: 14px 14px 36px 14px;
+                font-size: 15px;
+            }
+
+            .preview-toolbar {
+                border-radius: 12px;
+                padding: 10px 12px;
+                font-size: 13px;
+                gap: 8px;
+            }
+            .preview-toolbar .toolbar-spacer { display: none; }
+            .preview-toolbar a.tool-link.is-back {
+                width: 100%;
+                padding: 6px 4px;
+                margin-bottom: 2px;
+                font-size: 13px;
+            }
+            .preview-toolbar button.tool-btn.is-primary,
+            .preview-toolbar a.tool-link.is-pdf {
+                flex: 1 1 0;
+                justify-content: center;
+                padding: 12px 12px;
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            .doc-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                padding: 0 2px;
+            }
+            .doc-title { font-size: 20px; }
+            .doc-title .doc-title-sub { font-size: 13px; margin-top: 2px; }
+            .doc-date-badge {
+                align-self: flex-start;
+                font-size: 14px;
+                padding: 6px 12px;
+            }
+
+            .desktop-grid { display: none; }
+            .mobile-cards { display: block; }
+            .page-card { display: none; }
+
+            .m-absence-banner {
+                background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+                border: 1px solid #fed7aa;
+                border-radius: 14px;
+                padding: 12px 14px;
+                margin-bottom: 16px;
+                box-shadow: var(--shadow);
+            }
+            .m-absence-banner-title {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 13px;
+                font-weight: 700;
+                color: #b91c1c;
+                letter-spacing: 0.04em;
+                margin-bottom: 10px;
+            }
+            .m-absence-icon {
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                border-radius: 999px;
+                background: var(--accent-absence);
+                flex: 0 0 auto;
+            }
+            .m-absence-count {
+                margin-left: auto;
+                background: #fff;
+                color: #b91c1c;
+                border: 1px solid #fecaca;
+                padding: 2px 9px;
+                border-radius: 999px;
+                font-size: 12px;
+                font-weight: 700;
+            }
+            .m-absence-banner-list {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .m-absence-pill {
+                background: #fff;
+                color: #b91c1c;
+                border: 1px solid #fecaca;
+                padding: 4px 11px;
+                border-radius: 999px;
+                font-weight: 600;
+                font-size: 14px;
+            }
+            .m-no-absence {
+                background: #ecfdf5;
+                color: #047857;
+                border: 1px solid #a7f3d0;
+                border-radius: 12px;
+                padding: 10px 14px;
+                margin-bottom: 16px;
+                font-size: 13px;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .m-no-absence::before {
+                content: "";
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                border-radius: 999px;
+                background: #10b981;
+            }
+
+            .m-card {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                box-shadow: var(--shadow);
+                margin-bottom: 14px;
+                overflow: hidden;
+            }
+            .m-card-head {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 14px;
+                background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+                border-bottom: 1px solid var(--border);
+            }
+            .m-card-num {
+                display: inline-flex;
+                align-items: center;
+                padding: 3px 10px;
+                border-radius: 999px;
+                background: var(--primary);
+                color: #fff;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                flex: 0 0 auto;
+            }
+            .m-card-title {
+                font-size: 16px;
+                font-weight: 700;
+                color: var(--text);
+                line-height: 1.35;
+            }
+            .m-card-body { padding: 2px 14px 10px 14px; }
+            .m-row {
+                display: grid;
+                grid-template-columns: 70px 1fr;
+                align-items: start;
+                gap: 12px;
+                padding: 11px 0;
+                border-bottom: 1px dashed var(--border);
+            }
+            .m-row:last-child { border-bottom: none; }
+            .m-row-label {
+                font-size: 12px;
+                font-weight: 700;
+                color: var(--text-muted);
+                letter-spacing: 0.06em;
+                padding-top: 5px;
+            }
+            .m-row-label .m-row-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                padding: 4px 10px;
+                border-radius: 999px;
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+            }
+            .m-row-label .m-row-chip::before {
+                content: "";
+                display: inline-block;
+                width: 6px;
+                height: 6px;
+                border-radius: 999px;
+                background: currentColor;
+            }
+            .m-row-label .m-chip-heavy { background: #fef3c7; color: #b45309; }
+            .m-row-label .m-chip-vehicle { background: #d1fae5; color: #047857; }
+            .m-row-content {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                min-width: 0;
+            }
+            .m-row-content .name-line { padding: 1px 0; }
+            .m-row-content .chip-list { margin-top: 2px; }
+        }
+
+        @media (max-width: 420px) {
+            body { padding: 12px 10px 32px 10px; }
+            .doc-title { font-size: 18px; }
+            .m-row { grid-template-columns: 58px 1fr; gap: 10px; }
+            .m-row-label { font-size: 11px; padding-top: 4px; }
+            .m-row-label .m-row-chip { padding: 3px 8px; font-size: 11px; }
+            .m-card-title { font-size: 15px; }
+            .m-card-head { padding: 10px 12px; gap: 8px; }
+            .m-card-body { padding: 2px 12px 8px 12px; }
+            .name-line .name-prefix { font-size: 10px; padding: 1px 5px; margin-right: 5px; }
+            .chip { font-size: 12px; padding: 3px 9px; }
+        }
+
         @media print {
             html, body { background: #fff; }
             body {
@@ -539,6 +756,114 @@
         </h1>
         <div class="doc-date-badge">{{ $display_date ?? '' }}</div>
     </div>
+
+    {{-- スマホ用カードレイアウト（≤900px で表示） --}}
+    <div class="mobile-cards">
+        @if(count($absenceNames) > 0)
+            <div class="m-absence-banner">
+                <div class="m-absence-banner-title">
+                    <span class="m-absence-icon"></span>
+                    本日の欠勤予定者
+                    <span class="m-absence-count">{{ count($absenceNames) }}名</span>
+                </div>
+                <div class="m-absence-banner-list">
+                    @foreach($absenceNames as $absName)
+                        <span class="m-absence-pill">{{ $absName }}</span>
+                    @endforeach
+                </div>
+            </div>
+        @else
+            <div class="m-no-absence">本日の欠勤予定者はいません</div>
+        @endif
+
+        @foreach($pages as $page)
+            @for($i = 1; $i <= 8; $i++)
+                @php
+                    $wp = $page['workplace'.$i] ?? [];
+                    $wpName = $wp['workplace_name'] ?? '';
+                    $techs = array_values(array_filter($wp['technitian_list'] ?? [], fn ($n) => $n !== null && $n !== ''));
+                    $workers = collect($wp['worker_list'] ?? [])->filter(fn ($w) => !empty($w['staff_name']));
+                    $heavy = collect($wp['equipment_list'] ?? [])->filter(fn ($e) => !empty($e['vehicle_name']));
+                    $vehicles = collect($wp['vehicle_list'] ?? [])->filter(fn ($v) => !empty($v['vehicle_name']));
+                    $hasAny = $wpName !== '' || count($techs) > 0 || $workers->isNotEmpty() || $heavy->isNotEmpty() || $vehicles->isNotEmpty();
+                @endphp
+                @if($hasAny)
+                    <div class="m-card">
+                        <div class="m-card-head">
+                            <span class="m-card-num">現場 {{ $i }}</span>
+                            <span class="m-card-title">{{ $wpName !== '' ? $wpName : '—' }}</span>
+                        </div>
+                        <div class="m-card-body">
+                            <div class="m-row">
+                                <div class="m-row-label">技術者</div>
+                                <div class="m-row-content">
+                                    @if(count($techs) === 0)
+                                        <span class="cell-muted">—</span>
+                                    @else
+                                        @foreach($techs as $t)
+                                            <span class="name-line is-tech">
+                                                <span class="name-prefix">技術者</span><span class="name-text">{{ $t }}</span>
+                                            </span>
+                                        @endforeach
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="m-row">
+                                <div class="m-row-label">作業員</div>
+                                <div class="m-row-content">
+                                    @if($workers->isEmpty())
+                                        <span class="cell-muted">—</span>
+                                    @else
+                                        @foreach($workers as $w)
+                                            <span class="name-line">
+                                                @if(!empty($w['staff_type']))
+                                                    <span class="name-prefix">{{ $w['staff_type'] }}</span>
+                                                @endif
+                                                <span class="name-text">{{ $w['staff_name'] }}</span>
+                                            </span>
+                                        @endforeach
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="m-row">
+                                <div class="m-row-label"><span class="m-row-chip m-chip-heavy">重機</span></div>
+                                <div class="m-row-content">
+                                    @if($heavy->isEmpty())
+                                        <span class="cell-muted">—</span>
+                                    @else
+                                        <div class="chip-list">
+                                            @foreach($heavy as $e)
+                                                <span class="chip chip-heavy">{{ $e['vehicle_name'] }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="m-row">
+                                <div class="m-row-label"><span class="m-row-chip m-chip-vehicle">車両</span></div>
+                                <div class="m-row-content">
+                                    @if($vehicles->isEmpty())
+                                        <span class="cell-muted">—</span>
+                                    @else
+                                        <div class="chip-list">
+                                            @foreach($vehicles as $v)
+                                                <span class="chip chip-vehicle">{{ $v['vehicle_name'] }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @endfor
+        @endforeach
+    </div>
+
+    <div class="desktop-grid">
 @endif
 
 @foreach($pages as $pageIdx => $page)
@@ -747,6 +1072,10 @@
     </div>
     @endif
 @endforeach
+
+@if($isWeb)
+    </div>{{-- /.desktop-grid --}}
+@endif
 
 @if(!$isWeb)
 <div class="page-break"></div>
