@@ -107,8 +107,8 @@
             min-width: 200px;
             max-width: 200px;
         }
-        th.ms-sat, td.ms-sat { background: #f0f9ff; }
-        th.ms-sun, td.ms-sun { background: #fef2f2; }
+        table.ms-grid th.ms-sat, table.ms-grid td.ms-sat { background: #dbeafe; }
+        table.ms-grid th.ms-sun, table.ms-grid td.ms-sun { background: #fce7f3; }
         td.ms-cell-empty:hover { background: #fef9c3; cursor: pointer; }
         td.ms-cell-filled { cursor: pointer; position: relative; }
         td.ms-cell-filled .ms-bar {
