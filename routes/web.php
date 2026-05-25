@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\InAppNotificationController;
 use App\Http\Controllers\MonthlyAssignmentController;
 use App\Http\Controllers\MonthlyAttendanceController;
+use App\Http\Controllers\GratitudePointController;
 use App\Http\Controllers\PaidLeaveApprovalController;
 use App\Http\Controllers\PaidLeaveController;
 use App\Http\Controllers\SettingAccountController;
@@ -145,6 +146,8 @@ Route::post('/paid-leave', [PaidLeaveController::class, 'store'])->middleware('n
 Route::get('/paid-leave/mine', [PaidLeaveController::class, 'mine'])->middleware('nakatsuka.auth')->name('paid-leave.mine');
 Route::get('/paid-leave/approvals', [PaidLeaveApprovalController::class, 'index'])->middleware('nakatsuka.auth')->name('paid-leave.approvals');
 Route::post('/paid-leave/{id}/approve', [PaidLeaveApprovalController::class, 'approve'])->middleware('nakatsuka.auth')->name('paid-leave.approve')->where('id', '[0-9]+');
+
+Route::get('/gratitude-points', [GratitudePointController::class, 'index'])->middleware('nakatsuka.auth')->name('gratitude-points.index');
 Route::get('/notifications', [InAppNotificationController::class, 'index'])->middleware('nakatsuka.auth')->name('notifications.index');
 Route::post('/notifications/{id}/read', [InAppNotificationController::class, 'markRead'])->middleware('nakatsuka.auth')->name('notifications.read')->where('id', '[0-9]+');
 Route::post('/notifications/read-all', [InAppNotificationController::class, 'markAllRead'])->middleware('nakatsuka.auth')->name('notifications.read-all');

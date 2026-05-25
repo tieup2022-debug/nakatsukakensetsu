@@ -40,6 +40,11 @@
             <span class="me-2">🗓️</span> 有給申請
         </a>
     </li>
+    <li class="nav-item">
+        <a href="{{ route('gratitude-points.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('gratitude-points.*') ? 'active' : 'text-white-50' }}">
+            <span class="me-2">💐</span> 感謝ポイント
+        </a>
+    </li>
     <li class="nav-item mt-4 pt-3 border-top border-secondary border-opacity-25">
         <a href="{{ route('inquiry.create') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('inquiry.*') ? 'active' : 'text-white-50' }}">
             <span class="me-2">✉️</span> お問い合わせ
