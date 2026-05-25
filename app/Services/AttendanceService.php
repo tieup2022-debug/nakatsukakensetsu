@@ -388,25 +388,36 @@ class AttendanceService
                 return false;
             }
 
-            $startTime = (string) ($startTime ?? '');
-            $endTime = (string) ($endTime ?? '');
-            $breakTime = (string) ($breakTime ?? '');
-
-            $startTime = $this->normalizeClockForSqlTime($startTime);
-            $endTime = $this->normalizeClockForSqlTime($endTime);
-
-            $breakTimeForStorage = $this->prepareBreakTimeForStorage($breakTime);
             $absenceForDb = (int) ((bool) $absenceFlg);
 
-            $payload = [
-                'workplace_id' => (int) $workplaceId,
-                'work_date' => $workDateNorm,
-                'start_time' => $startTime,
-                'end_time' => $endTime,
-                'break_time' => $breakTimeForStorage,
-                'absence_flg' => $absenceForDb,
-                'updated_at' => now(),
-            ];
+            // 欠勤時に start_time/end_time へ空文字を書くと MySQL の TIME 型で例外になり、
+            // APP_ENV=local では DB を更新せず upsertLocalAttendance だけ成功して「欠勤保存したのに反映されない」になる。
+            if ($absenceForDb === 1) {
+                $payload = [
+                    'workplace_id' => (int) $workplaceId,
+                    'work_date' => $workDateNorm,
+                    'absence_flg' => 1,
+                    'updated_at' => now(),
+                ];
+            } else {
+                $startTime = (string) ($startTime ?? '');
+                $endTime = (string) ($endTime ?? '');
+                $breakTime = (string) ($breakTime ?? '');
+
+                $startTime = $this->normalizeClockForSqlTime($startTime);
+                $endTime = $this->normalizeClockForSqlTime($endTime);
+                $breakTimeForStorage = $this->prepareBreakTimeForStorage($breakTime);
+
+                $payload = [
+                    'workplace_id' => (int) $workplaceId,
+                    'work_date' => $workDateNorm,
+                    'start_time' => $startTime,
+                    'end_time' => $endTime,
+                    'break_time' => $breakTimeForStorage,
+                    'absence_flg' => 0,
+                    'updated_at' => now(),
+                ];
+            }
 
             DB::beginTransaction();
 
@@ -431,11 +442,17 @@ class AttendanceService
                     ->where('id', '=', $rowId)
                     ->update($payload);
             } else {
-                $rowId = (int) DB::table('t_attendance')->insertGetId(array_merge($payload, [
+                $insertRow = array_merge($payload, [
                     'staff_id' => (int) $staffId,
                     'deleted_at' => null,
                     'created_at' => now(),
-                ]));
+                ]);
+                if ($absenceForDb === 1) {
+                    $insertRow['start_time'] = null;
+                    $insertRow['end_time'] = null;
+                    $insertRow['break_time'] = $this->prepareBreakTimeForStorage('');
+                }
+                $rowId = (int) DB::table('t_attendance')->insertGetId($insertRow);
                 if ($rowId <= 0) {
                     DB::rollBack();
 
@@ -450,28 +467,44 @@ class AttendanceService
                 return false;
             }
 
-            foreach (['start_time' => $startTime, 'end_time' => $endTime] as $column => $expected) {
-                if ($expected === '') {
-                    continue;
-                }
-                $got = $this->normalizeClockForSqlTime($this->formatTimeForDisplay($fresh->{$column} ?? ''));
-                if ($got !== $expected) {
-                    $conn = (string) config('database.default');
-                    $dbName = (string) data_get(config('database.connections.'.$conn), 'database', '');
-                    Log::warning('AttendanceUpdate: DB上の時刻が保存値と一致しません（接続先・トリガ・権限を確認）', [
-                        'connection' => $conn,
-                        'database' => $dbName,
+            if ($absenceForDb === 1) {
+                if ((int) ($fresh->absence_flg ?? 0) !== 1) {
+                    DB::rollBack();
+                    Log::warning('AttendanceUpdate: 欠勤フラグがDBに反映されませんでした', [
                         'row_id' => $rowId,
                         'staff_id' => (int) $staffId,
                         'work_date' => $workDateNorm,
-                        'column' => $column,
-                        'expected' => $expected,
-                        'actual_raw' => $fresh->{$column} ?? null,
-                        'actual_norm' => $got,
+                        'absence_flg_actual' => $fresh->absence_flg ?? null,
                     ]);
-                    DB::rollBack();
 
                     return false;
+                }
+            } else {
+                $startTime = (string) ($payload['start_time'] ?? '');
+                $endTime = (string) ($payload['end_time'] ?? '');
+                foreach (['start_time' => $startTime, 'end_time' => $endTime] as $column => $expected) {
+                    if ($expected === '') {
+                        continue;
+                    }
+                    $got = $this->normalizeClockForSqlTime($this->formatTimeForDisplay($fresh->{$column} ?? ''));
+                    if ($got !== $expected) {
+                        $conn = (string) config('database.default');
+                        $dbName = (string) data_get(config('database.connections.'.$conn), 'database', '');
+                        Log::warning('AttendanceUpdate: DB上の時刻が保存値と一致しません（接続先・トリガ・権限を確認）', [
+                            'connection' => $conn,
+                            'database' => $dbName,
+                            'row_id' => $rowId,
+                            'staff_id' => (int) $staffId,
+                            'work_date' => $workDateNorm,
+                            'column' => $column,
+                            'expected' => $expected,
+                            'actual_raw' => $fresh->{$column} ?? null,
+                            'actual_norm' => $got,
+                        ]);
+                        DB::rollBack();
+
+                        return false;
+                    }
                 }
             }
 
