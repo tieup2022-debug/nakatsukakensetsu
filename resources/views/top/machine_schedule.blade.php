@@ -231,6 +231,13 @@
 
         .ms-legend { font-size: 12px; color: #64748b; }
         .ms-legend-na { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+        /* 使用不可セルのツールチップ（即時表示・読みやすさ調整） */
+        .tooltip.ms-tooltip .tooltip-inner {
+            max-width: 320px;
+            font-size: 12px;
+            text-align: left;
+            white-space: pre-wrap;
+        }
         .ms-legend-na .sw {
             display: inline-block;
             width: 14px;
@@ -406,7 +413,9 @@
                                             data-na-reason-type="{{ $na['reason_type'] }}"
                                             data-na-reason-label="{{ $na['reason_label'] }}"
                                             data-na-note="{{ $na['note'] ?? '' }}"
-                                            title="{{ $titleText }}"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-title="{{ $titleText }}"
                                         @endif
                                     >
                                         @if($cell)
@@ -581,6 +590,18 @@
         var modalEl = document.getElementById('msEditModal');
         if (!modalEl || typeof bootstrap === 'undefined') return;
         var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+        // 使用不可セルのツールチップ初期化（ホバー後すぐ表示）
+        if (bootstrap.Tooltip) {
+            document.querySelectorAll('.ms-grid [data-bs-toggle="tooltip"]').forEach(function (el) {
+                new bootstrap.Tooltip(el, {
+                    delay: { show: 80, hide: 0 },
+                    container: 'body',
+                    trigger: 'hover focus',
+                    customClass: 'ms-tooltip',
+                });
+            });
+        }
 
         var $name = document.getElementById('msMachineName');
         var $masterId = document.getElementById('msMasterId');
