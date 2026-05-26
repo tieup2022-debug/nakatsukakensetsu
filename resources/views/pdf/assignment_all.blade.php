@@ -382,6 +382,9 @@
         .name-line {
             display: block;
             padding: 2px 0;
+            /* 日本語名（CJK）の字間で折り返さない。スペースは nb 化済みなので姓+名は1単位扱い */
+            word-break: keep-all;
+            overflow-wrap: break-word;
         }
         .name-line .name-prefix {
             display: inline-block;
@@ -394,10 +397,13 @@
             color: var(--text-muted);
             margin-right: 6px;
             vertical-align: 2px;
+            white-space: nowrap;
         }
         .name-line .name-text {
             font-weight: 600;
             color: var(--text);
+            word-break: keep-all;
+            overflow-wrap: break-word;
         }
         .name-line.is-tech .name-prefix {
             background: #e0f2fe;
@@ -446,6 +452,8 @@
             gap: 8px;
             font-weight: 600;
             color: #b91c1c;
+            word-break: keep-all;
+            overflow-wrap: break-word;
         }
         .absence-list .absence-name::before {
             content: "";
@@ -674,6 +682,8 @@
                 border-radius: 999px;
                 font-weight: 600;
                 font-size: 14px;
+                word-break: keep-all;
+                overflow-wrap: break-word;
             }
             .m-no-absence {
                 background: #ecfdf5;
@@ -837,6 +847,12 @@
     $absenceText = collect($absenceFlat)->filter(fn ($n) => $n !== null && $n !== '')->implode("\n");
     $absenceNames = collect($absenceFlat)->filter(fn ($n) => $n !== null && $n !== '')->values()->all();
     $isWeb = !empty($web_preview);
+    // 氏名の姓と名の間に入っている半角/全角スペースを non-breaking space に変換し、
+    // word-break: keep-all と組み合わせて姓・名の途中で改行されないようにする（Web 表示のみ）
+    $nb = static function ($s) {
+        if ($s === null) { return ''; }
+        return preg_replace('/[\s\x{3000}]+/u', "\u{00A0}", (string) $s);
+    };
 @endphp
 
 @if($isWeb)
@@ -871,7 +887,7 @@
                 </div>
                 <div class="m-absence-banner-list">
                     @foreach($absenceNames as $absName)
-                        <span class="m-absence-pill">{{ $absName }}</span>
+                        <span class="m-absence-pill">{{ $nb($absName) }}</span>
                     @endforeach
                 </div>
             </div>
@@ -905,7 +921,7 @@
                                     @else
                                         @foreach($techs as $t)
                                             <span class="name-line is-tech">
-                                                <span class="name-prefix">技術者</span><span class="name-text">{{ $t }}</span>
+                                                <span class="name-prefix">技術者</span><span class="name-text">{{ $nb($t) }}</span>
                                             </span>
                                         @endforeach
                                     @endif
@@ -923,7 +939,7 @@
                                                 @if(!empty($w['staff_type']))
                                                     <span class="name-prefix">{{ $w['staff_type'] }}</span>
                                                 @endif
-                                                <span class="name-text">{{ $w['staff_name'] }}</span>
+                                                <span class="name-text">{{ $nb($w['staff_name']) }}</span>
                                             </span>
                                         @endforeach
                                     @endif
@@ -1021,7 +1037,7 @@
                             @if($isWeb)
                                 @if($name !== '')
                                     <span class="name-line is-tech">
-                                        <span class="name-prefix">技術者</span><span class="name-text">{{ $name }}</span>
+                                        <span class="name-prefix">技術者</span><span class="name-text">{{ $nb($name) }}</span>
                                     </span>
                                 @else
                                     <span class="cell-muted">—</span>
@@ -1041,7 +1057,7 @@
                                 @if(count($absenceNames) > 0)
                                     <div class="absence-list">
                                         @foreach($absenceNames as $absName)
-                                            <span class="absence-name">{{ $absName }}</span>
+                                            <span class="absence-name">{{ $nb($absName) }}</span>
                                         @endforeach
                                     </div>
                                 @else
@@ -1071,7 +1087,7 @@
                                         @if(!empty($w['staff_type']))
                                             <span class="name-prefix">{{ $w['staff_type'] }}</span>
                                         @endif
-                                        <span class="name-text">{{ $w['staff_name'] }}</span>
+                                        <span class="name-text">{{ $nb($w['staff_name']) }}</span>
                                     </span>
                                 @endforeach
                             @endif
