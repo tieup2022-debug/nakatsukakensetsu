@@ -224,12 +224,8 @@
         }
         td.ms-cell-na .ms-bar-na.start { border-top-left-radius: 6px; border-bottom-left-radius: 6px; margin-left: 2px; }
         td.ms-cell-na .ms-bar-na.end   { border-top-right-radius: 6px; border-bottom-right-radius: 6px; margin-right: 2px; }
-        /* 種別ごとの背景色（薄め） */
-        td.ms-cell-na .ms-bar-na.reason-1  { background-color: #fecaca; } /* 車検 - 赤 */
-        td.ms-cell-na .ms-bar-na.reason-2  { background-color: #fde68a; } /* 点検 - 黄 */
-        td.ms-cell-na .ms-bar-na.reason-3  { background-color: #fed7aa; } /* 修理 - 橙 */
-        td.ms-cell-na .ms-bar-na.reason-4  { background-color: #fbcfe8; } /* 故障 - 桃 */
-        td.ms-cell-na .ms-bar-na.reason-99 { background-color: #e5e7eb; } /* その他 - 灰 */
+        /* 種別問わず統一: 薄い灰 + 45° 斜線 */
+        td.ms-cell-na .ms-bar-na { background-color: #e5e7eb; }
         /* 配置と使用不可が同日にある場合（不可優先） */
         td.ms-cell-filled.ms-cell-na .ms-bar { display: none; }
 
@@ -247,7 +243,7 @@
                 transparent 2px,
                 transparent 4px
             );
-            background-color: #fecaca;
+            background-color: #e5e7eb;
         }
         .ms-legend .swatch { display:inline-block;width:14px;height:14px;border-radius:3px;background:#e5e7eb;margin-right:4px;vertical-align:-2px; }
         .ms-quick-nav .btn { white-space: nowrap; }
