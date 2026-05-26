@@ -206,6 +206,11 @@
             margin-top: 4px;
             letter-spacing: 0;
         }
+        .doc-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
         .doc-date-badge {
             display: inline-flex;
             align-items: center;
@@ -219,6 +224,8 @@
             font-weight: 600;
             font-size: 15px;
         }
+        /* デスクトップでは表示切替ボタンは不要なので非表示。スマホで有効化する */
+        .m-view-toggle { display: none; }
 
         .page-card {
             background: var(--surface);
@@ -517,11 +524,102 @@
             }
             .doc-title { font-size: 20px; }
             .doc-title .doc-title-sub { font-size: 13px; margin-top: 2px; }
-            .doc-date-badge {
+            .doc-meta {
                 align-self: flex-start;
+                width: 100%;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .doc-date-badge {
                 font-size: 14px;
                 padding: 6px 12px;
             }
+            .m-view-toggle {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 7px 14px;
+                border-radius: 999px;
+                border: 1px solid var(--border-strong);
+                background: #fff;
+                color: var(--text);
+                font: inherit;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                line-height: 1.2;
+                margin-left: auto;
+                transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+            }
+            .m-view-toggle:hover,
+            .m-view-toggle:active {
+                background: #f8fafc;
+                border-color: #94a3b8;
+            }
+            .m-view-toggle::before {
+                content: "";
+                display: inline-block;
+                width: 14px;
+                height: 11px;
+                background: currentColor;
+                /* 3 段の横線（カード表示アイコン） */
+                -webkit-mask: linear-gradient(currentColor, currentColor) top/100% 2px no-repeat,
+                              linear-gradient(currentColor, currentColor) center/100% 2px no-repeat,
+                              linear-gradient(currentColor, currentColor) bottom/100% 2px no-repeat;
+                        mask: linear-gradient(currentColor, currentColor) top/100% 2px no-repeat,
+                              linear-gradient(currentColor, currentColor) center/100% 2px no-repeat,
+                              linear-gradient(currentColor, currentColor) bottom/100% 2px no-repeat;
+            }
+            .m-view-toggle[data-mode="table"] {
+                background: var(--primary);
+                color: #fff;
+                border-color: var(--primary);
+            }
+            .m-view-toggle[data-mode="table"]:hover,
+            .m-view-toggle[data-mode="table"]:active {
+                background: #1d4ed8;
+                border-color: #1d4ed8;
+            }
+            .m-view-toggle[data-mode="table"]::before {
+                /* 3 本の縦線（テーブル列アイコン） */
+                -webkit-mask: linear-gradient(currentColor, currentColor) left/2px 100% no-repeat,
+                              linear-gradient(currentColor, currentColor) center/2px 100% no-repeat,
+                              linear-gradient(currentColor, currentColor) right/2px 100% no-repeat;
+                        mask: linear-gradient(currentColor, currentColor) left/2px 100% no-repeat,
+                              linear-gradient(currentColor, currentColor) center/2px 100% no-repeat,
+                              linear-gradient(currentColor, currentColor) right/2px 100% no-repeat;
+            }
+
+            /* === 表モード（スマホで横スクロール可能なテーブル表示） === */
+            body.view-table .mobile-cards { display: none; }
+            body.view-table .desktop-grid { display: block; }
+            body.view-table .page-card {
+                display: block;
+                padding: 10px;
+                margin-bottom: 14px;
+                border-radius: 14px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            body.view-table .grid {
+                min-width: 920px;
+                font-size: 13px;
+            }
+            body.view-table .grid th,
+            body.view-table .grid td { padding: 7px 8px; }
+            body.view-table .wp-head { padding: 8px 6px !important; }
+            body.view-table .wp-head .wp-head-label { font-size: 10px; padding: 1px 6px; }
+            body.view-table .wp-sub { font-size: 13px; min-height: 18px; margin-top: 5px; }
+            body.view-table .grid td.cell { font-size: 13px; line-height: 1.45; }
+            body.view-table .chip { font-size: 12px; padding: 2px 8px; }
+            body.view-table .name-line .name-prefix {
+                font-size: 10px;
+                padding: 1px 5px;
+                margin-right: 5px;
+            }
+            body.view-table .section-divider .section-chip { font-size: 11px; padding: 2px 8px; }
+            body.view-table .absence-list .absence-name { font-size: 13px; }
+            body.view-table .doc-title .doc-title-sub { display: none; }
 
             .desktop-grid { display: none; }
             .mobile-cards { display: block; }
@@ -754,7 +852,12 @@
             社員 ・ 作業員 ・ 重機 ・ 車両配置一覧
             <span class="doc-title-sub">現場ごとの配置と本日の欠勤予定者を表示しています</span>
         </h1>
-        <div class="doc-date-badge">{{ $display_date ?? '' }}</div>
+        <div class="doc-meta">
+            <div class="doc-date-badge">{{ $display_date ?? '' }}</div>
+            <button id="m-view-toggle" type="button" class="m-view-toggle no-print" data-mode="card" aria-label="表示切替">
+                <span class="m-view-toggle-label">横表示</span>
+            </button>
+        </div>
     </div>
 
     {{-- スマホ用カードレイアウト（≤900px で表示） --}}
@@ -1081,5 +1184,39 @@
 <div class="page-break"></div>
 @endif
 <div class="company-footer">中塚建設株式会社</div>
+@if($isWeb)
+<script>
+(function () {
+    var STORAGE_KEY = 'nk-assignment-mobile-view';
+    var btn = document.getElementById('m-view-toggle');
+    if (!btn) return;
+    var labelEl = btn.querySelector('.m-view-toggle-label');
+
+    function applyMode(mode) {
+        if (mode !== 'table') mode = 'card';
+        btn.setAttribute('data-mode', mode);
+        if (labelEl) {
+            labelEl.textContent = (mode === 'table') ? 'カード表示' : '横表示';
+        }
+        btn.setAttribute('aria-label', (mode === 'table') ? 'カード表示に切替' : '横表示に切替');
+        if (mode === 'table') {
+            document.body.classList.add('view-table');
+        } else {
+            document.body.classList.remove('view-table');
+        }
+    }
+
+    var saved = null;
+    try { saved = window.localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    applyMode(saved === 'table' ? 'table' : 'card');
+
+    btn.addEventListener('click', function () {
+        var next = (btn.getAttribute('data-mode') === 'table') ? 'card' : 'table';
+        applyMode(next);
+        try { window.localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+    });
+})();
+</script>
+@endif
 </body>
 </html>
