@@ -265,7 +265,9 @@
         </div>
         <div class="ms-quick-nav d-flex flex-wrap align-items-center gap-2">
             <a class="btn btn-outline-secondary btn-sm" href="{{ route('top.machine.schedule', ['start_date'=>$prev_start,'range'=>$range_key,'vehicle_type'=>$vehicle_type_param]) }}">← 前期間</a>
+            <a class="btn btn-outline-primary btn-sm" href="{{ route('top.machine.schedule', ['start_date'=>$prev_week_start,'range'=>$range_key,'vehicle_type'=>$vehicle_type_param]) }}">‹ 1週前</a>
             <a class="btn btn-outline-secondary btn-sm" href="{{ route('top.machine.schedule', ['range'=>$range_key,'vehicle_type'=>$vehicle_type_param]) }}">今日へ</a>
+            <a class="btn btn-outline-primary btn-sm" href="{{ route('top.machine.schedule', ['start_date'=>$next_week_start,'range'=>$range_key,'vehicle_type'=>$vehicle_type_param]) }}">1週先 ›</a>
             <a class="btn btn-outline-secondary btn-sm" href="{{ route('top.machine.schedule', ['start_date'=>$next_start,'range'=>$range_key,'vehicle_type'=>$vehicle_type_param]) }}">次期間 →</a>
         </div>
     </div>

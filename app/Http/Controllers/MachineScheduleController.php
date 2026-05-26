@@ -53,6 +53,8 @@ class MachineScheduleController extends Controller
         // 前後ナビ
         $prevStart = date('Y-m-d', strtotime($startDate . ' -' . $days . ' days'));
         $nextStart = date('Y-m-d', strtotime($startDate . ' +' . $days . ' days'));
+        $prevWeekStart = date('Y-m-d', strtotime($startDate . ' -7 days'));
+        $nextWeekStart = date('Y-m-d', strtotime($startDate . ' +7 days'));
 
         return view('top.machine_schedule')->with([
             'matrix' => $matrix,
@@ -61,6 +63,8 @@ class MachineScheduleController extends Controller
             'vehicle_type_param' => $vehicleTypeParam,
             'prev_start' => $prevStart,
             'next_start' => $nextStart,
+            'prev_week_start' => $prevWeekStart,
+            'next_week_start' => $nextWeekStart,
             'start_date' => $startDate,
             'end_date' => $endDate,
         ]);
