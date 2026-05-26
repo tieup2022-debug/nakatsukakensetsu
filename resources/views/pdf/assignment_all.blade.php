@@ -1203,7 +1203,12 @@
 @if($isWeb)
 <script>
 (function () {
+    // 以前のバージョンでは選択モードを localStorage に保存していたが、
+    // 「スマホは常にカード表示で開く」運用にしたため、保存していた値は破棄して
+    // ページ読み込みのたびにカード表示で開始する。トグルは現セッション中のみ有効。
     var STORAGE_KEY = 'nk-assignment-mobile-view';
+    try { window.localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+
     var btn = document.getElementById('m-view-toggle');
     if (!btn) return;
     var labelEl = btn.querySelector('.m-view-toggle-label');
@@ -1222,14 +1227,11 @@
         }
     }
 
-    var saved = null;
-    try { saved = window.localStorage.getItem(STORAGE_KEY); } catch (e) {}
-    applyMode(saved === 'table' ? 'table' : 'card');
+    applyMode('card');
 
     btn.addEventListener('click', function () {
         var next = (btn.getAttribute('data-mode') === 'table') ? 'card' : 'table';
         applyMode(next);
-        try { window.localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
     });
 })();
 </script>
