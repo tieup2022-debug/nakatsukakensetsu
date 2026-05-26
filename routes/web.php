@@ -46,6 +46,8 @@ Route::post('/top/assignment/copy', [TopAssignmentController::class, 'copy'])->n
 Route::get('/top/machine-schedule', [MachineScheduleController::class, 'index'])->name('top.machine.schedule');
 Route::post('/top/machine-schedule/place', [MachineScheduleController::class, 'place'])->name('top.machine.schedule.place');
 Route::post('/top/machine-schedule/clear', [MachineScheduleController::class, 'clear'])->name('top.machine.schedule.clear');
+Route::post('/top/machine-schedule/unavailable/set', [MachineScheduleController::class, 'setUnavailable'])->name('top.machine.schedule.unavailable.set');
+Route::post('/top/machine-schedule/unavailable/clear', [MachineScheduleController::class, 'clearUnavailable'])->name('top.machine.schedule.unavailable.clear');
 
 Route::get('/top/setting', [TopSettingController::class, 'index'])->middleware('nakatsuka.auth')->name('top.setting');
 

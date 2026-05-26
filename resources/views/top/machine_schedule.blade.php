@@ -5,7 +5,9 @@
     $dates = $matrix['dates'] ?? [];
     $machines = $matrix['machines'] ?? [];
     $cells = $matrix['cells'] ?? [];
+    $unavailableMap = $matrix['unavailable'] ?? [];
     $workplaces = $matrix['workplaces'] ?? [];
+    $reasons = $matrix['reasons'] ?? [];
 
     // 現場ID -> 名前
     $workplaceNameById = [];
@@ -17,6 +19,11 @@
     $colorFor = function (int $id): string {
         $hue = ($id * 47) % 360;
         return "hsl({$hue}, 70%, 82%)";
+    };
+
+    // 使用不可 reason_type -> CSS クラス（色分け）
+    $unavailClassFor = function (int $rt): string {
+        return 'reason-' . $rt;
     };
 
     $weekdays = ['日','月','火','水','木','金','土'];
@@ -194,7 +201,54 @@
         td.ms-cell-filled .ms-bar.start { border-top-left-radius: 6px; border-bottom-left-radius: 6px; margin-left: 2px; }
         td.ms-cell-filled .ms-bar.end   { border-top-right-radius: 6px; border-bottom-right-radius: 6px; margin-right: 2px; }
         td.ms-cell-filled.is-conflict .ms-bar { outline: 2px solid #dc2626; }
+
+        /* 使用不可バー（車検・点検・修理・故障・その他） */
+        td.ms-cell-na { cursor: pointer; position: relative; }
+        td.ms-cell-na .ms-bar-na {
+            display: block;
+            height: 24px;
+            line-height: 24px;
+            margin: 4px 0;
+            font-size: 10px;
+            color: #1e293b;
+            text-align: center;
+            overflow: hidden;
+            white-space: nowrap;
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(0, 0, 0, 0.10),
+                rgba(0, 0, 0, 0.10) 4px,
+                transparent 4px,
+                transparent 8px
+            );
+        }
+        td.ms-cell-na .ms-bar-na.start { border-top-left-radius: 6px; border-bottom-left-radius: 6px; margin-left: 2px; }
+        td.ms-cell-na .ms-bar-na.end   { border-top-right-radius: 6px; border-bottom-right-radius: 6px; margin-right: 2px; }
+        /* 種別ごとの背景色（薄め） */
+        td.ms-cell-na .ms-bar-na.reason-1  { background-color: #fecaca; } /* 車検 - 赤 */
+        td.ms-cell-na .ms-bar-na.reason-2  { background-color: #fde68a; } /* 点検 - 黄 */
+        td.ms-cell-na .ms-bar-na.reason-3  { background-color: #fed7aa; } /* 修理 - 橙 */
+        td.ms-cell-na .ms-bar-na.reason-4  { background-color: #fbcfe8; } /* 故障 - 桃 */
+        td.ms-cell-na .ms-bar-na.reason-99 { background-color: #e5e7eb; } /* その他 - 灰 */
+        /* 配置と使用不可が同日にある場合（不可優先） */
+        td.ms-cell-filled.ms-cell-na .ms-bar { display: none; }
+
         .ms-legend { font-size: 12px; color: #64748b; }
+        .ms-legend-na { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+        .ms-legend-na .sw {
+            display: inline-block;
+            width: 14px;
+            height: 10px;
+            border-radius: 2px;
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(0, 0, 0, 0.10),
+                rgba(0, 0, 0, 0.10) 2px,
+                transparent 2px,
+                transparent 4px
+            );
+            background-color: #fecaca;
+        }
         .ms-legend .swatch { display:inline-block;width:14px;height:14px;border-radius:3px;background:#e5e7eb;margin-right:4px;vertical-align:-2px; }
         .ms-quick-nav .btn { white-space: nowrap; }
     </style>
@@ -240,7 +294,8 @@
                     <button class="btn btn-primary btn-sm" type="submit">表示</button>
                 </div>
                 <div class="col text-end ms-legend">
-                    セルをクリック → 期間配置／クリア。色は現場ごと。
+                    セルをクリック → 期間配置／使用不可登録。色は現場ごと。
+                    <span class="ms-legend-na"><span class="sw"></span>使用不可（車検・点検・修理・故障）</span>
                 </div>
             </form>
         </div>
@@ -298,6 +353,7 @@
                         @foreach($machines as $m)
                             @php
                                 $row = $cells[$m['id']] ?? [];
+                                $naRow = $unavailableMap[$m['id']] ?? [];
                                 $typeLabel = $m['vehicle_type'] === 2 ? '重' : '車';
                                 $typeCls = $m['vehicle_type'] === 2 ? 'type-2' : 'type-1';
                             @endphp
@@ -308,6 +364,7 @@
                                 @foreach($dates as $d)
                                     @php
                                         $cell = $row[$d['date']] ?? null;
+                                        $na = $naRow[$d['date']] ?? null;
                                         $cls = '';
                                         if ($d['is_sat']) $cls .= ' ms-sat';
                                         if ($d['is_sun']) $cls .= ' ms-sun';
@@ -318,7 +375,15 @@
                                             if (!empty($cell['start'])) $barCls .= ' start';
                                             if (!empty($cell['end']))   $barCls .= ' end';
                                             $showName = !empty($cell['start']);
-                                        } else {
+                                        }
+                                        if ($na) {
+                                            $cls .= ' ms-cell-na';
+                                            $naBarCls = $unavailClassFor((int)$na['reason_type']);
+                                            if (!empty($na['start'])) $naBarCls .= ' start';
+                                            if (!empty($na['end']))   $naBarCls .= ' end';
+                                            $showLabel = !empty($na['start']);
+                                        }
+                                        if (!$cell && !$na) {
                                             $cls .= ' ms-cell-empty';
                                         }
                                     @endphp
@@ -332,9 +397,16 @@
                                             data-workplace-id="{{ $cell['workplace_id'] }}"
                                             data-workplace-name="{{ $cell['workplace_name'] }}"
                                         @endif
+                                        @if($na)
+                                            data-na-reason-type="{{ $na['reason_type'] }}"
+                                            data-na-reason-label="{{ $na['reason_label'] }}"
+                                        @endif
                                     >
                                         @if($cell)
                                             <span class="ms-bar{{ $barCls }}" style="background: {{ $color }};">{{ $showName ? $cell['workplace_name'] : '' }}</span>
+                                        @endif
+                                        @if($na)
+                                            <span class="ms-bar-na {{ $naBarCls }}">{{ $showLabel ? $na['reason_label'] : '' }}</span>
                                         @endif
                                     </td>
                                 @endforeach
@@ -346,75 +418,136 @@
         </div>
     </div>
 
-    {{-- セル編集モーダル --}}
+    {{-- セル編集モーダル（タブ式：現場へ配置 / 使用不可登録） --}}
     <div class="modal fade" id="msEditModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">機械配置の編集</h5>
+                    <h5 class="modal-title">機械スケジュール編集</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="msPlaceForm" method="POST" action="{{ route('top.machine.schedule.place') }}">
-                    @csrf
-                    <input type="hidden" name="master_id" id="msMasterId">
-                    <input type="hidden" name="master_type" id="msMasterType">
-                    {{-- 戻り先（現在の表示条件をそのまま保持） --}}
-                    <input type="hidden" name="view_start_date" value="{{ $start_date }}">
-                    <input type="hidden" name="view_range" value="{{ $range_key }}">
-                    <input type="hidden" name="view_vehicle_type" value="{{ $vehicle_type_param }}">
 
-                    <div class="modal-body">
-                        <div class="mb-2">
-                            <span class="text-muted small">対象機械：</span>
-                            <strong id="msMachineName">-</strong>
+                <div class="modal-body pb-0">
+                    <div class="mb-2">
+                        <span class="text-muted small">対象機械：</span>
+                        <strong id="msMachineName">-</strong>
+                    </div>
+                    <div id="msCurrentInfo" class="alert alert-info py-2 mb-3 small d-none"></div>
+
+                    {{-- 共通: 開始日 / 終了日 --}}
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">開始日</label>
+                            <input type="text" class="form-control form-control-sm js-datepicker" id="msStartDate" readonly autocomplete="off">
                         </div>
-                        <div id="msCurrentInfo" class="alert alert-info py-2 mb-3 small d-none"></div>
-
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <label class="form-label small text-muted">開始日</label>
-                                <input type="text" class="form-control form-control-sm js-datepicker" name="start_date" id="msStartDate" readonly autocomplete="off">
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label small text-muted">終了日</label>
-                                <input type="text" class="form-control form-control-sm js-datepicker" name="end_date" id="msEndDate" readonly autocomplete="off">
-                            </div>
-                        </div>
-
-                        <div class="mt-3">
-                            <label class="form-label small text-muted">現場</label>
-                            <select class="form-select form-select-sm" name="workplace_id" id="msWorkplaceId" required>
-                                <option value="">選択してください</option>
-                                @foreach($workplaces as $w)
-                                    <option value="{{ $w['id'] }}">{{ $w['name'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="form-check mt-3">
-                            <input type="hidden" name="overwrite" value="0">
-                            <input class="form-check-input" type="checkbox" value="1" id="msOverwrite" name="overwrite">
-                            <label class="form-check-label small" for="msOverwrite">
-                                他現場に配置済みの日も上書きする
-                            </label>
+                        <div class="col-6">
+                            <label class="form-label small text-muted">終了日</label>
+                            <input type="text" class="form-control form-control-sm js-datepicker" id="msEndDate" readonly autocomplete="off">
                         </div>
                     </div>
-                    <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-outline-danger btn-sm" id="msClearBtn">この期間をクリア</button>
-                        <div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">キャンセル</button>
-                            <button type="submit" class="btn btn-primary btn-sm">この期間に配置</button>
-                        </div>
-                    </div>
-                </form>
 
-                {{-- クリア用フォーム（モーダル内のクリアボタンが POST する） --}}
+                    <ul class="nav nav-pills nav-fill mb-3" id="msTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="ms-tab-place" data-bs-toggle="pill" data-bs-target="#ms-pane-place" type="button" role="tab">現場へ配置</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ms-tab-na" data-bs-toggle="pill" data-bs-target="#ms-pane-na" type="button" role="tab">🔧 使用不可登録</button>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="tab-content">
+                    {{-- 現場配置タブ --}}
+                    <div class="tab-pane fade show active" id="ms-pane-place" role="tabpanel">
+                        <form id="msPlaceForm" method="POST" action="{{ route('top.machine.schedule.place') }}">
+                            @csrf
+                            <input type="hidden" name="master_id" id="msMasterId">
+                            <input type="hidden" name="master_type" id="msMasterType">
+                            <input type="hidden" name="start_date" id="msPlaceStartDate">
+                            <input type="hidden" name="end_date" id="msPlaceEndDate">
+                            <input type="hidden" name="view_start_date" value="{{ $start_date }}">
+                            <input type="hidden" name="view_range" value="{{ $range_key }}">
+                            <input type="hidden" name="view_vehicle_type" value="{{ $vehicle_type_param }}">
+
+                            <div class="modal-body pt-0">
+                                <div>
+                                    <label class="form-label small text-muted">現場</label>
+                                    <select class="form-select form-select-sm" name="workplace_id" id="msWorkplaceId">
+                                        <option value="">選択してください</option>
+                                        @foreach($workplaces as $w)
+                                            <option value="{{ $w['id'] }}">{{ $w['name'] }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-check mt-3">
+                                    <input type="hidden" name="overwrite" value="0">
+                                    <input class="form-check-input" type="checkbox" value="1" id="msOverwrite" name="overwrite">
+                                    <label class="form-check-label small" for="msOverwrite">
+                                        他現場に配置済みの日も上書きする
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="modal-footer justify-content-between">
+                                <button type="button" class="btn btn-outline-danger btn-sm" id="msClearBtn">この期間の配置をクリア</button>
+                                <div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">キャンセル</button>
+                                    <button type="submit" class="btn btn-primary btn-sm">この期間に配置</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    {{-- 使用不可登録タブ --}}
+                    <div class="tab-pane fade" id="ms-pane-na" role="tabpanel">
+                        <form id="msNaForm" method="POST" action="{{ route('top.machine.schedule.unavailable.set') }}">
+                            @csrf
+                            <input type="hidden" name="vehicle_id" id="msNaVehicleId">
+                            <input type="hidden" name="start_date" id="msNaStartDate">
+                            <input type="hidden" name="end_date" id="msNaEndDate">
+                            <input type="hidden" name="view_start_date" value="{{ $start_date }}">
+                            <input type="hidden" name="view_range" value="{{ $range_key }}">
+                            <input type="hidden" name="view_vehicle_type" value="{{ $vehicle_type_param }}">
+
+                            <div class="modal-body pt-0">
+                                <div>
+                                    <label class="form-label small text-muted">種別</label>
+                                    <select class="form-select form-select-sm" name="reason_type" id="msNaReasonType">
+                                        @foreach($reasons as $rt => $label)
+                                            <option value="{{ $rt }}">{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-text mt-2">
+                                    指定期間中、この機械は配置候補から自動的に外れます。
+                                </div>
+                            </div>
+                            <div class="modal-footer justify-content-between">
+                                <button type="button" class="btn btn-outline-danger btn-sm" id="msNaClearBtn">この期間の使用不可をクリア</button>
+                                <div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">キャンセル</button>
+                                    <button type="submit" class="btn btn-warning btn-sm">使用不可登録</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {{-- クリア用フォーム（配置クリア・使用不可クリア） --}}
                 <form id="msClearForm" method="POST" action="{{ route('top.machine.schedule.clear') }}" class="d-none">
                     @csrf
                     <input type="hidden" name="master_id" id="msClearMasterId">
                     <input type="hidden" name="master_type" id="msClearMasterType">
                     <input type="hidden" name="start_date" id="msClearStartDate">
                     <input type="hidden" name="end_date" id="msClearEndDate">
+                    <input type="hidden" name="view_start_date" value="{{ $start_date }}">
+                    <input type="hidden" name="view_range" value="{{ $range_key }}">
+                    <input type="hidden" name="view_vehicle_type" value="{{ $vehicle_type_param }}">
+                </form>
+                <form id="msNaClearForm" method="POST" action="{{ route('top.machine.schedule.unavailable.clear') }}" class="d-none">
+                    @csrf
+                    <input type="hidden" name="vehicle_id" id="msNaClearVehicleId">
+                    <input type="hidden" name="start_date" id="msNaClearStartDate">
+                    <input type="hidden" name="end_date" id="msNaClearEndDate">
                     <input type="hidden" name="view_start_date" value="{{ $start_date }}">
                     <input type="hidden" name="view_range" value="{{ $range_key }}">
                     <input type="hidden" name="view_vehicle_type" value="{{ $vehicle_type_param }}">
@@ -432,13 +565,29 @@
         var $name = document.getElementById('msMachineName');
         var $masterId = document.getElementById('msMasterId');
         var $masterType = document.getElementById('msMasterType');
+        var $vehicleId = document.getElementById('msNaVehicleId');
         var $start = document.getElementById('msStartDate');
         var $end = document.getElementById('msEndDate');
+
         var $wp = document.getElementById('msWorkplaceId');
+        var $reasonType = document.getElementById('msNaReasonType');
         var $info = document.getElementById('msCurrentInfo');
-        var $form = document.getElementById('msPlaceForm');
-        var $clearBtn = document.getElementById('msClearBtn');
+
+        var $placeForm = document.getElementById('msPlaceForm');
+        var $naForm = document.getElementById('msNaForm');
         var $clearForm = document.getElementById('msClearForm');
+        var $naClearForm = document.getElementById('msNaClearForm');
+
+        var $placeStart = document.getElementById('msPlaceStartDate');
+        var $placeEnd = document.getElementById('msPlaceEndDate');
+        var $naStart = document.getElementById('msNaStartDate');
+        var $naEnd = document.getElementById('msNaEndDate');
+
+        var $clearBtn = document.getElementById('msClearBtn');
+        var $naClearBtn = document.getElementById('msNaClearBtn');
+
+        var $tabPlace = document.getElementById('ms-tab-place');
+        var $tabNa = document.getElementById('ms-tab-na');
 
         function setDatePickerValue(input, value) {
             if (input && input._flatpickr && typeof input._flatpickr.setDate === 'function') {
@@ -448,6 +597,18 @@
             }
         }
 
+        function syncDatesToHidden() {
+            $placeStart.value = $start.value;
+            $placeEnd.value = $end.value;
+            $naStart.value = $start.value;
+            $naEnd.value = $end.value;
+        }
+        // 日付変更を常に hidden に反映
+        ['change', 'input'].forEach(function (ev) {
+            $start.addEventListener(ev, syncDatesToHidden);
+            $end.addEventListener(ev, syncDatesToHidden);
+        });
+
         document.querySelectorAll('.ms-grid td[data-machine-id]').forEach(function (cell) {
             cell.addEventListener('click', function () {
                 var machineId = cell.getAttribute('data-machine-id');
@@ -456,20 +617,35 @@
                 var date = cell.getAttribute('data-date');
                 var wpId = cell.getAttribute('data-workplace-id') || '';
                 var wpName = cell.getAttribute('data-workplace-name') || '';
+                var naRt = cell.getAttribute('data-na-reason-type') || '';
+                var naLabel = cell.getAttribute('data-na-reason-label') || '';
 
                 $name.textContent = machineName;
                 $masterId.value = machineId;
                 $masterType.value = masterType;
+                $vehicleId.value = machineId;
                 setDatePickerValue($start, date);
                 setDatePickerValue($end, date);
                 $wp.value = wpId;
+                if (naRt) $reasonType.value = naRt;
+                syncDatesToHidden();
 
-                if (wpId) {
+                var msgs = [];
+                if (wpId) msgs.push('「' + wpName + '」に配置済みです。');
+                if (naRt) msgs.push('🔧 ' + naLabel + ' で使用不可登録中です。');
+                if (msgs.length) {
                     $info.classList.remove('d-none');
-                    $info.textContent = date + ' は「' + wpName + '」に配置済みです。期間を伸ばす場合は終了日を変更してください。';
+                    $info.textContent = date + ' は ' + msgs.join(' / ') + ' 期間を伸ばす場合は終了日を変更してください。';
                 } else {
                     $info.classList.add('d-none');
                     $info.textContent = '';
+                }
+
+                // セルが使用不可の場合は最初から「使用不可」タブを開く
+                if (naRt && bootstrap.Tab) {
+                    bootstrap.Tab.getOrCreateInstance($tabNa).show();
+                } else if (bootstrap.Tab) {
+                    bootstrap.Tab.getOrCreateInstance($tabPlace).show();
                 }
 
                 modal.show();
@@ -486,7 +662,16 @@
             $clearForm.submit();
         });
 
-        $form.addEventListener('submit', function (e) {
+        $naClearBtn.addEventListener('click', function () {
+            if (!$vehicleId.value) return;
+            if (!confirm('指定期間（' + $start.value + ' 〜 ' + $end.value + '）の使用不可登録をクリアしますか？')) return;
+            document.getElementById('msNaClearVehicleId').value = $vehicleId.value;
+            document.getElementById('msNaClearStartDate').value = $start.value;
+            document.getElementById('msNaClearEndDate').value = $end.value;
+            $naClearForm.submit();
+        });
+
+        $placeForm.addEventListener('submit', function (e) {
             if (!$wp.value) {
                 e.preventDefault();
                 alert('現場を選択してください');
@@ -497,6 +682,21 @@
                 alert('開始日・終了日を選択してください');
                 return;
             }
+            syncDatesToHidden();
+        });
+
+        $naForm.addEventListener('submit', function (e) {
+            if (!$reasonType.value) {
+                e.preventDefault();
+                alert('種別を選択してください');
+                return;
+            }
+            if (!$start.value || !$end.value) {
+                e.preventDefault();
+                alert('開始日・終了日を選択してください');
+                return;
+            }
+            syncDatesToHidden();
         });
     });
     </script>

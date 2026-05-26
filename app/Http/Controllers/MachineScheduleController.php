@@ -122,6 +122,63 @@ class MachineScheduleController extends Controller
         return $this->backToIndex($request, sprintf('配置をクリアしました（%d 日分）', $deleted));
     }
 
+    /**
+     * 使用不可期間（車検・点検・修理・故障・その他）を登録する。
+     */
+    public function setUnavailable(Request $request)
+    {
+        if (! session()->has('login_user_id')) {
+            return redirect()->route('login');
+        }
+
+        $vehicleId = (int) $request->input('vehicle_id');
+        $reasonType = (int) $request->input('reason_type');
+        $startDate = (string) $request->input('start_date');
+        $endDate = (string) $request->input('end_date');
+
+        if ($vehicleId <= 0 || $reasonType <= 0 || ! $startDate || ! $endDate) {
+            return $this->backToIndex($request, '入力に不足があります');
+        }
+        if (strtotime($endDate) < strtotime($startDate)) {
+            return $this->backToIndex($request, '終了日が開始日より前になっています');
+        }
+
+        $result = $this->service->setUnavailable($vehicleId, $reasonType, $startDate, $endDate);
+        $reasons = \App\Services\MachineScheduleService::unavailableReasons();
+        $label = $reasons[$reasonType] ?? '使用不可';
+
+        $msg = $result['ok']
+            ? sprintf('%s を登録しました（%s 〜 %s）', $label, $startDate, $endDate)
+            : '使用不可登録に失敗しました';
+
+        return $this->backToIndex($request, $msg);
+    }
+
+    /**
+     * 使用不可期間をクリアする（指定期間と重なる分を削除）。
+     */
+    public function clearUnavailable(Request $request)
+    {
+        if (! session()->has('login_user_id')) {
+            return redirect()->route('login');
+        }
+
+        $vehicleId = (int) $request->input('vehicle_id');
+        $startDate = (string) $request->input('start_date');
+        $endDate = (string) $request->input('end_date');
+
+        if ($vehicleId <= 0 || ! $startDate || ! $endDate) {
+            return $this->backToIndex($request, '入力に不足があります');
+        }
+        if (strtotime($endDate) < strtotime($startDate)) {
+            return $this->backToIndex($request, '終了日が開始日より前になっています');
+        }
+
+        $deleted = $this->service->clearUnavailable($vehicleId, $startDate, $endDate);
+
+        return $this->backToIndex($request, sprintf('使用不可期間をクリアしました（%d 件）', $deleted));
+    }
+
     private function backToIndex(Request $request, string $status)
     {
         return redirect()->route('top.machine.schedule', [

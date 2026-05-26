@@ -189,6 +189,12 @@ class AssignmentService
                             AND ta.workplace_id <> :workplace_id_other
                             AND ta.deleted_at IS NULL
                         )
+                        AND NOT EXISTS (
+                            SELECT 1 FROM t_vehicle_unavailable tvu
+                            WHERE tvu.vehicle_id = vhc.id
+                            AND :work_date_unavailable BETWEEN tvu.start_date AND tvu.end_date
+                            AND tvu.deleted_at IS NULL
+                        )
                 ';
 
                 $bindings = [
@@ -197,6 +203,7 @@ class AssignmentService
                     'work_date_other' => $workDate,
                     'workplace_id_other' => $workplaceId,
                     'master_type_vehicle' => config('assignments.master_type.vehicle'),
+                    'work_date_unavailable' => $workDate,
                 ];
 
                 if ($assigned) {
@@ -255,6 +262,12 @@ class AssignmentService
                             AND ta.workplace_id <> :workplace_id_other
                             AND ta.deleted_at IS NULL
                         )
+                        AND NOT EXISTS (
+                            SELECT 1 FROM t_vehicle_unavailable tvu
+                            WHERE tvu.vehicle_id = vhc.id
+                            AND :work_date_unavailable BETWEEN tvu.start_date AND tvu.end_date
+                            AND tvu.deleted_at IS NULL
+                        )
                 ';
 
                 $bindings = [
@@ -263,6 +276,7 @@ class AssignmentService
                     'work_date_other' => $workDate,
                     'workplace_id_other' => $workplaceId,
                     'master_type_equipment' => config('assignments.master_type.equipment'),
+                    'work_date_unavailable' => $workDate,
                 ];
 
                 if ($assigned) {

@@ -21,6 +21,24 @@ class MachineScheduleService
     private const LOCAL_EQUIPMENT_FILE = 'app/local_equipments.json';
     private const LOCAL_WORKPLACE_FILE = 'app/local_workplaces.json';
     private const LOCAL_ASSIGNMENT_FILE = 'app/local_assignments.json';
+    private const LOCAL_UNAVAILABLE_FILE = 'app/local_vehicle_unavailable.json';
+
+    /**
+     * 使用不可の理由種別。
+     * t_vehicle_unavailable.reason_type の値と対応。
+     *
+     * @return array<int, string>
+     */
+    public static function unavailableReasons(): array
+    {
+        return [
+            1 => '車検',
+            2 => '点検',
+            3 => '修理',
+            4 => '故障',
+            99 => 'その他',
+        ];
+    }
 
     /**
      * 期間プリセット（ヘッダのプルダウン用）。
@@ -50,7 +68,9 @@ class MachineScheduleService
      *   dates:array<int,array{date:string,d:string,wd:string,is_sun:bool,is_sat:bool}>,
      *   machines:array<int,array{id:int,name:string,vehicle_type:int,master_type:int,sort:int}>,
      *   cells:array<int,array<string,array{workplace_id:int,workplace_name:string,start:bool,end:bool}>>,
+     *   unavailable:array<int,array<string,array{reason_type:int,reason_label:string,start:bool,end:bool}>>,
      *   workplaces:array<int,array{id:int,name:string}>,
+     *   reasons:array<int,string>,
      * }
      */
     public function getMatrix(string $startDate, string $endDate, ?int $vehicleType = null): array
@@ -59,8 +79,10 @@ class MachineScheduleService
         $machines = $this->getMachines($vehicleType);
         $workplaces = $this->getWorkplaces();
         $cells = $this->getAssignmentCells($machines, $startDate, $endDate);
+        $unavailable = $this->getUnavailableCells($machines, $startDate, $endDate);
 
         $cellsWithSpan = $this->markSpanEdges($cells, $dates);
+        $unavailableWithSpan = $this->markUnavailableSpanEdges($unavailable, $dates);
 
         return [
             'start_date' => $startDate,
@@ -68,7 +90,9 @@ class MachineScheduleService
             'dates' => $dates,
             'machines' => $machines,
             'cells' => $cellsWithSpan,
+            'unavailable' => $unavailableWithSpan,
             'workplaces' => $workplaces,
+            'reasons' => self::unavailableReasons(),
         ];
     }
 
@@ -159,6 +183,170 @@ class MachineScheduleService
             }
             return ['ok' => false, 'written' => 0, 'skipped' => []];
         }
+    }
+
+    /**
+     * 指定機械（vehicle_id ベース）を期間 [startDate, endDate] にわたって使用不可登録する。
+     *
+     * - 既存の使用不可期間と重複する場合は、その重複部分を吸収して1本の期間に統合する
+     *   （同じ理由種別なら結合、違う種別なら別レコードで上書き：シンプル化のため）
+     * - reasonType: 1=車検 2=点検 3=修理 4=故障 99=その他
+     *
+     * @return array{ok:bool, written:int}
+     */
+    public function setUnavailable(int $vehicleId, int $reasonType, string $startDate, string $endDate): array
+    {
+        $vehicleId = (int) $vehicleId;
+        $reasonType = (int) $reasonType;
+        if ($vehicleId <= 0 || ! array_key_exists($reasonType, self::unavailableReasons())) {
+            return ['ok' => false, 'written' => 0];
+        }
+        if (strtotime($endDate) === false || strtotime($startDate) === false || strtotime($endDate) < strtotime($startDate)) {
+            return ['ok' => false, 'written' => 0];
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // 同 vehicle で期間がオーバーラップする既存レコードを取得
+            $overlapping = DB::table('t_vehicle_unavailable')
+                ->where('vehicle_id', $vehicleId)
+                ->where('start_date', '<=', $endDate)
+                ->where('end_date', '>=', $startDate)
+                ->whereNull('deleted_at')
+                ->get();
+
+            // 同種別だけマージし、別種別はそのまま残す（別種別と重なるなら新規の方が優先するため別途上書き）
+            $mergedStart = $startDate;
+            $mergedEnd = $endDate;
+            foreach ($overlapping as $row) {
+                if ((int) $row->reason_type === $reasonType) {
+                    if ($row->start_date < $mergedStart) $mergedStart = (string) $row->start_date;
+                    if ($row->end_date > $mergedEnd) $mergedEnd = (string) $row->end_date;
+                    DB::table('t_vehicle_unavailable')->where('id', $row->id)->delete();
+                } else {
+                    // 別種別: 新規範囲と被る日付部分を既存からカット
+                    $this->trimUnavailableRow($row, $startDate, $endDate);
+                }
+            }
+
+            DB::table('t_vehicle_unavailable')->insert([
+                'vehicle_id' => $vehicleId,
+                'reason_type' => $reasonType,
+                'start_date' => $mergedStart,
+                'end_date' => $mergedEnd,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::commit();
+            return ['ok' => true, 'written' => 1];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if (function_exists('error')) {
+                error($e, __FILE__, __METHOD__, __LINE__);
+            }
+            if (app()->environment('local')) {
+                return $this->setUnavailableLocal($vehicleId, $reasonType, $startDate, $endDate);
+            }
+            return ['ok' => false, 'written' => 0];
+        }
+    }
+
+    /**
+     * 指定機械の使用不可期間を、指定の期間に重なる範囲でクリアする。
+     */
+    public function clearUnavailable(int $vehicleId, string $startDate, string $endDate): int
+    {
+        $vehicleId = (int) $vehicleId;
+        if ($vehicleId <= 0) return 0;
+        if (strtotime($endDate) === false || strtotime($startDate) === false) return 0;
+
+        try {
+            $rows = DB::table('t_vehicle_unavailable')
+                ->where('vehicle_id', $vehicleId)
+                ->where('start_date', '<=', $endDate)
+                ->where('end_date', '>=', $startDate)
+                ->whereNull('deleted_at')
+                ->get();
+
+            $count = 0;
+            foreach ($rows as $row) {
+                $count += $this->trimUnavailableRow($row, $startDate, $endDate, true);
+            }
+            return $count;
+        } catch (\Exception $e) {
+            if (function_exists('error')) {
+                error($e, __FILE__, __METHOD__, __LINE__);
+            }
+            if (app()->environment('local')) {
+                return $this->clearUnavailableLocal($vehicleId, $startDate, $endDate);
+            }
+            return 0;
+        }
+    }
+
+    /**
+     * 1件の既存使用不可レコードに対し、指定範囲 [trimStart, trimEnd] と重なる部分を削除する。
+     *  - 完全に重なる → 削除（戻り 1）
+     *  - 前後どちらか片側だけ重なる → 該当側を切り詰めて update（戻り 1）
+     *  - 中間が重なる → 前半と後半 2本に分割（戻り 2）
+     *
+     * @return int 影響レコード数
+     */
+    private function trimUnavailableRow($row, string $trimStart, string $trimEnd, bool $countDeleted = false): int
+    {
+        $rowStart = (string) $row->start_date;
+        $rowEnd = (string) $row->end_date;
+
+        // 完全包含 → 削除
+        if ($trimStart <= $rowStart && $rowEnd <= $trimEnd) {
+            DB::table('t_vehicle_unavailable')->where('id', $row->id)->delete();
+            return $countDeleted ? 1 : 1;
+        }
+
+        // 中間切り抜き → 前半 update + 後半 insert
+        if ($rowStart < $trimStart && $trimEnd < $rowEnd) {
+            DB::table('t_vehicle_unavailable')
+                ->where('id', $row->id)
+                ->update([
+                    'end_date' => date('Y-m-d', strtotime($trimStart . ' -1 day')),
+                    'updated_at' => now(),
+                ]);
+            DB::table('t_vehicle_unavailable')->insert([
+                'vehicle_id' => $row->vehicle_id,
+                'reason_type' => $row->reason_type,
+                'start_date' => date('Y-m-d', strtotime($trimEnd . ' +1 day')),
+                'end_date' => $rowEnd,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            return 2;
+        }
+
+        // 先頭が重なる → 後ろ側を残す
+        if ($trimStart <= $rowStart && $rowStart <= $trimEnd) {
+            DB::table('t_vehicle_unavailable')
+                ->where('id', $row->id)
+                ->update([
+                    'start_date' => date('Y-m-d', strtotime($trimEnd . ' +1 day')),
+                    'updated_at' => now(),
+                ]);
+            return 1;
+        }
+
+        // 末尾が重なる → 前側を残す
+        if ($trimStart <= $rowEnd && $rowEnd <= $trimEnd) {
+            DB::table('t_vehicle_unavailable')
+                ->where('id', $row->id)
+                ->update([
+                    'end_date' => date('Y-m-d', strtotime($trimStart . ' -1 day')),
+                    'updated_at' => now(),
+                ]);
+            return 1;
+        }
+
+        return 0;
     }
 
     /**
@@ -334,6 +522,103 @@ class MachineScheduleService
             }
             return [];
         }
+    }
+
+    /**
+     * 指定機械セットの使用不可期間を日次にバラして返す。
+     *
+     * @param  array<int,array{id:int}>  $machines
+     * @return array<int,array<string,array{reason_type:int,reason_label:string,start:bool,end:bool}>>
+     */
+    private function getUnavailableCells(array $machines, string $startDate, string $endDate): array
+    {
+        if ($machines === []) {
+            return [];
+        }
+        $vehicleIds = array_map(fn ($m) => $m['id'], $machines);
+        $labels = self::unavailableReasons();
+
+        try {
+            $rows = DB::table('t_vehicle_unavailable')
+                ->whereIn('vehicle_id', $vehicleIds)
+                ->where('start_date', '<=', $endDate)
+                ->where('end_date', '>=', $startDate)
+                ->whereNull('deleted_at')
+                ->get();
+
+            return $this->expandUnavailableRows($rows->all(), $startDate, $endDate, $labels);
+        } catch (\Exception $e) {
+            if (function_exists('error')) {
+                error($e, __FILE__, __METHOD__, __LINE__);
+            }
+            if (app()->environment('local')) {
+                return $this->getUnavailableCellsLocal($vehicleIds, $startDate, $endDate);
+            }
+            return [];
+        }
+    }
+
+    /**
+     * @param  array<int,object|array<string,mixed>>  $rows
+     * @param  array<int,string>  $labels
+     * @return array<int,array<string,array{reason_type:int,reason_label:string,start:bool,end:bool}>>
+     */
+    private function expandUnavailableRows(array $rows, string $rangeStart, string $rangeEnd, array $labels): array
+    {
+        $result = [];
+        foreach ($rows as $row) {
+            $vid = (int) (is_array($row) ? ($row['vehicle_id'] ?? 0) : ($row->vehicle_id ?? 0));
+            $rt = (int) (is_array($row) ? ($row['reason_type'] ?? 0) : ($row->reason_type ?? 0));
+            $s = (string) (is_array($row) ? ($row['start_date'] ?? '') : ($row->start_date ?? ''));
+            $e = (string) (is_array($row) ? ($row['end_date'] ?? '') : ($row->end_date ?? ''));
+            if ($vid <= 0 || $s === '' || $e === '') continue;
+
+            // 表示範囲とクリップ
+            $clipStart = $s < $rangeStart ? $rangeStart : $s;
+            $clipEnd = $e > $rangeEnd ? $rangeEnd : $e;
+
+            $cursor = strtotime($clipStart);
+            $end = strtotime($clipEnd);
+            $guard = 0;
+            while ($cursor <= $end && $guard < 400) {
+                $d = date('Y-m-d', $cursor);
+                // 同日に複数登録があった場合は後勝ち（基本起きないが念のため）
+                $result[$vid][$d] = [
+                    'reason_type' => $rt,
+                    'reason_label' => $labels[$rt] ?? '不可',
+                    'start' => false,
+                    'end' => false,
+                ];
+                $cursor = strtotime('+1 day', $cursor);
+                $guard++;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * 使用不可セルの連続区間の両端にフラグを立てる。
+     *
+     * @param  array<int,array<string,array{reason_type:int,reason_label:string,start:bool,end:bool}>>  $cells
+     * @param  array<int,array{date:string}>  $dates
+     * @return array<int,array<string,array{reason_type:int,reason_label:string,start:bool,end:bool}>>
+     */
+    private function markUnavailableSpanEdges(array $cells, array $dates): array
+    {
+        $dateList = array_map(fn ($d) => $d['date'], $dates);
+        $count = count($dateList);
+        foreach ($cells as $vid => $perDate) {
+            for ($i = 0; $i < $count; $i++) {
+                $d = $dateList[$i];
+                if (! isset($perDate[$d])) continue;
+                $rt = $perDate[$d]['reason_type'];
+                $prev = $i > 0 ? ($perDate[$dateList[$i - 1]]['reason_type'] ?? null) : null;
+                $next = $i < $count - 1 ? ($perDate[$dateList[$i + 1]]['reason_type'] ?? null) : null;
+                $cells[$vid][$d]['start'] = ($prev !== $rt);
+                $cells[$vid][$d]['end'] = ($next !== $rt);
+            }
+        }
+        return $cells;
     }
 
     /**
@@ -525,6 +810,102 @@ class MachineScheduleService
         }));
         $this->writeLocalJson(self::LOCAL_ASSIGNMENT_FILE, $rows);
         return $before - count($rows);
+    }
+
+    /**
+     * @param  array<int,int>  $vehicleIds
+     * @return array<int,array<string,array{reason_type:int,reason_label:string,start:bool,end:bool}>>
+     */
+    private function getUnavailableCellsLocal(array $vehicleIds, string $startDate, string $endDate): array
+    {
+        $rows = $this->readLocalJson(self::LOCAL_UNAVAILABLE_FILE);
+        $rows = array_values(array_filter($rows, function ($r) use ($vehicleIds, $startDate, $endDate) {
+            $vid = (int) ($r['vehicle_id'] ?? 0);
+            $s = (string) ($r['start_date'] ?? '');
+            $e = (string) ($r['end_date'] ?? '');
+            return in_array($vid, $vehicleIds, true) && $s <= $endDate && $e >= $startDate;
+        }));
+        return $this->expandUnavailableRows($rows, $startDate, $endDate, self::unavailableReasons());
+    }
+
+    /**
+     * @return array{ok:bool, written:int}
+     */
+    private function setUnavailableLocal(int $vehicleId, int $reasonType, string $startDate, string $endDate): array
+    {
+        $rows = $this->readLocalJson(self::LOCAL_UNAVAILABLE_FILE);
+        // 同 vehicle 同 reason のオーバーラップを統合
+        $mergedStart = $startDate;
+        $mergedEnd = $endDate;
+        $keep = [];
+        foreach ($rows as $r) {
+            $vid = (int) ($r['vehicle_id'] ?? 0);
+            $rt = (int) ($r['reason_type'] ?? 0);
+            $s = (string) ($r['start_date'] ?? '');
+            $e = (string) ($r['end_date'] ?? '');
+            if ($vid !== $vehicleId || $s > $endDate || $e < $startDate) {
+                $keep[] = $r;
+                continue;
+            }
+            if ($rt === $reasonType) {
+                if ($s < $mergedStart) $mergedStart = $s;
+                if ($e > $mergedEnd) $mergedEnd = $e;
+                continue; // 取り込みのため drop
+            }
+            // 別種別: 重なり部分をカット
+            if ($startDate <= $s && $e <= $endDate) {
+                continue; // 完全に飲み込む
+            }
+            if ($s < $startDate && $endDate < $e) {
+                // 中間切り抜き
+                $keep[] = ['vehicle_id' => $vid, 'reason_type' => $rt, 'start_date' => $s, 'end_date' => date('Y-m-d', strtotime($startDate . ' -1 day'))];
+                $keep[] = ['vehicle_id' => $vid, 'reason_type' => $rt, 'start_date' => date('Y-m-d', strtotime($endDate . ' +1 day')), 'end_date' => $e];
+                continue;
+            }
+            if ($startDate <= $s) {
+                $keep[] = ['vehicle_id' => $vid, 'reason_type' => $rt, 'start_date' => date('Y-m-d', strtotime($endDate . ' +1 day')), 'end_date' => $e];
+                continue;
+            }
+            $keep[] = ['vehicle_id' => $vid, 'reason_type' => $rt, 'start_date' => $s, 'end_date' => date('Y-m-d', strtotime($startDate . ' -1 day'))];
+        }
+        $keep[] = ['vehicle_id' => $vehicleId, 'reason_type' => $reasonType, 'start_date' => $mergedStart, 'end_date' => $mergedEnd];
+        $this->writeLocalJson(self::LOCAL_UNAVAILABLE_FILE, $keep);
+        return ['ok' => true, 'written' => 1];
+    }
+
+    private function clearUnavailableLocal(int $vehicleId, string $startDate, string $endDate): int
+    {
+        $rows = $this->readLocalJson(self::LOCAL_UNAVAILABLE_FILE);
+        $count = 0;
+        $keep = [];
+        foreach ($rows as $r) {
+            $vid = (int) ($r['vehicle_id'] ?? 0);
+            $s = (string) ($r['start_date'] ?? '');
+            $e = (string) ($r['end_date'] ?? '');
+            if ($vid !== $vehicleId || $s > $endDate || $e < $startDate) {
+                $keep[] = $r;
+                continue;
+            }
+            if ($startDate <= $s && $e <= $endDate) {
+                $count++;
+                continue;
+            }
+            if ($s < $startDate && $endDate < $e) {
+                $keep[] = array_merge($r, ['end_date' => date('Y-m-d', strtotime($startDate . ' -1 day'))]);
+                $keep[] = array_merge($r, ['start_date' => date('Y-m-d', strtotime($endDate . ' +1 day'))]);
+                $count++;
+                continue;
+            }
+            if ($startDate <= $s) {
+                $keep[] = array_merge($r, ['start_date' => date('Y-m-d', strtotime($endDate . ' +1 day'))]);
+                $count++;
+                continue;
+            }
+            $keep[] = array_merge($r, ['end_date' => date('Y-m-d', strtotime($startDate . ' -1 day'))]);
+            $count++;
+        }
+        $this->writeLocalJson(self::LOCAL_UNAVAILABLE_FILE, $keep);
+        return $count;
     }
 
     /**
