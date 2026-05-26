@@ -504,24 +504,21 @@
 
             .preview-toolbar {
                 border-radius: 12px;
-                padding: 10px 12px;
+                padding: 8px 12px;
                 font-size: 13px;
                 gap: 8px;
             }
             .preview-toolbar .toolbar-spacer { display: none; }
+            /* スマホからは印刷／PDFを使わないため非表示。戻るリンクだけ残す */
+            .preview-toolbar button.tool-btn.is-primary,
+            .preview-toolbar a.tool-link.is-pdf {
+                display: none !important;
+            }
             .preview-toolbar a.tool-link.is-back {
                 width: 100%;
                 padding: 6px 4px;
-                margin-bottom: 2px;
-                font-size: 13px;
-            }
-            .preview-toolbar button.tool-btn.is-primary,
-            .preview-toolbar a.tool-link.is-pdf {
-                flex: 1 1 0;
-                justify-content: center;
-                padding: 12px 12px;
+                margin: 0;
                 font-size: 14px;
-                font-weight: 600;
             }
 
             .doc-header {
