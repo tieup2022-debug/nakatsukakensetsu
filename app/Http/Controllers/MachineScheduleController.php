@@ -135,6 +135,8 @@ class MachineScheduleController extends Controller
         $reasonType = (int) $request->input('reason_type');
         $startDate = (string) $request->input('start_date');
         $endDate = (string) $request->input('end_date');
+        $note = $request->input('note');
+        $note = is_string($note) ? $note : null;
 
         if ($vehicleId <= 0 || $reasonType <= 0 || ! $startDate || ! $endDate) {
             return $this->backToIndex($request, '入力に不足があります');
@@ -143,7 +145,7 @@ class MachineScheduleController extends Controller
             return $this->backToIndex($request, '終了日が開始日より前になっています');
         }
 
-        $result = $this->service->setUnavailable($vehicleId, $reasonType, $startDate, $endDate);
+        $result = $this->service->setUnavailable($vehicleId, $reasonType, $startDate, $endDate, $note);
         $reasons = \App\Services\MachineScheduleService::unavailableReasons();
         $label = $reasons[$reasonType] ?? '使用不可';
 

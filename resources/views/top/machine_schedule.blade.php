@@ -383,6 +383,15 @@
                                             $cls .= ' ms-cell-empty';
                                         }
                                     @endphp
+                                    @php
+                                        $titleText = '';
+                                        if ($na) {
+                                            $titleText = $na['reason_label'];
+                                            if (!empty($na['note'])) {
+                                                $titleText .= '：' . $na['note'];
+                                            }
+                                        }
+                                    @endphp
                                     <td
                                         class="{{ trim($cls) }}"
                                         data-machine-id="{{ $m['id'] }}"
@@ -396,6 +405,8 @@
                                         @if($na)
                                             data-na-reason-type="{{ $na['reason_type'] }}"
                                             data-na-reason-label="{{ $na['reason_label'] }}"
+                                            data-na-note="{{ $na['note'] ?? '' }}"
+                                            title="{{ $titleText }}"
                                         @endif
                                     >
                                         @if($cell)
@@ -513,6 +524,19 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                <div class="mt-3">
+                                    <label class="form-label small text-muted">メモ（任意）</label>
+                                    <input
+                                        type="text"
+                                        class="form-control form-control-sm"
+                                        name="note"
+                                        id="msNaNote"
+                                        maxlength="255"
+                                        placeholder="例: ○○モータースで車検 / ベルト交換"
+                                        autocomplete="off"
+                                    >
+                                    <div class="form-text">セルにマウスを当てると表示されます。</div>
+                                </div>
                                 <div class="form-text mt-2">
                                     指定期間中、この機械は配置候補から自動的に外れます。
                                 </div>
@@ -567,6 +591,7 @@
 
         var $wp = document.getElementById('msWorkplaceId');
         var $reasonType = document.getElementById('msNaReasonType');
+        var $note = document.getElementById('msNaNote');
         var $info = document.getElementById('msCurrentInfo');
 
         var $placeForm = document.getElementById('msPlaceForm');
@@ -615,6 +640,7 @@
                 var wpName = cell.getAttribute('data-workplace-name') || '';
                 var naRt = cell.getAttribute('data-na-reason-type') || '';
                 var naLabel = cell.getAttribute('data-na-reason-label') || '';
+                var naNote = cell.getAttribute('data-na-note') || '';
 
                 $name.textContent = machineName;
                 $masterId.value = machineId;
@@ -624,11 +650,16 @@
                 setDatePickerValue($end, date);
                 $wp.value = wpId;
                 if (naRt) $reasonType.value = naRt;
+                $note.value = naNote;
                 syncDatesToHidden();
 
                 var msgs = [];
                 if (wpId) msgs.push('「' + wpName + '」に配置済みです。');
-                if (naRt) msgs.push('🔧 ' + naLabel + ' で使用不可登録中です。');
+                if (naRt) {
+                    var naMsg = '🔧 ' + naLabel + ' で使用不可登録中';
+                    if (naNote) naMsg += '（メモ: ' + naNote + '）';
+                    msgs.push(naMsg + 'です。');
+                }
                 if (msgs.length) {
                     $info.classList.remove('d-none');
                     $info.textContent = date + ' は ' + msgs.join(' / ') + ' 期間を伸ばす場合は終了日を変更してください。';

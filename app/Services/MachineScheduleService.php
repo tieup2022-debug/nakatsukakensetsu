@@ -190,11 +190,13 @@ class MachineScheduleService
      *
      * - 既存の使用不可期間と重複する場合は、その重複部分を吸収して1本の期間に統合する
      *   （同じ理由種別なら結合、違う種別なら別レコードで上書き：シンプル化のため）
+     * - 同種別を結合する際、note は今回入力されたものを採用（上書き）
      * - reasonType: 1=車検 2=点検 3=修理 4=故障 99=その他
+     * - note は任意。NULL/空文字も可
      *
      * @return array{ok:bool, written:int}
      */
-    public function setUnavailable(int $vehicleId, int $reasonType, string $startDate, string $endDate): array
+    public function setUnavailable(int $vehicleId, int $reasonType, string $startDate, string $endDate, ?string $note = null): array
     {
         $vehicleId = (int) $vehicleId;
         $reasonType = (int) $reasonType;
@@ -203,6 +205,11 @@ class MachineScheduleService
         }
         if (strtotime($endDate) === false || strtotime($startDate) === false || strtotime($endDate) < strtotime($startDate)) {
             return ['ok' => false, 'written' => 0];
+        }
+
+        $note = is_string($note) ? mb_substr(trim($note), 0, 255) : null;
+        if ($note === '') {
+            $note = null;
         }
 
         try {
@@ -230,14 +237,19 @@ class MachineScheduleService
                 }
             }
 
-            DB::table('t_vehicle_unavailable')->insert([
+            $insertData = [
                 'vehicle_id' => $vehicleId,
                 'reason_type' => $reasonType,
                 'start_date' => $mergedStart,
                 'end_date' => $mergedEnd,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
+            ];
+            // note カラムが存在しない旧スキーマ環境でも落ちないよう、存在チェック
+            if (\Illuminate\Support\Facades\Schema::hasColumn('t_vehicle_unavailable', 'note')) {
+                $insertData['note'] = $note;
+            }
+            DB::table('t_vehicle_unavailable')->insert($insertData);
 
             DB::commit();
             return ['ok' => true, 'written' => 1];
@@ -247,7 +259,7 @@ class MachineScheduleService
                 error($e, __FILE__, __METHOD__, __LINE__);
             }
             if (app()->environment('local')) {
-                return $this->setUnavailableLocal($vehicleId, $reasonType, $startDate, $endDate);
+                return $this->setUnavailableLocal($vehicleId, $reasonType, $startDate, $endDate, $note);
             }
             return ['ok' => false, 'written' => 0];
         }
@@ -528,7 +540,7 @@ class MachineScheduleService
      * 指定機械セットの使用不可期間を日次にバラして返す。
      *
      * @param  array<int,array{id:int}>  $machines
-     * @return array<int,array<string,array{reason_type:int,reason_label:string,start:bool,end:bool}>>
+     * @return array<int,array<string,array{reason_type:int,reason_label:string,note:?string,start:bool,end:bool}>>
      */
     private function getUnavailableCells(array $machines, string $startDate, string $endDate): array
     {
@@ -539,7 +551,14 @@ class MachineScheduleService
         $labels = self::unavailableReasons();
 
         try {
+            $hasNote = \Illuminate\Support\Facades\Schema::hasColumn('t_vehicle_unavailable', 'note');
+            $columns = ['vehicle_id', 'reason_type', 'start_date', 'end_date'];
+            if ($hasNote) {
+                $columns[] = 'note';
+            }
+
             $rows = DB::table('t_vehicle_unavailable')
+                ->select($columns)
                 ->whereIn('vehicle_id', $vehicleIds)
                 ->where('start_date', '<=', $endDate)
                 ->where('end_date', '>=', $startDate)
@@ -561,7 +580,7 @@ class MachineScheduleService
     /**
      * @param  array<int,object|array<string,mixed>>  $rows
      * @param  array<int,string>  $labels
-     * @return array<int,array<string,array{reason_type:int,reason_label:string,start:bool,end:bool}>>
+     * @return array<int,array<string,array{reason_type:int,reason_label:string,note:?string,start:bool,end:bool}>>
      */
     private function expandUnavailableRows(array $rows, string $rangeStart, string $rangeEnd, array $labels): array
     {
@@ -571,6 +590,13 @@ class MachineScheduleService
             $rt = (int) (is_array($row) ? ($row['reason_type'] ?? 0) : ($row->reason_type ?? 0));
             $s = (string) (is_array($row) ? ($row['start_date'] ?? '') : ($row->start_date ?? ''));
             $e = (string) (is_array($row) ? ($row['end_date'] ?? '') : ($row->end_date ?? ''));
+            $note = null;
+            if (is_array($row)) {
+                $note = array_key_exists('note', $row) ? $row['note'] : null;
+            } else {
+                $note = property_exists($row, 'note') ? $row->note : null;
+            }
+            $note = $note === null ? null : (string) $note;
             if ($vid <= 0 || $s === '' || $e === '') continue;
 
             // 表示範囲とクリップ
@@ -586,6 +612,7 @@ class MachineScheduleService
                 $result[$vid][$d] = [
                     'reason_type' => $rt,
                     'reason_label' => $labels[$rt] ?? '不可',
+                    'note' => $note,
                     'start' => false,
                     'end' => false,
                 ];
@@ -831,7 +858,7 @@ class MachineScheduleService
     /**
      * @return array{ok:bool, written:int}
      */
-    private function setUnavailableLocal(int $vehicleId, int $reasonType, string $startDate, string $endDate): array
+    private function setUnavailableLocal(int $vehicleId, int $reasonType, string $startDate, string $endDate, ?string $note = null): array
     {
         $rows = $this->readLocalJson(self::LOCAL_UNAVAILABLE_FILE);
         // 同 vehicle 同 reason のオーバーラップを統合
@@ -850,7 +877,7 @@ class MachineScheduleService
             if ($rt === $reasonType) {
                 if ($s < $mergedStart) $mergedStart = $s;
                 if ($e > $mergedEnd) $mergedEnd = $e;
-                continue; // 取り込みのため drop
+                continue; // 取り込みのため drop（note は新しい値で上書き）
             }
             // 別種別: 重なり部分をカット
             if ($startDate <= $s && $e <= $endDate) {
@@ -858,17 +885,23 @@ class MachineScheduleService
             }
             if ($s < $startDate && $endDate < $e) {
                 // 中間切り抜き
-                $keep[] = ['vehicle_id' => $vid, 'reason_type' => $rt, 'start_date' => $s, 'end_date' => date('Y-m-d', strtotime($startDate . ' -1 day'))];
-                $keep[] = ['vehicle_id' => $vid, 'reason_type' => $rt, 'start_date' => date('Y-m-d', strtotime($endDate . ' +1 day')), 'end_date' => $e];
+                $keep[] = array_merge($r, ['end_date' => date('Y-m-d', strtotime($startDate . ' -1 day'))]);
+                $keep[] = array_merge($r, ['start_date' => date('Y-m-d', strtotime($endDate . ' +1 day'))]);
                 continue;
             }
             if ($startDate <= $s) {
-                $keep[] = ['vehicle_id' => $vid, 'reason_type' => $rt, 'start_date' => date('Y-m-d', strtotime($endDate . ' +1 day')), 'end_date' => $e];
+                $keep[] = array_merge($r, ['start_date' => date('Y-m-d', strtotime($endDate . ' +1 day'))]);
                 continue;
             }
-            $keep[] = ['vehicle_id' => $vid, 'reason_type' => $rt, 'start_date' => $s, 'end_date' => date('Y-m-d', strtotime($startDate . ' -1 day'))];
+            $keep[] = array_merge($r, ['end_date' => date('Y-m-d', strtotime($startDate . ' -1 day'))]);
         }
-        $keep[] = ['vehicle_id' => $vehicleId, 'reason_type' => $reasonType, 'start_date' => $mergedStart, 'end_date' => $mergedEnd];
+        $keep[] = [
+            'vehicle_id' => $vehicleId,
+            'reason_type' => $reasonType,
+            'note' => $note,
+            'start_date' => $mergedStart,
+            'end_date' => $mergedEnd,
+        ];
         $this->writeLocalJson(self::LOCAL_UNAVAILABLE_FILE, $keep);
         return ['ok' => true, 'written' => 1];
     }
