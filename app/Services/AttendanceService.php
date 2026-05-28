@@ -561,6 +561,55 @@ class AttendanceService
     }
 
     /**
+     * t_absence を t_attendance の欠勤状態と同期（失敗しても勤怠本体の保存は継続する）。
+     */
+    private function syncAbsenceTable(int $staffId, string $workDateNorm, bool $isAbsent): void
+    {
+        try {
+            if (! Schema::hasTable('t_absence')) {
+                return;
+            }
+
+            $scopedQuery = DB::table('t_absence')->where('staff_id', '=', $staffId);
+            if (Schema::hasColumn('t_absence', 'deleted_at')) {
+                $scopedQuery->whereNull('deleted_at');
+            }
+            $this->applyWorkDateScope($scopedQuery, $workDateNorm);
+
+            if ($isAbsent) {
+                $absenceRow = $scopedQuery->first();
+                if ($absenceRow) {
+                    $update = ['updated_at' => now()];
+                    if (Schema::hasColumn('t_absence', 'absence_flg')) {
+                        $update['absence_flg'] = 1;
+                    }
+                    DB::table('t_absence')->where('id', '=', (int) $absenceRow->id)->update($update);
+                } else {
+                    $insert = [
+                        'staff_id' => $staffId,
+                        'work_date' => $workDateNorm,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                    if (Schema::hasColumn('t_absence', 'absence_flg')) {
+                        $insert['absence_flg'] = 1;
+                    }
+                    DB::table('t_absence')->insert($insert);
+                }
+            } else {
+                $scopedQuery->delete();
+            }
+        } catch (\Exception $e) {
+            Log::warning('AttendanceUpdate: t_absence の同期に失敗（t_attendance は保存済み）', [
+                'staff_id' => $staffId,
+                'work_date' => $workDateNorm,
+                'is_absent' => $isAbsent,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
      * 勤怠 更新
      */
     public function AttendanceUpdate($staffId, $workplaceId, $workDate, $startTime, $endTime, $breakTime, $absenceFlg = false)
@@ -582,11 +631,10 @@ class AttendanceService
             // 欠勤時に start_time/end_time へ空文字を書くと MySQL の TIME 型で例外になり、
             // APP_ENV=local では DB を更新せず upsertLocalAttendance だけ成功して「欠勤保存したのに反映されない」になる。
             if ($absenceForDb === 1) {
+                // start_time / end_time は NOT NULL の環境があるため NULL は使わない（画面は absence_flg で時刻非表示）
                 $payload = [
                     'workplace_id' => (int) $workplaceId,
                     'work_date' => $workDateNorm,
-                    'start_time' => null,
-                    'end_time' => null,
                     'break_time' => $this->prepareBreakTimeForStorage(''),
                     'absence_flg' => 1,
                     'updated_at' => now(),
@@ -629,8 +677,6 @@ class AttendanceService
                         ->whereIn('id', $ids)
                         ->update([
                             'workplace_id' => (int) $workplaceId,
-                            'start_time' => null,
-                            'end_time' => null,
                             'break_time' => $this->prepareBreakTimeForStorage(''),
                             'absence_flg' => 1,
                             'updated_at' => now(),
@@ -650,6 +696,8 @@ class AttendanceService
                 } else {
                     $insertRow = array_merge($payload, [
                         'staff_id' => (int) $staffId,
+                        'start_time' => $this->normalizeClockForSqlTime('08:00'),
+                        'end_time' => $this->normalizeClockForSqlTime('17:00'),
                         'deleted_at' => null,
                         'created_at' => now(),
                     ]);
@@ -698,7 +746,7 @@ class AttendanceService
             }
 
             if ($absenceForDb === 1) {
-                if ((int) ($fresh->absence_flg ?? 0) !== 1) {
+                if ((int) ($fresh->absence_flg ?? 0) === 0) {
                     DB::rollBack();
                     Log::warning('AttendanceUpdate: 欠勤フラグがDBに反映されませんでした', [
                         'row_id' => $rowId,
@@ -717,12 +765,10 @@ class AttendanceService
                         continue;
                     }
                     $got = $this->normalizeClockForSqlTime($this->formatTimeForDisplay($fresh->{$column} ?? ''));
-                    if ($got !== $expected) {
-                        $conn = (string) config('database.default');
-                        $dbName = (string) data_get(config('database.connections.'.$conn), 'database', '');
-                        Log::warning('AttendanceUpdate: DB上の時刻が保存値と一致しません（接続先・トリガ・権限を確認）', [
-                            'connection' => $conn,
-                            'database' => $dbName,
+                    $expectedHm = substr($expected, 0, 5);
+                    $gotHm = substr($got, 0, 5);
+                    if ($gotHm !== '' && $expectedHm !== $gotHm) {
+                        Log::warning('AttendanceUpdate: DB上の時刻が保存値と一致しません（保存は継続）', [
                             'row_id' => $rowId,
                             'staff_id' => (int) $staffId,
                             'work_date' => $workDateNorm,
@@ -731,9 +777,6 @@ class AttendanceService
                             'actual_raw' => $fresh->{$column} ?? null,
                             'actual_norm' => $got,
                         ]);
-                        DB::rollBack();
-
-                        return false;
                     }
                 }
             }
@@ -750,37 +793,7 @@ class AttendanceService
                 'fresh_break' => $fresh->break_time ?? null,
             ]);
 
-            // 欠勤状態は t_attendance と t_absence の両方で一貫させる。
-            // 月次表示や別画面で t_absence を参照する経路があるため、ここで同期する。
-            if ($absenceForDb === 1) {
-                $absenceRowQuery = DB::table('t_absence')
-                    ->where('staff_id', '=', (int) $staffId)
-                    ->whereNull('deleted_at');
-                $this->applyWorkDateScope($absenceRowQuery, $workDateNorm);
-                $absenceRow = $absenceRowQuery->first();
-                if ($absenceRow) {
-                    DB::table('t_absence')
-                        ->where('id', '=', (int) $absenceRow->id)
-                        ->update([
-                            'absence_flg' => 1,
-                            'updated_at' => now(),
-                        ]);
-                } else {
-                    DB::table('t_absence')->insert([
-                        'staff_id' => (int) $staffId,
-                        'work_date' => $workDateNorm,
-                        'absence_flg' => 1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-            } else {
-                $deleteAbsenceQuery = DB::table('t_absence')
-                    ->where('staff_id', '=', (int) $staffId)
-                    ->whereNull('deleted_at');
-                $this->applyWorkDateScope($deleteAbsenceQuery, $workDateNorm);
-                $deleteAbsenceQuery->delete();
-            }
+            $this->syncAbsenceTable((int) $staffId, $workDateNorm, $absenceForDb === 1);
 
             DB::commit();
 

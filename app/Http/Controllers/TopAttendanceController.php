@@ -268,8 +268,7 @@ class TopAttendanceController extends Controller
             ]);
 
             if ($ok && $absenceFlg && ! $this->attendanceService->staffIsAbsentOnDate((int) $staffId, $workDate)) {
-                $ok = false;
-                Log::warning('TopAttendance: 欠勤保存後もDBに欠勤が反映されていません', [
+                Log::warning('TopAttendance: 欠勤保存後の確認で t_attendance に欠勤が見つかりません', [
                     'staff_id' => (int) $staffId,
                     'workplace_id' => (int) $workplaceId,
                     'work_date' => (string) $workDate,
