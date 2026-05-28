@@ -547,11 +547,18 @@ class AssignmentService
     public function GetAssignedWorkplace($workDate)
     {
         try {
-            return DB::table('v_assignment_staff')
-                ->select('workplace_id', 'workplace_name')
-                ->where('work_date', '=', $workDate)
+            // ブラウザ表示/PDF は「その日に何かしら配置がある現場」を対象にする。
+            // 以前は staff view 基準だったため、車両/重機のみ配置の現場が漏れていた。
+            return DB::table('t_assignment AS ta')
+                ->join('m_workplace AS mwp', function ($join) {
+                    $join->on('mwp.id', '=', 'ta.workplace_id')
+                        ->whereNull('mwp.deleted_at');
+                })
+                ->select('ta.workplace_id', 'mwp.workplace_name')
+                ->where('ta.work_date', '=', $workDate)
+                ->whereNull('ta.deleted_at')
                 ->distinct()
-                ->orderBy('workplace_id')
+                ->orderBy('ta.workplace_id')
                 ->get();
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
