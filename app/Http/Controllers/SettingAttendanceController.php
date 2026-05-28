@@ -8,6 +8,7 @@ use App\Services\UserService;
 use App\Services\WorkplaceService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SettingAttendanceController extends Controller
 {
@@ -273,6 +274,14 @@ class SettingAttendanceController extends Controller
                 (string)($breakTimeFinal ?? '01:00'),
                 $absenceFlg
             );
+            Log::info('SettingAttendance update row result', [
+                'staff_id' => (int) $staffId,
+                'workplace_id' => (int) $workplaceId,
+                'work_date' => (string) $workDate,
+                'absence_input' => $request->input('absence_flg'),
+                'absence_decision' => (bool) $absenceFlg,
+                'save_ok' => (bool) $result,
+            ]);
         }
 
         // 成否を result へ

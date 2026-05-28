@@ -6,6 +6,7 @@ use App\Services\AttendanceService;
 use App\Services\WorkplaceService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TopAttendanceController extends Controller
 {
@@ -229,6 +230,17 @@ class TopAttendanceController extends Controller
                 $break,
                 $absenceFlg
             );
+
+            Log::info('TopAttendance update row result', [
+                'staff_id' => (int) $staffId,
+                'workplace_id' => (int) $workplaceId,
+                'work_date' => (string) $workDate,
+                'absence_active_hit' => in_array($staffId, $absenceActiveIds, true),
+                'absence_checkbox_hit' => $this->isPostedAbsent($request, $absenceFlags, $staffId),
+                'times_all_empty' => $this->postedTimesAllEmpty($bucket),
+                'absence_decision' => (bool) $absenceFlg,
+                'save_ok' => (bool) $ok,
+            ]);
 
             if (! $ok) {
                 $result = false;

@@ -511,6 +511,18 @@ class AttendanceService
                 }
             }
 
+            Log::info('AttendanceUpdate persisted row', [
+                'row_id' => (int) $rowId,
+                'staff_id' => (int) $staffId,
+                'workplace_id' => (int) $workplaceId,
+                'work_date' => (string) $workDateNorm,
+                'requested_absence' => (int) $absenceForDb,
+                'fresh_absence' => (int) ($fresh->absence_flg ?? 0),
+                'fresh_start' => $fresh->start_time ?? null,
+                'fresh_end' => $fresh->end_time ?? null,
+                'fresh_break' => $fresh->break_time ?? null,
+            ]);
+
             // 欠勤状態は t_attendance と t_absence の両方で一貫させる。
             // 月次表示や別画面で t_absence を参照する経路があるため、ここで同期する。
             if ($absenceForDb === 1) {
