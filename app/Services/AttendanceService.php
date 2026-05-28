@@ -508,6 +508,38 @@ class AttendanceService
                 }
             }
 
+            // 欠勤状態は t_attendance と t_absence の両方で一貫させる。
+            // 月次表示や別画面で t_absence を参照する経路があるため、ここで同期する。
+            if ($absenceForDb === 1) {
+                $absenceRow = DB::table('t_absence')
+                    ->where('staff_id', '=', (int) $staffId)
+                    ->where('work_date', '=', $workDateNorm)
+                    ->whereNull('deleted_at')
+                    ->first();
+                if ($absenceRow) {
+                    DB::table('t_absence')
+                        ->where('id', '=', (int) $absenceRow->id)
+                        ->update([
+                            'absence_flg' => 1,
+                            'updated_at' => now(),
+                        ]);
+                } else {
+                    DB::table('t_absence')->insert([
+                        'staff_id' => (int) $staffId,
+                        'work_date' => $workDateNorm,
+                        'absence_flg' => 1,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            } else {
+                DB::table('t_absence')
+                    ->where('staff_id', '=', (int) $staffId)
+                    ->where('work_date', '=', $workDateNorm)
+                    ->whereNull('deleted_at')
+                    ->delete();
+            }
+
             DB::commit();
 
             return true;
