@@ -39,6 +39,40 @@ class AttendanceService
     }
 
     /**
+     * 指定社員・指定日が欠勤か（t_attendance の欠勤フラグまたは t_absence）。
+     */
+    private function isStaffAbsentOnDate(int $staffId, string $workDate): bool
+    {
+        if ($staffId <= 0) {
+            return false;
+        }
+
+        $workDateNorm = $this->coerceWorkDateYmd($workDate);
+
+        try {
+            $attendanceAbsentQuery = DB::table('t_attendance')
+                ->where('staff_id', '=', $staffId)
+                ->whereNull('deleted_at')
+                ->where('absence_flg', '!=', 0);
+            $this->whereWorkDateEquals($attendanceAbsentQuery, $workDateNorm);
+            if ($attendanceAbsentQuery->exists()) {
+                return true;
+            }
+
+            $absenceQuery = DB::table('t_absence')
+                ->where('staff_id', '=', $staffId)
+                ->whereNull('deleted_at');
+            $this->whereWorkDateEquals($absenceQuery, $workDateNorm);
+
+            return $absenceQuery->exists();
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return false;
+        }
+    }
+
+    /**
      * 勤怠一覧 取得
      */
     public function GetAttendance($workplaceId = null, $workDate = null)
@@ -1460,6 +1494,17 @@ class AttendanceService
                     $attendanceDataList[$fullDate]['work_date'] = $fullDate;
                     $attendanceDataList[$fullDate]['week_day'] = $weekdays[date('N', strtotime($fullDate)) - 1];
                     $attendanceDataList[$fullDate]['staff_name'] = $staff->staff_name;
+
+                    // 月次表はビュー1行目だと別現場の通常勤務が先に返ることがあるため、欠勤は実テーブルで先に判定する。
+                    if ($this->isStaffAbsentOnDate((int) $staff->id, $fullDate)) {
+                        $attendanceDataList[$fullDate]['workplace_name'] = '#absence';
+                        $attendanceDataList[$fullDate]['start_time'] = '';
+                        $attendanceDataList[$fullDate]['end_time'] = '';
+                        $attendanceDataList[$fullDate]['break_time'] = '';
+                        $attendanceDataList[$fullDate]['absence'] = '休み';
+
+                        continue;
+                    }
 
                     // まずは既存ビュー（安定）を主参照し、時刻欠落時のみ t_attendance から補完する。
                     $viewQuery = DB::table('v_attendance_all')
