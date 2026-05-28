@@ -135,7 +135,7 @@ class AttendanceService
 
         try {
             $dbRows = DB::table('t_attendance')
-                ->whereDate('work_date', '=', $workDateNorm)
+                ->where('work_date', '=', $workDateNorm)
                 ->whereIn('staff_id', $ids)
                 ->whereNull('deleted_at')
                 ->orderByDesc('id')
@@ -199,7 +199,7 @@ class AttendanceService
 
         try {
             $absenceIds = DB::table('t_absence')
-                ->whereDate('work_date', '=', $workDateNorm)
+                ->where('work_date', '=', $workDateNorm)
                 ->whereIn('staff_id', $ids)
                 ->whereNull('deleted_at')
                 ->pluck('staff_id')
@@ -265,7 +265,7 @@ class AttendanceService
 
         try {
             $rows = DB::table('t_attendance')
-                ->whereDate('work_date', '=', $workDateNorm)
+                ->where('work_date', '=', $workDateNorm)
                 ->whereIn('staff_id', $staffIds)
                 ->whereNull('deleted_at')
                 ->orderByDesc('id')
@@ -484,7 +484,7 @@ class AttendanceService
 
             $candidateRows = DB::table('t_attendance')
                 ->where('staff_id', '=', (int) $staffId)
-                ->whereDate('work_date', '=', $workDateNorm)
+                ->where('work_date', '=', $workDateNorm)
                 ->whereNull('deleted_at')
                 ->orderByDesc('id')
                 ->get();
