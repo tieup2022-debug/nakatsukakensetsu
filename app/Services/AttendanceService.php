@@ -205,6 +205,17 @@ class AttendanceService
                 ->pluck('staff_id')
                 ->map(fn ($id) => (int) $id)
                 ->all();
+
+            $attendanceAbsentIds = DB::table('t_attendance')
+                ->where('work_date', '=', $workDateNorm)
+                ->whereIn('staff_id', $ids)
+                ->whereNull('deleted_at')
+                ->where('absence_flg', '=', 1)
+                ->pluck('staff_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            $absenceIds = array_values(array_unique(array_merge($absenceIds, $attendanceAbsentIds)));
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
 
@@ -241,7 +252,9 @@ class AttendanceService
         return collect($rows)
             ->filter(fn ($r) => (int) ($r->staff_id ?? 0) > 0)
             ->sortBy(function ($r) {
-                return [(int) ($r->sort_number ?? 99999), (int) ($r->staff_id ?? 0)];
+                $absentFirst = (isset($r->absence_flg) && (int) $r->absence_flg !== 0) ? 0 : 1;
+
+                return [$absentFirst, (int) ($r->sort_number ?? 99999), (int) ($r->staff_id ?? 0)];
             })
             ->unique(fn ($r) => (int) ($r->staff_id ?? 0))
             ->values();
@@ -298,20 +311,48 @@ class AttendanceService
             if ($sid <= 0) {
                 continue;
             }
-            $list = $group->sortByDesc(fn ($r) => (int) ($r->id ?? 0))->values();
-            $chosen = null;
-            if ($wp > 0) {
-                $chosen = $list->first(fn ($r) => (int) ($r->workplace_id ?? 0) === $wp);
-            }
-            if (! $chosen) {
-                $chosen = $list->first();
-            }
+            $chosen = $this->chooseBestAttendanceRowFromList($group->values(), $wp);
             if ($chosen) {
                 $map[$sid] = $chosen;
             }
         }
 
         return $map;
+    }
+
+    /**
+     * 同一社員の複数行から表示・更新対象の1行を選ぶ。
+     * 欠勤行（absence_flg=1）を最優先し、次に選択中現場一致、最後に id 降順。
+     *
+     * @param  iterable<int, object>  $rows
+     */
+    private function chooseBestAttendanceRowFromList(iterable $rows, int $preferredWorkplaceId): ?object
+    {
+        $list = collect($rows)->sortByDesc(fn ($r) => (int) ($r->id ?? 0))->values();
+        if ($list->isEmpty()) {
+            return null;
+        }
+
+        $absentRows = $list->filter(fn ($r) => (int) ($r->absence_flg ?? 0) !== 0);
+        if ($absentRows->isNotEmpty()) {
+            if ($preferredWorkplaceId > 0) {
+                $wpAbsent = $absentRows->first(fn ($r) => (int) ($r->workplace_id ?? 0) === $preferredWorkplaceId);
+                if ($wpAbsent) {
+                    return $wpAbsent;
+                }
+            }
+
+            return $absentRows->first();
+        }
+
+        if ($preferredWorkplaceId > 0) {
+            $wpMatch = $list->first(fn ($r) => (int) ($r->workplace_id ?? 0) === $preferredWorkplaceId);
+            if ($wpMatch) {
+                return $wpMatch;
+            }
+        }
+
+        return $list->first();
     }
 
     /**
@@ -517,7 +558,18 @@ class AttendanceService
                     $rowId = (int) DB::table('t_attendance')->insertGetId($insertRow);
                 }
             } else {
-                // 通常勤務は、現場一致を優先した1行だけを更新する。
+                // 通常勤務に戻すときは同日全行の欠勤フラグを解除（別行だけ欠勤のまま残るのを防ぐ）
+                if ($candidateRows->isNotEmpty()) {
+                    $ids = $candidateRows->pluck('id')->map(fn ($id) => (int) $id)->all();
+                    DB::table('t_attendance')
+                        ->whereIn('id', $ids)
+                        ->update([
+                            'absence_flg' => 0,
+                            'updated_at' => now(),
+                        ]);
+                }
+
+                // 通常勤務は、現場一致を優先した1行だけを時刻付きで更新する。
                 $chosenByStaff = $this->pickBestAttendanceRowPerStaff($candidateRows, (int) $workplaceId);
                 $row = $chosenByStaff[(int) $staffId] ?? null;
                 if ($row) {

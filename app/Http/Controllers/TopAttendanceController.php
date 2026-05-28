@@ -80,6 +80,7 @@ class TopAttendanceController extends Controller
             $wpForOverlay = $resolvedWorkplaceId !== null && $resolvedWorkplaceId !== '' ? (int) $resolvedWorkplaceId : null;
             $attendanceItems = $this->attendanceService->overlayTAttendanceTimes($attendanceItems, $resolvedWorkDate, $wpForOverlay);
             $attendanceItems = $this->attendanceService->uniqueAttendanceRowsForForm($attendanceItems);
+            $attendanceItems = $this->attendanceService->overlayAbsenceFlags($attendanceItems, $resolvedWorkDate);
             $defaults = $this->attendanceService->GetDefaults();
             if ($defaults === false || $defaults === null) {
                 $defaults = (object) [];
@@ -211,10 +212,6 @@ class TopAttendanceController extends Controller
                 || $this->isTruthyAbsenceValue($this->timeFromKeyedArray($absenceForceRaw, $staffId))
                 || $this->isPostedAbsent($request, $absenceFlags, $staffId)
                 || $this->postedTimesAllEmpty($bucket);
-            if ($absenceFlg) {
-                $savedAnyAbsent = true;
-            }
-
             // 欠勤は DB 上も時刻なしに揃える（空 POST が既定時刻へ戻るのを防ぐ）
             if ($absenceFlg) {
                 $start = '';
@@ -249,6 +246,8 @@ class TopAttendanceController extends Controller
 
             if (! $ok) {
                 $result = false;
+            } elseif ($absenceFlg) {
+                $savedAnyAbsent = true;
             }
         }
 
