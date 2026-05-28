@@ -86,6 +86,25 @@ class TopAttendanceController extends Controller
                 $defaults = (object) [];
             }
             $attendanceItems = $this->attendanceService->withListDisplayTimes($attendanceItems, $defaults);
+
+            $flashAbsentIds = array_values(array_unique(array_filter(array_map(
+                'intval',
+                (array) session('attendance_absent_staff_ids', [])
+            ), fn ($id) => $id > 0)));
+            if ($flashAbsentIds !== []) {
+                $flashAbsentSet = array_fill_keys($flashAbsentIds, true);
+                $attendanceItems = collect($attendanceItems)->map(function ($row) use ($flashAbsentSet) {
+                    $sid = (int) ($row->staff_id ?? 0);
+                    if ($sid > 0 && isset($flashAbsentSet[$sid])) {
+                        $row->absence_flg = 1;
+                        $row->display_start = '';
+                        $row->display_end = '';
+                        $row->display_break = '';
+                    }
+
+                    return $row;
+                })->values();
+            }
         }
 
         // 月次表表示（以前のPDF出力をWebページ表示へ変更）
@@ -197,6 +216,7 @@ class TopAttendanceController extends Controller
 
         $result = true;
         $savedAnyAbsent = false;
+        $savedAbsentStaffIds = [];
         foreach ($staffIds as $staffId) {
             $bucket = $this->timesBucketForStaff($timesPayload, $staffId);
             if (! is_array($bucket)) {
@@ -210,8 +230,7 @@ class TopAttendanceController extends Controller
             // absence_active[] / checkbox に加え、出退勤がすべて空なら欠勤扱い（UIで時刻を空にしたケース）
             $absenceFlg = in_array($staffId, $absenceActiveIds, true)
                 || $this->isTruthyAbsenceValue($this->timeFromKeyedArray($absenceForceRaw, $staffId))
-                || $this->isPostedAbsent($request, $absenceFlags, $staffId)
-                || $this->postedTimesAllEmpty($bucket);
+                || $this->isPostedAbsent($request, $absenceFlags, $staffId);
             // 欠勤は DB 上も時刻なしに揃える（空 POST が既定時刻へ戻るのを防ぐ）
             if ($absenceFlg) {
                 $start = '';
@@ -248,6 +267,7 @@ class TopAttendanceController extends Controller
                 $result = false;
             } elseif ($absenceFlg) {
                 $savedAnyAbsent = true;
+                $savedAbsentStaffIds[] = (int) $staffId;
             }
         }
 
@@ -260,7 +280,8 @@ class TopAttendanceController extends Controller
 
         return redirect()
             ->route('top.attendance', ['workplace_id' => $workplaceId, 'work_date' => $workDate])
-            ->with('status', $status);
+            ->with('status', $status)
+            ->with('attendance_absent_staff_ids', $savedAbsentStaffIds);
     }
 
     /**

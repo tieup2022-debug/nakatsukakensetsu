@@ -28,6 +28,17 @@ class AttendanceService
     }
 
     /**
+     * work_date 列が DATE / DATETIME どちらでも同日一致させる（= だけだと既存行を拾えない環境がある）。
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return \Illuminate\Database\Query\Builder
+     */
+    private function whereWorkDateEquals($query, string $workDateNorm)
+    {
+        return $query->whereRaw('DATE(work_date) = ?', [$workDateNorm]);
+    }
+
+    /**
      * 勤怠一覧 取得
      */
     public function GetAttendance($workplaceId = null, $workDate = null)
@@ -79,11 +90,11 @@ class AttendanceService
             }
             $workDate = $this->coerceWorkDateYmd($workDate);
 
-            return DB::table('v_attendance_all')
-                ->where('workplace_id', '=', $workplaceId)
-                ->where('work_date', '=', $workDate)
-                ->orderBy('staff_name')
-                ->get();
+            $query = DB::table('v_attendance_all')
+                ->where('workplace_id', '=', $workplaceId);
+            $this->whereWorkDateEquals($query, $workDate);
+
+            return $query->orderBy('staff_name')->get();
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
             // ローカルDB未接続でも「勤怠一括入力」の対象社員リストを表示できるようにする
@@ -134,12 +145,11 @@ class AttendanceService
         }
 
         try {
-            $dbRows = DB::table('t_attendance')
-                ->where('work_date', '=', $workDateNorm)
+            $dbQuery = DB::table('t_attendance')
                 ->whereIn('staff_id', $ids)
-                ->whereNull('deleted_at')
-                ->orderByDesc('id')
-                ->get();
+                ->whereNull('deleted_at');
+            $this->whereWorkDateEquals($dbQuery, $workDateNorm);
+            $dbRows = $dbQuery->orderByDesc('id')->get();
 
             $byStaff = collect($this->pickBestAttendanceRowPerStaff($dbRows, $preferredWorkplaceId));
         } catch (\Exception $e) {
@@ -198,20 +208,20 @@ class AttendanceService
         }
 
         try {
-            $absenceIds = DB::table('t_absence')
-                ->where('work_date', '=', $workDateNorm)
+            $absenceQuery = DB::table('t_absence')
                 ->whereIn('staff_id', $ids)
-                ->whereNull('deleted_at')
-                ->pluck('staff_id')
+                ->whereNull('deleted_at');
+            $this->whereWorkDateEquals($absenceQuery, $workDateNorm);
+            $absenceIds = $absenceQuery->pluck('staff_id')
                 ->map(fn ($id) => (int) $id)
                 ->all();
 
-            $attendanceAbsentIds = DB::table('t_attendance')
-                ->where('work_date', '=', $workDateNorm)
+            $attendanceAbsentQuery = DB::table('t_attendance')
                 ->whereIn('staff_id', $ids)
                 ->whereNull('deleted_at')
-                ->where('absence_flg', '=', 1)
-                ->pluck('staff_id')
+                ->where('absence_flg', '=', 1);
+            $this->whereWorkDateEquals($attendanceAbsentQuery, $workDateNorm);
+            $attendanceAbsentIds = $attendanceAbsentQuery->pluck('staff_id')
                 ->map(fn ($id) => (int) $id)
                 ->all();
 
@@ -277,12 +287,11 @@ class AttendanceService
         $workDateNorm = $this->coerceWorkDateYmd($workDate);
 
         try {
-            $rows = DB::table('t_attendance')
-                ->where('work_date', '=', $workDateNorm)
+            $rowsQuery = DB::table('t_attendance')
                 ->whereIn('staff_id', $staffIds)
-                ->whereNull('deleted_at')
-                ->orderByDesc('id')
-                ->get();
+                ->whereNull('deleted_at');
+            $this->whereWorkDateEquals($rowsQuery, $workDateNorm);
+            $rows = $rowsQuery->orderByDesc('id')->get();
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
 
@@ -360,11 +369,11 @@ class AttendanceService
      */
     private function resolveAttendanceRawForMonthly(int $staffId, string $fullDate, $preferredWorkplaceId): ?object
     {
-        $rawRows = DB::table('t_attendance')
+        $rawQuery = DB::table('t_attendance')
             ->where('staff_id', '=', $staffId)
-            ->where('work_date', '=', $fullDate)
-            ->whereNull('deleted_at')
-            ->orderByDesc('id')
+            ->whereNull('deleted_at');
+        $this->whereWorkDateEquals($rawQuery, $fullDate);
+        $rawRows = $rawQuery->orderByDesc('id')
             ->get(['id', 'workplace_id', 'start_time', 'end_time', 'break_time', 'absence_flg']);
 
         if ($rawRows->isEmpty()) {
@@ -523,12 +532,11 @@ class AttendanceService
 
             DB::beginTransaction();
 
-            $candidateRows = DB::table('t_attendance')
+            $candidateQuery = DB::table('t_attendance')
                 ->where('staff_id', '=', (int) $staffId)
-                ->where('work_date', '=', $workDateNorm)
-                ->whereNull('deleted_at')
-                ->orderByDesc('id')
-                ->get();
+                ->whereNull('deleted_at');
+            $this->whereWorkDateEquals($candidateQuery, $workDateNorm);
+            $candidateRows = $candidateQuery->orderByDesc('id')->get();
 
             $rowId = null;
             if ($absenceForDb === 1) {
@@ -655,11 +663,11 @@ class AttendanceService
             // 欠勤状態は t_attendance と t_absence の両方で一貫させる。
             // 月次表示や別画面で t_absence を参照する経路があるため、ここで同期する。
             if ($absenceForDb === 1) {
-                $absenceRow = DB::table('t_absence')
+                $absenceRowQuery = DB::table('t_absence')
                     ->where('staff_id', '=', (int) $staffId)
-                    ->where('work_date', '=', $workDateNorm)
-                    ->whereNull('deleted_at')
-                    ->first();
+                    ->whereNull('deleted_at');
+                $this->whereWorkDateEquals($absenceRowQuery, $workDateNorm);
+                $absenceRow = $absenceRowQuery->first();
                 if ($absenceRow) {
                     DB::table('t_absence')
                         ->where('id', '=', (int) $absenceRow->id)
@@ -677,11 +685,11 @@ class AttendanceService
                     ]);
                 }
             } else {
-                DB::table('t_absence')
+                $deleteAbsenceQuery = DB::table('t_absence')
                     ->where('staff_id', '=', (int) $staffId)
-                    ->where('work_date', '=', $workDateNorm)
-                    ->whereNull('deleted_at')
-                    ->delete();
+                    ->whereNull('deleted_at');
+                $this->whereWorkDateEquals($deleteAbsenceQuery, $workDateNorm);
+                $deleteAbsenceQuery->delete();
             }
 
             DB::commit();
@@ -717,11 +725,15 @@ class AttendanceService
 
         try {
             if (isset($staffId) && isset($workplaceId) && isset($workDate)) {
-                return DB::table('t_attendance')
+                $workDateNorm = $this->coerceWorkDateYmd($workDate);
+                $query = DB::table('t_attendance')
                     ->where('staff_id', '=', $staffId)
-                    ->where('work_date', '=', $workDate)
-                    ->whereNull('deleted_at')
-                    ->first();
+                    ->whereNull('deleted_at');
+                $this->whereWorkDateEquals($query, $workDateNorm);
+                $rows = $query->orderByDesc('id')->get();
+                $map = $this->pickBestAttendanceRowPerStaff($rows, (int) $workplaceId);
+
+                return $map[(int) $staffId] ?? $rows->first();
             }
 
             return false;
@@ -1450,10 +1462,10 @@ class AttendanceService
                     $attendanceDataList[$fullDate]['staff_name'] = $staff->staff_name;
 
                     // まずは既存ビュー（安定）を主参照し、時刻欠落時のみ t_attendance から補完する。
-                    $attendanceData = DB::table('v_attendance_all')
-                        ->where('staff_id', '=', $staff->id)
-                        ->where('work_date', '=', $fullDate)
-                        ->first();
+                    $viewQuery = DB::table('v_attendance_all')
+                        ->where('staff_id', '=', $staff->id);
+                    $this->whereWorkDateEquals($viewQuery, $fullDate);
+                    $attendanceData = $viewQuery->first();
 
                     $preferredWp = (int) ($attendanceData->workplace_id ?? 0);
                     $attendanceRaw = $this->resolveAttendanceRawForMonthly((int) $staff->id, $fullDate, $preferredWp);
@@ -1536,11 +1548,11 @@ class AttendanceService
                         $attendanceDataList[$fullDate]['absence'] = $attendanceData && $attendanceData->absence_flg ? '休み' : '';
                     }
 
-                    $absenceExists = DB::table('t_absence')
+                    $absenceExistsQuery = DB::table('t_absence')
                         ->where('staff_id', '=', $staff->id)
-                        ->where('work_date', '=', $fullDate)
-                        ->whereNull('deleted_at')
-                        ->exists();
+                        ->whereNull('deleted_at');
+                    $this->whereWorkDateEquals($absenceExistsQuery, $fullDate);
+                    $absenceExists = $absenceExistsQuery->exists();
 
                     if ($isAbsentDay) {
                         $attendanceDataList[$fullDate]['workplace_name'] = '#absence';
