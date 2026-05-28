@@ -86,6 +86,7 @@ class TopAttendanceController extends Controller
                 $defaults = (object) [];
             }
             $attendanceItems = $this->attendanceService->withListDisplayTimes($attendanceItems, $defaults);
+            $attendanceItems = $this->attendanceService->enforceAbsentStateOnRows($attendanceItems, $resolvedWorkDate);
 
             $flashAbsentIds = array_values(array_unique(array_filter(array_map(
                 'intval',
@@ -227,10 +228,13 @@ class TopAttendanceController extends Controller
 
             $existing = $existingByStaff[$staffId] ?? null;
 
-            // absence_active[] / checkbox に加え、出退勤がすべて空なら欠勤扱い（UIで時刻を空にしたケース）
             $absenceFlg = in_array($staffId, $absenceActiveIds, true)
-                || $this->isTruthyAbsenceValue($this->timeFromKeyedArray($absenceForceRaw, $staffId))
-                || $this->isPostedAbsent($request, $absenceFlags, $staffId);
+                || $this->isPostedAbsent($request, $absenceFlags, $staffId)
+                || (
+                    $this->isTruthyAbsenceValue($this->timeFromKeyedArray($absenceForceRaw, $staffId))
+                    && is_array($bucket)
+                    && $this->postedTimesAllEmpty($bucket)
+                );
             // 欠勤は DB 上も時刻なしに揃える（空 POST が既定時刻へ戻るのを防ぐ）
             if ($absenceFlg) {
                 $start = '';
@@ -262,6 +266,15 @@ class TopAttendanceController extends Controller
                 'absence_decision' => (bool) $absenceFlg,
                 'save_ok' => (bool) $ok,
             ]);
+
+            if ($ok && $absenceFlg && ! $this->attendanceService->staffIsAbsentOnDate((int) $staffId, $workDate)) {
+                $ok = false;
+                Log::warning('TopAttendance: 欠勤保存後もDBに欠勤が反映されていません', [
+                    'staff_id' => (int) $staffId,
+                    'workplace_id' => (int) $workplaceId,
+                    'work_date' => (string) $workDate,
+                ]);
+            }
 
             if (! $ok) {
                 $result = false;

@@ -348,6 +348,7 @@ class SettingAttendanceController extends Controller
         $assignedStaffList = $this->attendanceService->overlayTAttendanceTimes($assignedStaffList, (string) $workDate, $wpForOverlay);
         $assignedStaffList = $this->attendanceService->overlayAbsenceFlags($assignedStaffList, (string) $workDate);
         $assignedStaffList = $this->attendanceService->withListDisplayTimes($assignedStaffList, $defaults);
+        $assignedStaffList = $this->attendanceService->enforceAbsentStateOnRows($assignedStaffList, (string) $workDate);
 
         return view('setting.attendance.list')->with([
             'workplace_id' => $workplaceId,
