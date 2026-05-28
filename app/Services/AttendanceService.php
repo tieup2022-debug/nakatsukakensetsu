@@ -482,9 +482,6 @@ class AttendanceService
 
             DB::beginTransaction();
 
-            // 複数行・whereDate の環境差で UPDATE が当たらない事例があるため、必ず主キー id で 1 行だけ更新する。
-            // 行の選び方は overlay / getAttendanceRowsByStaffForDate と同じ（選択中の workplace_id 一致を最優先）。
-            // id 降順のみだと「別現場のより新しい行」だけが更新され、画面と phpMyAdmin で見ている行が更新されないことがある。
             $candidateRows = DB::table('t_attendance')
                 ->where('staff_id', '=', (int) $staffId)
                 ->whereDate('work_date', '=', $workDateNorm)
@@ -492,33 +489,55 @@ class AttendanceService
                 ->orderByDesc('id')
                 ->get();
 
-            $chosenByStaff = $this->pickBestAttendanceRowPerStaff($candidateRows, (int) $workplaceId);
-            $row = $chosenByStaff[(int) $staffId] ?? null;
-
             $rowId = null;
-            if ($row) {
-                $rowId = (int) $row->id;
-                // rowCount は MySQL/PDO の設定次第で「値が変わった行」だけを数え 0 になり得る（誤ロールバックの原因になる）
-                DB::table('t_attendance')
-                    ->where('id', '=', $rowId)
-                    ->update($payload);
-            } else {
-                $insertRow = array_merge($payload, [
-                    'staff_id' => (int) $staffId,
-                    'deleted_at' => null,
-                    'created_at' => now(),
-                ]);
-                if ($absenceForDb === 1) {
-                    $insertRow['start_time'] = null;
-                    $insertRow['end_time'] = null;
-                    $insertRow['break_time'] = $this->prepareBreakTimeForStorage('');
-                }
-                $rowId = (int) DB::table('t_attendance')->insertGetId($insertRow);
-                if ($rowId <= 0) {
-                    DB::rollBack();
+            if ($absenceForDb === 1) {
+                // 欠勤は「日単位」なので、同一 staff_id / work_date の複数行をすべて欠勤化する。
+                // 1行だけ更新すると、表示側が別行（欠勤=0）を拾って初期値に見えることがある。
+                if ($candidateRows->isNotEmpty()) {
+                    $ids = $candidateRows->pluck('id')->map(fn ($id) => (int) $id)->all();
+                    DB::table('t_attendance')
+                        ->whereIn('id', $ids)
+                        ->update([
+                            'start_time' => null,
+                            'end_time' => null,
+                            'break_time' => $this->prepareBreakTimeForStorage(''),
+                            'absence_flg' => 1,
+                            'updated_at' => now(),
+                        ]);
 
-                    return false;
+                    $chosenByStaff = $this->pickBestAttendanceRowPerStaff($candidateRows, (int) $workplaceId);
+                    $row = $chosenByStaff[(int) $staffId] ?? $candidateRows->first();
+                    $rowId = $row ? (int) $row->id : null;
+                } else {
+                    $insertRow = array_merge($payload, [
+                        'staff_id' => (int) $staffId,
+                        'deleted_at' => null,
+                        'created_at' => now(),
+                    ]);
+                    $rowId = (int) DB::table('t_attendance')->insertGetId($insertRow);
                 }
+            } else {
+                // 通常勤務は、現場一致を優先した1行だけを更新する。
+                $chosenByStaff = $this->pickBestAttendanceRowPerStaff($candidateRows, (int) $workplaceId);
+                $row = $chosenByStaff[(int) $staffId] ?? null;
+                if ($row) {
+                    $rowId = (int) $row->id;
+                    DB::table('t_attendance')
+                        ->where('id', '=', $rowId)
+                        ->update($payload);
+                } else {
+                    $insertRow = array_merge($payload, [
+                        'staff_id' => (int) $staffId,
+                        'deleted_at' => null,
+                        'created_at' => now(),
+                    ]);
+                    $rowId = (int) DB::table('t_attendance')->insertGetId($insertRow);
+                }
+            }
+            if (! $rowId || $rowId <= 0) {
+                DB::rollBack();
+
+                return false;
             }
 
             $fresh = DB::table('t_attendance')->where('id', '=', $rowId)->first();
