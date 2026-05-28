@@ -263,7 +263,7 @@ class SettingAttendanceController extends Controller
                 return redirect()->route('setting.attendance.manage')->with('status', false);
             }
 
-            $absenceFlg = $request->boolean('absence_flg');
+            $absenceFlg = $this->isTruthyAbsenceInput($request->input('absence_flg'));
             $result = $this->attendanceService->AttendanceUpdate(
                 $staffId,
                 $workplaceId,
@@ -278,6 +278,37 @@ class SettingAttendanceController extends Controller
         // 成否を result へ
         $workplaceQuery = ['workplace_id' => $workplaceId, 'work_date' => $workDate];
         return redirect()->route('setting.attendance.list', $workplaceQuery)->with('status', $result ? '保存しました' : '保存に失敗しました');
+    }
+
+    /**
+     * hidden + checkbox の重複送信やブラウザ差（"1"/"on"/true）を吸収して欠勤ONを判定する。
+     */
+    private function isTruthyAbsenceInput(mixed $raw): bool
+    {
+        if (is_array($raw)) {
+            foreach ($raw as $v) {
+                if ($this->isTruthyAbsenceInput($v)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (is_bool($raw)) {
+            return $raw;
+        }
+
+        if ($raw === null) {
+            return false;
+        }
+
+        $s = trim(strtolower((string) $raw));
+        if ($s === '') {
+            return false;
+        }
+
+        return in_array($s, ['1', 'true', 'on', 'yes'], true);
     }
 
     /**

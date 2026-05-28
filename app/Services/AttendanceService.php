@@ -396,6 +396,9 @@ class AttendanceService
                 $payload = [
                     'workplace_id' => (int) $workplaceId,
                     'work_date' => $workDateNorm,
+                    'start_time' => null,
+                    'end_time' => null,
+                    'break_time' => $this->prepareBreakTimeForStorage(''),
                     'absence_flg' => 1,
                     'updated_at' => now(),
                 ];

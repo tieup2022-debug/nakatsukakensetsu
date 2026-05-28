@@ -366,7 +366,7 @@ class TopAttendanceController extends Controller
         }
 
         foreach (is_array($raw) ? $raw : [$raw] as $value) {
-            if ((string) $this->unwrapPostedScalar($value) === '1') {
+            if ($this->isTruthyAbsenceValue($value)) {
                 return true;
             }
         }
@@ -405,6 +405,27 @@ class TopAttendanceController extends Controller
         }
 
         return $value;
+    }
+
+    /**
+     * checkbox の value は環境差で "1"/"on"/true などがあり得るため、欠勤ON判定を広く受ける。
+     */
+    private function isTruthyAbsenceValue(mixed $value): bool
+    {
+        $scalar = $this->unwrapPostedScalar($value);
+        if ($scalar === null) {
+            return false;
+        }
+        if (is_bool($scalar)) {
+            return $scalar;
+        }
+
+        $raw = trim(strtolower((string) $scalar));
+        if ($raw === '') {
+            return false;
+        }
+
+        return in_array($raw, ['1', 'true', 'on', 'yes'], true);
     }
 
     private function normalizeTimeInput($value, string $fallback): string
