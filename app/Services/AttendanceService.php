@@ -148,7 +148,7 @@ class AttendanceService
             return $collection;
         }
 
-        return $collection->map(function ($row) use ($byStaff) {
+        $collection = $collection->map(function ($row) use ($byStaff) {
             $sid = (int) ($row->staff_id ?? 0);
             $raw = $byStaff->get($sid);
             if (! $raw) {
@@ -165,6 +165,64 @@ class AttendanceService
                 $row->start_time = $raw->start_time;
                 $row->end_time = $raw->end_time;
                 $row->break_time = $raw->break_time;
+            }
+
+            return $row;
+        })->values();
+
+        return $this->overlayAbsenceFlags($collection, $workDateNorm);
+    }
+
+    /**
+     * t_absence に登録がある日は、一覧表示を必ず欠勤扱いに揃える。
+     *
+     * @param  iterable<int, object>  $rows
+     * @return Collection<int, object>
+     */
+    public function overlayAbsenceFlags(iterable $rows, string $workDate): Collection
+    {
+        $collection = collect($rows);
+        if ($collection->isEmpty()) {
+            return $collection;
+        }
+
+        $workDateNorm = $this->coerceWorkDateYmd($workDate);
+        $ids = $collection->pluck('staff_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+        if ($ids === []) {
+            return $collection;
+        }
+
+        try {
+            $absenceIds = DB::table('t_absence')
+                ->whereDate('work_date', '=', $workDateNorm)
+                ->whereIn('staff_id', $ids)
+                ->whereNull('deleted_at')
+                ->pluck('staff_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return $collection;
+        }
+
+        if ($absenceIds === []) {
+            return $collection;
+        }
+        $absenceSet = array_fill_keys($absenceIds, true);
+
+        return $collection->map(function ($row) use ($absenceSet) {
+            $sid = (int) ($row->staff_id ?? 0);
+            if ($sid > 0 && isset($absenceSet[$sid])) {
+                $row->absence_flg = 1;
+                $row->start_time = null;
+                $row->end_time = null;
+                $row->break_time = null;
             }
 
             return $row;

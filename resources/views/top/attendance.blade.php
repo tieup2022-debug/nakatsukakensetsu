@@ -150,6 +150,7 @@
                                             >
                                         </td>
                                         <td>
+                                            <input type="hidden" name="absence_force[{{ $sid }}]" value="{{ $isAbsent ? '1' : '0' }}">
                                             <input
                                                 type="checkbox"
                                                 class="form-check-input"
@@ -195,6 +196,10 @@
                             cb.addEventListener('change', function () {
                                 var tr = cb.closest('tr');
                                 if (tr) {
+                                    var force = tr.querySelector('input[type="hidden"][name^="absence_force"]');
+                                    if (force) {
+                                        force.value = cb.checked ? '1' : '0';
+                                    }
                                     syncAbsentRowTimes(tr);
                                 }
                             });
@@ -206,6 +211,7 @@
                             });
                             saveForm.querySelectorAll('tbody tr[data-absent-row]').forEach(function (tr) {
                                 var cb = tr.querySelector('input[type="checkbox"][name^="absence_flg"]');
+                                var force = tr.querySelector('input[type="hidden"][name^="absence_force"]');
                                 if (cb && cb.checked) {
                                     var sid = tr.getAttribute('data-staff-id') || '';
                                     if (sid !== '') {
@@ -215,6 +221,9 @@
                                         marker.value = sid;
                                         saveForm.appendChild(marker);
                                     }
+                                }
+                                if (force) {
+                                    force.value = (cb && cb.checked) ? '1' : '0';
                                 }
                             });
 

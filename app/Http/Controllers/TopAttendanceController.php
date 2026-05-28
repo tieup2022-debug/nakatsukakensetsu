@@ -182,6 +182,10 @@ class TopAttendanceController extends Controller
             'intval',
             $absenceActiveRaw
         ), fn ($id) => $id > 0)));
+        $absenceForceRaw = $request->input('absence_force', []);
+        if (! is_array($absenceForceRaw)) {
+            $absenceForceRaw = [];
+        }
 
         $defaults = $this->attendanceService->GetDefaults();
         $defaultStart = $this->normalizeTimeInput($defaults->start_time ?? null, '08:00');
@@ -204,6 +208,7 @@ class TopAttendanceController extends Controller
 
             // absence_active[] / checkbox に加え、出退勤がすべて空なら欠勤扱い（UIで時刻を空にしたケース）
             $absenceFlg = in_array($staffId, $absenceActiveIds, true)
+                || $this->isTruthyAbsenceValue($this->timeFromKeyedArray($absenceForceRaw, $staffId))
                 || $this->isPostedAbsent($request, $absenceFlags, $staffId)
                 || $this->postedTimesAllEmpty($bucket);
             if ($absenceFlg) {

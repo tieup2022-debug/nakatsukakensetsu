@@ -344,6 +344,7 @@ class SettingAttendanceController extends Controller
             $defaults = (object) [];
         }
 
+        $assignedStaffList = $this->attendanceService->overlayAbsenceFlags($assignedStaffList, (string) $workDate);
         $assignedStaffList = $this->attendanceService->withListDisplayTimes($assignedStaffList, $defaults);
 
         return view('setting.attendance.list')->with([
