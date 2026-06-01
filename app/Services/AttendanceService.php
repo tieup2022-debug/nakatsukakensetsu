@@ -528,6 +528,28 @@ class AttendanceService
     }
 
     /**
+     * 休憩時間の表示用整形（HH:MM）。
+     *
+     * break_time 列は「分」を整数で保存する（60=1時間, 15=15分）。
+     * formatTimeForDisplay は 23 以下の整数を「時間」と解釈する旧データ互換があり、
+     * 15 分休憩が 15:00（15時間）になってしまうため、休憩は必ず分として解釈する。
+     */
+    public function formatBreakForDisplay($break): string
+    {
+        if ($break === null || $break === '') {
+            return '';
+        }
+        $s = trim((string) $break);
+        if ($s === '') {
+            return '';
+        }
+
+        $minutes = $this->breakStoreValueToMinutes($s);
+
+        return sprintf('%02d:%02d', intdiv($minutes, 60), $minutes % 60);
+    }
+
+    /**
      * 勤怠一覧行に表示用の時刻を付与（未登録・NULL 時は m_attendance_defaults 相当の既定値）
      */
     public function withListDisplayTimes(iterable $rows, object $defaults): Collection
@@ -536,7 +558,7 @@ class AttendanceService
 
         $fallbackStart = $this->formatTimeForDisplay($defaults->start_time ?? null) ?: '08:00';
         $fallbackEnd = $this->formatTimeForDisplay($defaults->end_time ?? null) ?: '17:00';
-        $fallbackBreak = $this->formatTimeForDisplay($defaults->break_time ?? null) ?: '01:00';
+        $fallbackBreak = $this->formatBreakForDisplay($defaults->break_time ?? null) ?: '01:00';
 
         return $rows->map(function ($row) use ($fallbackStart, $fallbackEnd, $fallbackBreak) {
             $absent = isset($row->absence_flg) && (int) $row->absence_flg !== 0;
@@ -550,7 +572,7 @@ class AttendanceService
 
             $s = $this->formatTimeForDisplay($row->start_time ?? null);
             $e = $this->formatTimeForDisplay($row->end_time ?? null);
-            $b = $this->formatTimeForDisplay($row->break_time ?? null);
+            $b = $this->formatBreakForDisplay($row->break_time ?? null);
 
             $row->display_start = $s !== '' ? $s : $fallbackStart;
             $row->display_end = $e !== '' ? $e : $fallbackEnd;
@@ -1536,7 +1558,7 @@ class AttendanceService
             $defaults = $this->GetDefaults();
             $fallbackStart = $this->formatTimeShort((string) ($defaults->start_time ?? '')) ?: '08:00';
             $fallbackEnd = $this->formatTimeShort((string) ($defaults->end_time ?? '')) ?: '17:00';
-            $fallbackBreak = $this->formatTimeShort((string) ($defaults->break_time ?? '')) ?: '01:00';
+            $fallbackBreak = $this->formatBreakForDisplay($defaults->break_time ?? '') ?: '01:00';
 
             $year = date('Y', strtotime($workDate));
             $month = date('m', strtotime($workDate));
@@ -1601,7 +1623,7 @@ class AttendanceService
                     if ($attendanceData && ! $isAbsentDay) {
                         $startTime = $this->formatTimeShort($attendanceData->start_time);
                         $endTime = $this->formatTimeShort($attendanceData->end_time);
-                        $breakTime = $this->formatTimeShort($attendanceData->break_time);
+                        $breakTime = $this->formatBreakForDisplay($attendanceData->break_time);
 
                         // v_attendance_all は配置現場ベースのため、勤怠トップで保存した t_attendance と現場・時刻がずれる。
                         // 実レコードがある日は t_attendance を優先して月次・PDF と入力内容を一致させる。
@@ -1612,7 +1634,7 @@ class AttendanceService
                                 : (string) ($attendanceData->workplace_name ?? '');
                             $stR = $this->formatTimeShort($attendanceRaw->start_time ?? '');
                             $enR = $this->formatTimeShort($attendanceRaw->end_time ?? '');
-                            $brR = $this->formatTimeShort($attendanceRaw->break_time ?? '');
+                            $brR = $this->formatBreakForDisplay($attendanceRaw->break_time ?? '');
                             if ($stR !== '') {
                                 $startTime = $stR;
                             }
@@ -1819,7 +1841,7 @@ class AttendanceService
                         $attendanceDataList[$fullDate]['workplace_name'] = $workplaceNameById[$workplaceId] ?? '';
                         $attendanceDataList[$fullDate]['start_time'] = $this->formatTimeShort($attRow['start_time'] ?? '');
                         $attendanceDataList[$fullDate]['end_time'] = $this->formatTimeShort($attRow['end_time'] ?? '');
-                        $attendanceDataList[$fullDate]['break_time'] = (string) ($attRow['break_time'] ?? '');
+                        $attendanceDataList[$fullDate]['break_time'] = $this->formatBreakForDisplay($attRow['break_time'] ?? '');
                         $attendanceDataList[$fullDate]['absence'] = '';
                     } else {
                         $attendanceDataList[$fullDate]['workplace_name'] = '';
@@ -1993,7 +2015,7 @@ class AttendanceService
                         if (! $absence) {
                             $startDisplay = $this->formatTimeShort((string) ($row->start_time ?? ''));
                             $endDisplay = $this->formatTimeShort((string) ($row->end_time ?? ''));
-                            $breakDisplay = $this->formatTimeShort((string) ($row->break_time ?? ''));
+                            $breakDisplay = $this->formatBreakForDisplay($row->break_time ?? '');
                             $breakMinutes = $this->timeToMinutes($breakDisplay, true) ?? 0;
                             $workedMinutes = $this->calcWorkedMinutes(
                                 $startDisplay,
