@@ -1634,19 +1634,16 @@ class AttendanceService
                             || $this->formatTimeShort($attendanceRaw->break_time ?? '') !== ''
                         );
                         if ($wpNameForFallback !== '' && ! $hasStoredTimes) {
-                            // 過去日は参考表示に従来の内蔵初期値（8:00〜17:00）を使い、今日以降だけ現在の初期時間マスタを使う
-                            $isPastDate = $fullDate < date('Y-m-d');
-                            $refStart = $isPastDate ? '08:00' : $fallbackStart;
-                            $refEnd = $isPastDate ? '17:00' : $fallbackEnd;
-                            $refBreak = $isPastDate ? '01:00' : $fallbackBreak;
+                            // 未入力日の参考表示は、過去・未来に関わらず初期時間マスタ（m_attendance_defaults）を使う。
+                            // 日付が過去になると 08:00 等の固定値へ切り替わり、先週まで 7:30 だった表示が変わってしまうため固定値は使わない。
                             if ($startTime === '') {
-                                $startTime = $refStart;
+                                $startTime = $fallbackStart;
                             }
                             if ($endTime === '') {
-                                $endTime = $refEnd;
+                                $endTime = $fallbackEnd;
                             }
                             if ($breakTime === '') {
-                                $breakTime = $refBreak;
+                                $breakTime = $fallbackBreak;
                             }
                         }
 
