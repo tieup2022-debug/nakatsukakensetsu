@@ -1592,6 +1592,7 @@ class AttendanceService
                         $attendanceDataList[$fullDate]['start_time'] = '';
                         $attendanceDataList[$fullDate]['end_time'] = '';
                         $attendanceDataList[$fullDate]['break_time'] = '';
+                        $attendanceDataList[$fullDate]['worked_time'] = '';
                         $attendanceDataList[$fullDate]['absence'] = '休み';
 
                         continue;
@@ -1672,12 +1673,14 @@ class AttendanceService
                         $attendanceDataList[$fullDate]['start_time'] = $startTime;
                         $attendanceDataList[$fullDate]['end_time'] = $endTime;
                         $attendanceDataList[$fullDate]['break_time'] = $breakTime;
+                        $attendanceDataList[$fullDate]['worked_time'] = $this->workedTimeDisplay($startTime, $endTime, $breakTime);
                         $attendanceDataList[$fullDate]['absence'] = '';
                     } else {
                         $attendanceDataList[$fullDate]['workplace_name'] = '';
                         $attendanceDataList[$fullDate]['start_time'] = '';
                         $attendanceDataList[$fullDate]['end_time'] = '';
                         $attendanceDataList[$fullDate]['break_time'] = '';
+                        $attendanceDataList[$fullDate]['worked_time'] = '';
                         $attendanceDataList[$fullDate]['absence'] = $attendanceData && $attendanceData->absence_flg ? '休み' : '';
                     }
 
@@ -1692,6 +1695,7 @@ class AttendanceService
                         $attendanceDataList[$fullDate]['start_time'] = '';
                         $attendanceDataList[$fullDate]['end_time'] = '';
                         $attendanceDataList[$fullDate]['break_time'] = '';
+                        $attendanceDataList[$fullDate]['worked_time'] = '';
                     }
                     if ($absenceExists) {
                         $attendanceDataList[$fullDate]['workplace_name'] = '#absence';
@@ -1834,20 +1838,26 @@ class AttendanceService
                     $attendanceDataList[$fullDate]['start_time'] = '';
                     $attendanceDataList[$fullDate]['end_time'] = '';
                     $attendanceDataList[$fullDate]['break_time'] = '';
+                    $attendanceDataList[$fullDate]['worked_time'] = '';
                     $attendanceDataList[$fullDate]['absence'] = '休';
                 } else {
                     // DB版と同じ形式に寄せる：勤怠行が無ければ空セル
                     if ($attRow) {
+                        $startDisp = $this->formatTimeShort($attRow['start_time'] ?? '');
+                        $endDisp = $this->formatTimeShort($attRow['end_time'] ?? '');
+                        $breakDisp = $this->formatBreakForDisplay($attRow['break_time'] ?? '');
                         $attendanceDataList[$fullDate]['workplace_name'] = $workplaceNameById[$workplaceId] ?? '';
-                        $attendanceDataList[$fullDate]['start_time'] = $this->formatTimeShort($attRow['start_time'] ?? '');
-                        $attendanceDataList[$fullDate]['end_time'] = $this->formatTimeShort($attRow['end_time'] ?? '');
-                        $attendanceDataList[$fullDate]['break_time'] = $this->formatBreakForDisplay($attRow['break_time'] ?? '');
+                        $attendanceDataList[$fullDate]['start_time'] = $startDisp;
+                        $attendanceDataList[$fullDate]['end_time'] = $endDisp;
+                        $attendanceDataList[$fullDate]['break_time'] = $breakDisp;
+                        $attendanceDataList[$fullDate]['worked_time'] = $this->workedTimeDisplay($startDisp, $endDisp, $breakDisp);
                         $attendanceDataList[$fullDate]['absence'] = '';
                     } else {
                         $attendanceDataList[$fullDate]['workplace_name'] = '';
                         $attendanceDataList[$fullDate]['start_time'] = '';
                         $attendanceDataList[$fullDate]['end_time'] = '';
                         $attendanceDataList[$fullDate]['break_time'] = '';
+                        $attendanceDataList[$fullDate]['worked_time'] = '';
                         $attendanceDataList[$fullDate]['absence'] = '';
                     }
                 }
@@ -2077,6 +2087,22 @@ class AttendanceService
 
             return false;
         }
+    }
+
+    /**
+     * 月次表「実働」用: 出勤・退勤・休憩から実働時間を HH:MM で返す（算出不能・0 は空文字）。
+     */
+    private function workedTimeDisplay(string $startTime, string $endTime, string $breakTime): string
+    {
+        if (trim($startTime) === '' || trim($endTime) === '') {
+            return '';
+        }
+        $minutes = $this->calcWorkedMinutes($startTime, $endTime, $breakTime);
+        if ($minutes <= 0) {
+            return '';
+        }
+
+        return sprintf('%02d:%02d', intdiv($minutes, 60), $minutes % 60);
     }
 
     private function calcWorkedMinutes(string $startTime, string $endTime, string $breakTime): int

@@ -76,7 +76,7 @@
                                         } elseif ($label === '休憩') {
                                             $value = $cell['break_time'] ?? '';
                                         } elseif ($label === '実働') {
-                                            $value = '';
+                                            $value = $cell['worked_time'] ?? '';
                                         }
                                     }
                                 @endphp
