@@ -10,6 +10,9 @@
         .staff-col { min-width: 92px; font-weight: 700; }
         .label-col { min-width: 56px; background: #f7f9fc; font-weight: 700; }
         .day-col { min-width: 40px; }
+        .monthly-table td.day-col { padding: 0; }
+        .cell-edit-link { display: block; padding: 2px 4px; min-height: 1em; color: inherit; text-decoration: none; cursor: pointer; }
+        .cell-edit-link:hover { background: #fff3cd; text-decoration: none; color: inherit; }
         .sun { color: #d43f3a; }
         .sat { color: #2a74d4; }
     </style>
@@ -24,6 +27,10 @@
                 href="{{ route('top.attendance', array_filter(['workplace_id' => $filter_workplace_id ?? null, 'work_date' => $filter_work_date ?? null], fn ($v) => $v !== null && $v !== '')) }}"
             >勤怠へ戻る</a>
         </div>
+    </div>
+
+    <div class="text-muted small mb-2">
+        各セルをクリックすると、その日の入力画面（現場・作業日）へ移動して時間を編集できます。
     </div>
 
     @php
@@ -79,8 +86,18 @@
                                             $value = $cell['worked_time'] ?? '';
                                         }
                                     }
+
+                                    $cellWorkplaceId = (int) ($cell['workplace_id'] ?? 0);
+                                    $editParams = ['work_date' => $date];
+                                    if ($cellWorkplaceId > 0) {
+                                        $editParams['workplace_id'] = $cellWorkplaceId;
+                                    }
+                                    $editHref = route('top.attendance', $editParams);
+                                    $editTitle = $staffName.'／'.((int) substr($date, 8, 2)).'日 の勤怠を編集';
                                 @endphp
-                                <td class="day-col">{{ $value }}</td>
+                                <td class="day-col">
+                                    <a href="{{ $editHref }}" class="cell-edit-link" title="{{ $editTitle }}">{{ $value !== '' ? $value : ' ' }}</a>
+                                </td>
                             @endforeach
                         </tr>
                     @endforeach

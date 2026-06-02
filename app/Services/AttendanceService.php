@@ -1589,6 +1589,7 @@ class AttendanceService
                     // 月次表はビュー1行目だと別現場の通常勤務が先に返ることがあるため、欠勤は実テーブルで先に判定する。
                     if ($this->isStaffAbsentOnDate((int) $staff->id, $fullDate)) {
                         $attendanceDataList[$fullDate]['workplace_name'] = '#absence';
+                        $attendanceDataList[$fullDate]['workplace_id'] = 0;
                         $attendanceDataList[$fullDate]['start_time'] = '';
                         $attendanceDataList[$fullDate]['end_time'] = '';
                         $attendanceDataList[$fullDate]['break_time'] = '';
@@ -1633,6 +1634,7 @@ class AttendanceService
                             $attendanceDataList[$fullDate]['workplace_name'] = $wpTa !== ''
                                 ? $wpTa
                                 : (string) ($attendanceData->workplace_name ?? '');
+                            $attendanceDataList[$fullDate]['workplace_id'] = (int) ($attendanceRaw->workplace_id ?? 0);
                             $stR = $this->formatTimeShort($attendanceRaw->start_time ?? '');
                             $enR = $this->formatTimeShort($attendanceRaw->end_time ?? '');
                             $brR = $this->formatBreakForDisplay($attendanceRaw->break_time ?? '');
@@ -1647,6 +1649,7 @@ class AttendanceService
                             }
                         } else {
                             $attendanceDataList[$fullDate]['workplace_name'] = (string) ($attendanceData->workplace_name ?? '');
+                            $attendanceDataList[$fullDate]['workplace_id'] = (int) ($attendanceData->workplace_id ?? 0);
                         }
 
                         // 現場はあるが DB に保存済みの時刻が無い日だけ、月次表では参考として初期時間を表示
@@ -1677,6 +1680,7 @@ class AttendanceService
                         $attendanceDataList[$fullDate]['absence'] = '';
                     } else {
                         $attendanceDataList[$fullDate]['workplace_name'] = '';
+                        $attendanceDataList[$fullDate]['workplace_id'] = 0;
                         $attendanceDataList[$fullDate]['start_time'] = '';
                         $attendanceDataList[$fullDate]['end_time'] = '';
                         $attendanceDataList[$fullDate]['break_time'] = '';
