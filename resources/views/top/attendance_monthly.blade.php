@@ -3,14 +3,16 @@
 @section('content')
     <style>
         .monthly-wrap { overflow-x: auto; background: #fff; border: 1px solid #dbe3ea; border-radius: 8px; }
-        .monthly-table { border-collapse: collapse; min-width: 1600px; width: 100%; font-size: 12px; }
-        .monthly-table th, .monthly-table td { border: 1px solid #8b8f96; padding: 2px 4px; text-align: center; white-space: nowrap; }
+        /* table-layout: fixed + colgroup により、全テーブルで列幅を完全に揃え、縦罫線がずれないようにする */
+        .monthly-table { border-collapse: collapse; table-layout: fixed; min-width: 1600px; width: 100%; font-size: 12px; }
+        .monthly-table th, .monthly-table td { border: 1px solid #8b8f96; padding: 2px 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .monthly-title { background: #2f8dde; color: #fff; font-weight: 700; text-align: center; }
         .monthly-head { background: #eef3f8; font-weight: 700; }
-        .staff-col { min-width: 92px; font-weight: 700; }
-        .label-col { min-width: 56px; background: #f7f9fc; font-weight: 700; }
-        .day-col { min-width: 40px; }
+        .staff-col { font-weight: 700; }
+        .label-col { background: #f7f9fc; font-weight: 700; }
         .monthly-table td.day-col { padding: 0; }
+        /* 現場名は長くても固定幅内で折り返して、列幅を広げないようにする */
+        .monthly-table td.day-col.site-cell .cell-edit-link { white-space: normal; word-break: break-all; }
         .cell-edit-link { display: block; padding: 2px 4px; min-height: 1em; color: inherit; text-decoration: none; cursor: pointer; }
         .cell-edit-link:hover { background: #fff3cd; text-decoration: none; color: inherit; }
         .sun { color: #d43f3a; }
@@ -40,6 +42,13 @@
     @foreach(($attendance_table_list ?? []) as $pageIndex => $pageStaffList)
         <div class="monthly-wrap mb-3">
             <table class="monthly-table">
+                <colgroup>
+                    <col style="width: 92px;">
+                    <col style="width: 56px;">
+                    @foreach(($date_list ?? []) as $date)
+                        <col style="width: 48px;">
+                    @endforeach
+                </colgroup>
                 <tr>
                     <th class="monthly-title" colspan="{{ count($date_list ?? []) + 2 }}">勤怠</th>
                 </tr>
@@ -95,7 +104,7 @@
                                     $editHref = route('top.attendance', $editParams);
                                     $editTitle = $staffName.'／'.((int) substr($date, 8, 2)).'日 の勤怠を編集';
                                 @endphp
-                                <td class="day-col">
+                                <td class="day-col{{ $label === '現場' ? ' site-cell' : '' }}">
                                     <a href="{{ $editHref }}" class="cell-edit-link" title="{{ $editTitle }}">{{ $value !== '' ? $value : ' ' }}</a>
                                 </td>
                             @endforeach
