@@ -685,6 +685,7 @@ class AssignmentService
             $absenceStaffList = DB::table('v_attendance_all')
                 ->where('work_date', $workDate)
                 ->where('absence_flg', 1)
+                ->select('staff_id', 'staff_name')
                 ->get()
                 ->all();
 
@@ -695,11 +696,24 @@ class AssignmentService
                         ->whereNull('tab.deleted_at');
                 })
                 ->where('tab.work_date', $workDate)
-                ->select('msf.staff_name')
+                ->select('tab.staff_id', 'msf.staff_name')
                 ->get()
                 ->all();
 
-            return array_merge($absenceStaffList, $plannedAbsenceList);
+            $merged = array_merge($absenceStaffList, $plannedAbsenceList);
+
+            // 勤怠の欠勤打刻（複数現場配置で複数行になり得る）と欠勤予定（t_absence）は
+            // 同一人物が両方に載ることがあるため、staff_id 単位で重複排除する。
+            $uniqueStaffList = [];
+            foreach ($merged as $row) {
+                $staffId = $row->staff_id ?? null;
+                $key = $staffId !== null ? 'id:'.$staffId : 'name:'.($row->staff_name ?? '');
+                if (!isset($uniqueStaffList[$key])) {
+                    $uniqueStaffList[$key] = $row;
+                }
+            }
+
+            return array_values($uniqueStaffList);
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
 
