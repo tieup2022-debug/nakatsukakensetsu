@@ -8,7 +8,8 @@
         .monthly-table th, .monthly-table td { border: 1px solid #8b8f96; padding: 2px 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .monthly-title { background: #2f8dde; color: #fff; font-weight: 700; text-align: center; }
         .monthly-head { background: #eef3f8; font-weight: 700; }
-        .staff-col { font-weight: 700; }
+        /* 社員名は長くても折り返して全て見えるようにする */
+        .staff-col { font-weight: 700; white-space: normal; word-break: break-word; }
         .label-col { background: #f7f9fc; font-weight: 700; }
         .monthly-table td.day-col { padding: 0; }
         /* 現場名（長くなりがちな行）は1行に収めるため、折り返さずフォントを小さくする */
@@ -41,9 +42,9 @@
 
     @foreach(($attendance_table_list ?? []) as $pageIndex => $pageStaffList)
         <div class="monthly-wrap mb-3">
-            <table class="monthly-table" style="min-width: {{ 148 + 64 * count($date_list ?? []) }}px;">
+            <table class="monthly-table" style="min-width: {{ 176 + 64 * count($date_list ?? []) }}px;">
                 <colgroup>
-                    <col style="width: 92px;">
+                    <col style="width: 120px;">
                     <col style="width: 56px;">
                     @foreach(($date_list ?? []) as $date)
                         <col style="width: 64px;">
