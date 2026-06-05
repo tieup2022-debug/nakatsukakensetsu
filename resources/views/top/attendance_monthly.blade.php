@@ -10,6 +10,9 @@
         .monthly-head { background: #eef3f8; font-weight: 700; }
         /* 社員名は長くても折り返して全て見えるようにする */
         .staff-col { font-weight: 700; white-space: normal; word-break: break-word; }
+        /* 先頭の【…】部分は名前の上の行に小さめで表示する */
+        .staff-col .staff-prefix { display: block; font-size: 10px; font-weight: 700; line-height: 1.2; }
+        .staff-col .staff-name { display: block; line-height: 1.2; }
         .label-col { background: #f7f9fc; font-weight: 700; }
         .monthly-table td.day-col { padding: 0; }
         /* 現場名（長くなりがちな行）は1行に収めるため、折り返さずフォントを小さくする */
@@ -70,11 +73,25 @@
                 </tr>
 
                 @foreach($pageStaffList as $staffRow)
-                    @php $staffName = $staffRow['staff_name'] ?? ''; @endphp
+                    @php
+                        $staffName = $staffRow['staff_name'] ?? '';
+                        // 先頭の【…】部分は名前の上の行に分けて表示する
+                        $staffPrefix = '';
+                        $staffMain = $staffName;
+                        if (preg_match('/^(【[^】]*】)(.*)$/u', $staffName, $m)) {
+                            $staffPrefix = $m[1];
+                            $staffMain = $m[2];
+                        }
+                    @endphp
                     @foreach(['現場', '出勤', '退勤', '休憩', '実働'] as $rowIdx => $label)
                         <tr>
                             @if($rowIdx === 0)
-                                <td class="staff-col" rowspan="5">{{ $staffName }}</td>
+                                <td class="staff-col" rowspan="5">
+                                    @if($staffPrefix !== '')
+                                        <span class="staff-prefix">{{ $staffPrefix }}</span>
+                                    @endif
+                                    <span class="staff-name">{{ $staffMain }}</span>
+                                </td>
                             @endif
                             <td class="label-col">{{ $label }}</td>
                             @foreach(($date_list ?? []) as $date)
