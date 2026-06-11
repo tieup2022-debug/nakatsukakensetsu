@@ -16,6 +16,8 @@
         .small { font-size: 8px; }
         .page-break { page-break-after: always; }
         .center { text-align: center; }
+        /* 配置のみで勤怠未保存の日はグレーで区別 */
+        .ref { color: #9aa0a6; }
     </style>
 </head>
 <body>
@@ -24,6 +26,7 @@
     <div class="meta">
         <div>対象月: {{ $display_date ?? '' }}</div>
         <div>出力日: {{ $today ?? '' }}</div>
+        <div class="small"><span class="ref">グレーの○</span>は配置のみで勤怠未保存の日です。</div>
     </div>
 
     @foreach($attendance_table_list as $pageIndex => $pageStaffList)
@@ -50,17 +53,19 @@
                             @php
                                 $cell = $staffRow[$date] ?? null;
                                 $mark = '';
+                                $isRef = false;
                                 if ($cell) {
                                     if (($cell['workplace_name'] ?? '') === '#absence') {
                                         $mark = '欠';
                                     } elseif (!empty($cell['workplace_name'])) {
                                         $mark = '○';
+                                        $isRef = !empty($cell['is_reference']);
                                     } elseif (!empty($cell['absence'] ?? '')) {
                                         $mark = '休';
                                     }
                                 }
                             @endphp
-                            <td class="day-cell">{{ $mark }}</td>
+                            <td class="day-cell{{ $isRef ? ' ref' : '' }}">{{ $mark }}</td>
                         @endforeach
                     </tr>
                 @endforeach

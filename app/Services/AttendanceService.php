@@ -1662,6 +1662,10 @@ class AttendanceService
                         if ($wpNameForFallback !== '' && ! $hasStoredTimes) {
                             // 未入力日の参考表示は、過去・未来に関わらず初期時間マスタ（m_attendance_defaults）を使う。
                             // 日付が過去になると 08:00 等の固定値へ切り替わり、先週まで 7:30 だった表示が変わってしまうため固定値は使わない。
+                            // 参考時刻は保存済みデータと区別して表示するためフラグを立てる（保存済みと誤認して未保存のまま放置されるのを防ぐ）。
+                            if ($startTime === '' || $endTime === '' || $breakTime === '') {
+                                $attendanceDataList[$fullDate]['is_reference'] = true;
+                            }
                             if ($startTime === '') {
                                 $startTime = $fallbackStart;
                             }

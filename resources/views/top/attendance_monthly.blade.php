@@ -21,6 +21,8 @@
         .cell-edit-link:hover { background: #fff3cd; text-decoration: none; color: inherit; }
         .sun { color: #d43f3a; }
         .sat { color: #2a74d4; }
+        /* 未保存日の参考時刻: 保存済みと区別できるようグレー・斜体で表示 */
+        .cell-edit-link.ref-time { color: #9aa0a6; font-style: italic; }
     </style>
 
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
@@ -36,7 +38,8 @@
     </div>
 
     <div class="text-muted small mb-2">
-        各セルをクリックすると、その日の入力画面（現場・作業日）へ移動して時間を編集できます。
+        各セルをクリックすると、その日の入力画面（現場・作業日）へ移動して時間を編集できます。<br>
+        <span style="color: #9aa0a6; font-style: italic;">グレーの斜体時刻</span>は未保存の参考表示（初期時間）です。勤怠入力画面で保存すると確定します。
     </div>
 
     @php
@@ -121,9 +124,15 @@
                                     }
                                     $editHref = route('top.attendance', $editParams);
                                     $editTitle = $staffName.'／'.((int) substr($date, 8, 2)).'日 の勤怠を編集';
+                                    // 未保存日の参考時刻（時刻系の行のみ）はグレー斜体で表示する
+                                    $isReference = !empty($cell['is_reference'])
+                                        && in_array($label, ['出勤', '退勤', '休憩', '実働'], true);
+                                    if ($isReference) {
+                                        $editTitle .= '（未保存・参考時刻）';
+                                    }
                                 @endphp
                                 <td class="day-col{{ $label === '現場' ? ' site-cell' : '' }}">
-                                    <a href="{{ $editHref }}" class="cell-edit-link" title="{{ $editTitle }}">{{ $value !== '' ? $value : ' ' }}</a>
+                                    <a href="{{ $editHref }}" class="cell-edit-link{{ $isReference ? ' ref-time' : '' }}" title="{{ $editTitle }}">{{ $value !== '' ? $value : ' ' }}</a>
                                 </td>
                             @endforeach
                         </tr>
