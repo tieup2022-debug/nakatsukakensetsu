@@ -1955,6 +1955,30 @@ class AttendanceService
     }
 
     /**
+     * 個人別集計向け: 同一社員・同一日の複数行から1行を選ぶ。
+     * 月次表（resolveAttendanceRawForMonthly）と同じ優先順位:
+     * 欠勤行 → 出勤時刻あり行 → それ以外（いずれも新しい行を優先）。
+     *
+     * @param  Collection<int, object>  $rows
+     */
+    private function pickBestDailyRowForSummary($rows): ?object
+    {
+        $sorted = collect($rows)->sortByDesc(fn ($r) => (int) ($r->id ?? 0))->values();
+        if ($sorted->isEmpty()) {
+            return null;
+        }
+
+        $absentRow = $sorted->first(fn ($r) => (int) ($r->absence_flg ?? 0) !== 0);
+        if ($absentRow) {
+            return $absentRow;
+        }
+
+        $withTimes = $sorted->first(fn ($r) => $this->formatTimeShort((string) ($r->start_time ?? '')) !== '');
+
+        return $withTimes ?? $sorted->first();
+    }
+
+    /**
      * 個人別の月次集計（勤怠管理画面向け）
      *
      * @return array<string, mixed>|false
@@ -1987,6 +2011,8 @@ class AttendanceService
 
             $summaryList = [];
             foreach ($staffList as $staff) {
+                // 同一社員・同一日に複数行（旧システムの現場別行など）があるため、
+                // keyBy で1行に潰さず、月次表と同じ基準で日ごとに最適な1行を選ぶ。
                 $dailyRows = DB::table('t_attendance')
                     ->where('staff_id', '=', $staff->id)
                     ->whereYear('work_date', '=', $year)
@@ -1994,7 +2020,9 @@ class AttendanceService
                     ->whereNull('deleted_at')
                     ->orderBy('work_date')
                     ->get()
-                    ->keyBy(fn ($r) => Carbon::parse($r->work_date)->format('Y-m-d'));
+                    ->groupBy(fn ($r) => Carbon::parse($r->work_date)->format('Y-m-d'))
+                    ->map(fn ($rows) => $this->pickBestDailyRowForSummary($rows))
+                    ->filter();
 
                 $personal = [
                     'staff_id' => $staff->id,
