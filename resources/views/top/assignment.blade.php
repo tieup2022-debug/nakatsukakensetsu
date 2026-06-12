@@ -243,7 +243,10 @@
                                 </div>
                             @endif
                         </div>
-                        <span class="badge bg-primary-subtle text-primary flex-shrink-0">最新</span>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                            <a href="{{ route('setting.news.update') }}" class="btn btn-outline-secondary btn-sm">編集</a>
+                            <span class="badge bg-primary-subtle text-primary">最新</span>
+                        </div>
                     </div>
                     @if($news && isset($news->news))
                         <div class="small text-muted news-body-diff" style="white-space: pre-wrap;">
