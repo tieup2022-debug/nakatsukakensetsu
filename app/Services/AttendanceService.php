@@ -38,6 +38,94 @@ class AttendanceService
         return $query->whereRaw('DATE(work_date) = ?', [$workDateNorm]);
     }
 
+    /** 解決済みの「会社」現場 ID をプロセス内でキャッシュする（null = 会社現場なし） */
+    private ?int $companyWorkplaceIdCache = null;
+
+    private bool $companyWorkplaceResolved = false;
+
+    /**
+     * 「会社」現場（本社・事務所）の workplace_id を取得する。存在しなければ null。
+     */
+    public function getCompanyWorkplaceId(): ?int
+    {
+        if ($this->companyWorkplaceResolved) {
+            return $this->companyWorkplaceIdCache;
+        }
+
+        $this->companyWorkplaceResolved = true;
+        $name = (string) config('assignments.company.workplace_name', '会社');
+
+        try {
+            $row = DB::table('m_workplace')
+                ->where('workplace_name', '=', $name)
+                ->whereNull('deleted_at')
+                ->orderBy('id')
+                ->first();
+            $this->companyWorkplaceIdCache = $row ? (int) $row->id : null;
+        } catch (\Exception $e) {
+            $this->companyWorkplaceIdCache = null;
+        }
+
+        return $this->companyWorkplaceIdCache;
+    }
+
+    /**
+     * 総務（現場に出ない）属性の staff_type。
+     */
+    public function getSoumuStaffType(): int
+    {
+        return (int) config('assignments.company.soumu_staff_type', 4);
+    }
+
+    /**
+     * 総務属性のスタッフを、指定日「会社」現場へ自動配置（不足分のみ作成）する。
+     *
+     * 配置(t_assignment)を作ることで、勤怠の一括入力・一覧・月次集計が現場社員と
+     * 同じ仕組みで動く。総務(staff_type=4)は配置一覧・配置PDFのクエリ対象外なので
+     * 配置表には現れない（会社現場自体も配置の現場一覧からは除外する）。
+     */
+    private function ensureSoumuAssignedToCompany($workplaceId, $workDate): void
+    {
+        try {
+            $companyId = $this->getCompanyWorkplaceId();
+            if ($companyId === null || (int) $workplaceId !== $companyId) {
+                return;
+            }
+
+            $workDateNorm = $this->coerceWorkDateYmd($workDate);
+            $masterTypeStaff = config('assignments.master_type.staff');
+
+            $soumuStaffIds = DB::table('m_staff')
+                ->where('staff_type', '=', $this->getSoumuStaffType())
+                ->whereNull('deleted_at')
+                ->pluck('id');
+
+            foreach ($soumuStaffIds as $staffId) {
+                $exists = DB::table('t_assignment')
+                    ->where('master_id', '=', $staffId)
+                    ->where('master_type', '=', $masterTypeStaff)
+                    ->where('workplace_id', '=', $companyId)
+                    ->where('work_date', '=', $workDateNorm)
+                    ->whereNull('deleted_at')
+                    ->exists();
+
+                if (! $exists) {
+                    DB::table('t_assignment')->insert([
+                        'workplace_id' => $companyId,
+                        'work_date' => $workDateNorm,
+                        'master_id' => $staffId,
+                        'master_type' => $masterTypeStaff,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            // 自動配置に失敗しても通常表示は継続させる（ログのみ）
+            error($e, __FILE__, __METHOD__, __LINE__);
+        }
+    }
+
     /**
      * work_date 列の型・形式差（DATE / DATETIME / 文字列）でも同日を拾う。
      *
@@ -170,6 +258,9 @@ class AttendanceService
                 return false;
             }
             $workDate = $this->coerceWorkDateYmd($workDate);
+
+            // 「会社」現場を開いたときは、総務スタッフを自動で配置しておく。
+            $this->ensureSoumuAssignedToCompany($workplaceId, $workDate);
 
             $query = DB::table('v_attendance_all')
                 ->where('workplace_id', '=', $workplaceId);
@@ -882,6 +973,9 @@ class AttendanceService
             $breakTimeForStorage = $this->prepareBreakTimeForStorage($breakTime);
 
             if (isset($workplaceId) && isset($workDate) && isset($startTime) && isset($endTime) && isset($breakTime)) {
+                // 「会社」現場の一括登録時は、総務スタッフを自動配置してから対象に含める。
+                $this->ensureSoumuAssignedToCompany($workplaceId, $workDate);
+
                 $assignedStaffList = DB::table('t_assignment')
                     ->where('master_type', '=', config('assignments.master_type.staff'))
                     ->where('workplace_id', '=', $workplaceId)

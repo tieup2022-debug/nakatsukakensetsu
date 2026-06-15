@@ -549,6 +549,9 @@ class AssignmentService
         try {
             // ブラウザ表示/PDF は「その日に何かしら配置がある現場」を対象にする。
             // 以前は staff view 基準だったため、車両/重機のみ配置の現場が漏れていた。
+            // 「会社」現場は総務スタッフの勤怠管理用なので、配置表には載せない。
+            $companyName = (string) config('assignments.company.workplace_name', '会社');
+
             return DB::table('t_assignment AS ta')
                 ->join('m_workplace AS mwp', function ($join) {
                     $join->on('mwp.id', '=', 'ta.workplace_id')
@@ -556,6 +559,7 @@ class AssignmentService
                 })
                 ->select('ta.workplace_id', 'mwp.workplace_name')
                 ->where('ta.work_date', '=', $workDate)
+                ->where('mwp.workplace_name', '!=', $companyName)
                 ->whereNull('ta.deleted_at')
                 ->distinct()
                 ->orderBy('ta.workplace_id')
@@ -1055,15 +1059,22 @@ class AssignmentService
             }
         }
 
+        $companyName = (string) config('assignments.company.workplace_name', '会社');
+
         $sortedIds = array_keys($workplaceIds);
         sort($sortedIds, SORT_NUMERIC);
 
         $list = [];
 
         foreach ($sortedIds as $wid) {
+            $name = $nameById[$wid] ?? ('現場ID '.$wid);
+            // 「会社」現場は配置表には載せない（総務の勤怠管理用）。
+            if ($name === $companyName) {
+                continue;
+            }
             $list[] = (object) [
                 'workplace_id' => $wid,
-                'workplace_name' => $nameById[$wid] ?? ('現場ID '.$wid),
+                'workplace_name' => $name,
             ];
         }
 
