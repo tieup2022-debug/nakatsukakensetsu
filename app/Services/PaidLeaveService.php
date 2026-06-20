@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Mail\PaidLeaveAppliedMail;
 use App\Mail\PaidLeaveApprovedMail;
+use App\Support\DatetimeDisplay;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -61,6 +62,37 @@ class PaidLeaveService
     public function isApproverStaffId(int $staffId): bool
     {
         return in_array($staffId, $this->approverStaffIds(), true);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function excludedStaffIds(): array
+    {
+        $raw = config('paid_leave.excluded_staff_ids', []);
+
+        return array_values(array_unique(array_map('intval', is_array($raw) ? $raw : [])));
+    }
+
+    public function isExcludedStaffId(int $staffId): bool
+    {
+        return in_array($staffId, $this->excludedStaffIds(), true);
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, object>|array<int, object>|false|null  $staffList
+     * @return \Illuminate\Support\Collection<int, object>
+     */
+    public function filterStaffListForApplicant($staffList)
+    {
+        $excluded = $this->excludedStaffIds();
+        if ($excluded === []) {
+            return collect($staffList ?: []);
+        }
+
+        return collect($staffList ?: [])->filter(function ($staff) use ($excluded) {
+            return ! in_array((int) ($staff->id ?? 0), $excluded, true);
+        })->values();
     }
 
     public function resolveEmailForStaff(int $staffId): ?string
@@ -283,8 +315,8 @@ class PaidLeaveService
 
     private function formatRange(object $request): string
     {
-        $s = Carbon::parse($request->starts_at)->timezone(config('app.timezone'))->format('Y/m/d H:i');
-        $e = Carbon::parse($request->ends_at)->timezone(config('app.timezone'))->format('Y/m/d H:i');
+        $s = DatetimeDisplay::formatWallClock($request->starts_at);
+        $e = DatetimeDisplay::formatWallClock($request->ends_at);
 
         return $s.' 〜 '.$e;
     }
@@ -317,6 +349,51 @@ class PaidLeaveService
                 ->orderByDesc('id')
                 ->limit(30)
                 ->get();
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return false;
+        }
+    }
+
+    public function findRequest(int $id): ?object
+    {
+        try {
+            return DB::table('t_paid_leave_requests')->where('id', '=', $id)->first() ?: null;
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return null;
+        }
+    }
+
+    public function deleteRequest(int $id): bool
+    {
+        try {
+            return DB::table('t_paid_leave_requests')->where('id', '=', $id)->delete() > 0;
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return false;
+        }
+    }
+
+    public function updateRequest(int $id, int $applicantStaffId, Carbon $startsAt, Carbon $endsAt, ?string $reason): bool
+    {
+        if ($endsAt->lte($startsAt)) {
+            return false;
+        }
+
+        try {
+            return DB::table('t_paid_leave_requests')
+                ->where('id', '=', $id)
+                ->update([
+                    'applicant_staff_id' => $applicantStaffId,
+                    'starts_at' => $startsAt->format('Y-m-d H:i:s'),
+                    'ends_at' => $endsAt->format('Y-m-d H:i:s'),
+                    'reason' => $reason,
+                    'updated_at' => now(),
+                ]) > 0;
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
 

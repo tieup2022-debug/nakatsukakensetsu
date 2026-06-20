@@ -24,7 +24,7 @@
                 <div>
                     <div class="fw-semibold">{{ $n->title }}</div>
                     <div class="small text-muted mt-1" style="white-space: pre-wrap;">{{ $n->body }}</div>
-                    <div class="small text-muted mt-1">{{ \Carbon\Carbon::parse($n->created_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}</div>
+                    <div class="small text-muted mt-1">{{ \App\Support\DatetimeDisplay::formatStoredAt($n->created_at) }}</div>
                 </div>
                 <div class="flex-shrink-0">
                     @if(!$n->read_at)

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\DatetimeDisplay;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -49,14 +50,7 @@ class SystemInquiryService
      */
     public static function formatStoredAt(mixed $value, string $pattern = 'Y/m/d H:i'): string
     {
-        if ($value === null || $value === '') {
-            return '—';
-        }
-
-        $storedTz = (string) config('app.datetime_storage_timezone', config('app.timezone'));
-        $displayTz = (string) config('app.display_timezone', config('app.timezone'));
-
-        return Carbon::parse($value, $storedTz)->timezone($displayTz)->format($pattern);
+        return DatetimeDisplay::formatStoredAt($value, $pattern);
     }
 
     public function create(int $userId, string $userName, string $body): ?object

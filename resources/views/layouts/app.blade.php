@@ -279,6 +279,19 @@
                 }
                 flatpickr(el, opts);
             });
+
+            document.querySelectorAll('input.js-timepicker').forEach(function (el) {
+                flatpickr(el, {
+                    locale: ja,
+                    enableTime: true,
+                    noCalendar: true,
+                    time_24hr: true,
+                    dateFormat: 'H:i',
+                    minuteIncrement: parseInt(el.dataset.minuteIncrement || '15', 10),
+                    allowInput: true,
+                    disableMobile: true,
+                });
+            });
         });
     </script>
 </body>

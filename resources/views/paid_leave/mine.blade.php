@@ -24,11 +24,11 @@
                     @forelse($requests as $r)
                         <tr>
                             <td class="small">
-                                {{ \Carbon\Carbon::parse($r->starts_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}
+                                {{ \App\Support\DatetimeDisplay::formatWallClock($r->starts_at) }}
                                 〜
-                                {{ \Carbon\Carbon::parse($r->ends_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}
+                                {{ \App\Support\DatetimeDisplay::formatWallClock($r->ends_at) }}
                             </td>
-                            <td class="small">{{ \Carbon\Carbon::parse($r->created_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}</td>
+                            <td class="small">{{ \App\Support\DatetimeDisplay::formatStoredAt($r->created_at) }}</td>
                             <td>
                                 @if($r->status === 'approved')
                                     <span class="badge text-bg-success">承認済</span>

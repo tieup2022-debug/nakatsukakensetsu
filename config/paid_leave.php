@@ -7,6 +7,9 @@
 return [
     'approver_staff_ids' => array_map('intval', array_filter(array_map('trim', explode(',', env('PAID_LEAVE_APPROVER_STAFF_IDS', '6,7,13,9,25,40'))))),
 
+    /** @var list<int> 有給対象者の選択肢から除外する社員ID（m_staff.id） */
+    'excluded_staff_ids' => array_map('intval', array_filter(array_map('trim', explode(',', env('PAID_LEAVE_EXCLUDED_STAFF_IDS', '58'))))),
+
     /** @var array<int, string> 社員ID => メール（DBにメール列がない場合の送信用） */
     'staff_emails' => [
         6 => 'syun@e-nakatsuka.com',

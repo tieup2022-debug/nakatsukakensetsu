@@ -151,6 +151,8 @@ Route::post('/setting/account/password/update', [SettingAccountController::class
 // 有給申請・承認・システム内通知
 Route::get('/paid-leave', [PaidLeaveController::class, 'index'])->middleware('nakatsuka.auth')->name('paid-leave.index');
 Route::post('/paid-leave', [PaidLeaveController::class, 'store'])->middleware('nakatsuka.auth')->name('paid-leave.store');
+Route::match(['put', 'patch'], '/paid-leave/{id}', [PaidLeaveController::class, 'update'])->middleware('nakatsuka.auth')->name('paid-leave.update')->where('id', '[0-9]+');
+Route::delete('/paid-leave/{id}', [PaidLeaveController::class, 'destroy'])->middleware('nakatsuka.auth')->name('paid-leave.destroy')->where('id', '[0-9]+');
 Route::get('/paid-leave/mine', [PaidLeaveController::class, 'mine'])->middleware('nakatsuka.auth')->name('paid-leave.mine');
 Route::get('/paid-leave/approvals', [PaidLeaveApprovalController::class, 'index'])->middleware('nakatsuka.auth')->name('paid-leave.approvals');
 Route::post('/paid-leave/{id}/approve', [PaidLeaveApprovalController::class, 'approve'])->middleware('nakatsuka.auth')->name('paid-leave.approve')->where('id', '[0-9]+');

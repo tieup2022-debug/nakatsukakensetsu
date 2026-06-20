@@ -34,11 +34,11 @@
                         <tr>
                             <td class="fw-medium">{{ $name }}</td>
                             <td class="small">
-                                {{ \Carbon\Carbon::parse($r->starts_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}
+                                {{ \App\Support\DatetimeDisplay::formatWallClock($r->starts_at) }}
                                 〜
-                                {{ \Carbon\Carbon::parse($r->ends_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}
+                                {{ \App\Support\DatetimeDisplay::formatWallClock($r->ends_at) }}
                             </td>
-                            <td class="small">{{ \Carbon\Carbon::parse($r->created_at)->timezone(config('app.timezone'))->format('Y/m/d H:i') }}</td>
+                            <td class="small">{{ \App\Support\DatetimeDisplay::formatStoredAt($r->created_at) }}</td>
                             <td class="small text-muted">{{ \Illuminate\Support\Str::limit($r->reason ?? '—', 48) }}</td>
                             <td class="text-end">
                                 <form method="POST" action="{{ route('paid-leave.approve', ['id' => $r->id]) }}" class="d-inline" onsubmit="return confirm('この申請を承認しますか？');">

@@ -15,11 +15,11 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label small text-muted">開始時刻</label>
-                        <input type="time" name="start_time" class="form-control" required>
+                        <input type="text" name="start_time" class="form-control js-timepicker" required autocomplete="off" inputmode="numeric" placeholder="例）08:00">
                     </div>
                     <div class="mb-3">
                         <label class="form-label small text-muted">終了時刻</label>
-                        <input type="time" name="end_time" class="form-control" required>
+                        <input type="text" name="end_time" class="form-control js-timepicker" required autocomplete="off" inputmode="numeric" placeholder="例）17:00">
                     </div>
                     <div class="mb-0">
                         <label class="form-label small text-muted">事由（任意）</label>
