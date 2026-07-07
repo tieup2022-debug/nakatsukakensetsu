@@ -406,10 +406,21 @@ class PaidLeaveService
      *
      * @return Collection<int, object>|false
      */
-    public function listRecentWithNames(int $limit = 100)
+    public function listRecentWithNames(int $limit = 100, string $sort = 'id', string $direction = 'desc')
     {
+        $sortableColumns = [
+            'target_staff' => 'target_staff_name',
+            'starts_at' => 'r.starts_at',
+            'created_at' => 'r.created_at',
+            'requester' => 'requester_user_name',
+            'status' => 'r.status',
+            'id' => 'r.id',
+        ];
+        $sort = array_key_exists($sort, $sortableColumns) ? $sort : 'id';
+        $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
+
         try {
-            return DB::table('t_paid_leave_requests as r')
+            $query = DB::table('t_paid_leave_requests as r')
                 ->leftJoin('m_staff as s', function ($join) {
                     $join->on('s.id', '=', 'r.applicant_staff_id')
                         ->whereNull('s.deleted_at');
@@ -425,7 +436,15 @@ class PaidLeaveService
                 ->leftJoin('m_user as au', function ($join) {
                     $join->on('au.id', '=', 'r.approved_by_user_id')
                         ->whereNull('au.deleted_at');
-                })
+                });
+
+            if (in_array($sort, ['target_staff', 'requester'], true)) {
+                $query->orderByRaw($sortableColumns[$sort].' '.$direction);
+            } else {
+                $query->orderBy($sortableColumns[$sort], $direction);
+            }
+
+            return $query
                 ->orderByDesc('r.id')
                 ->limit($limit)
                 ->get([

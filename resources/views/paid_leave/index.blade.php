@@ -4,6 +4,20 @@
     @php
         $showActions = !empty($can_approve_paid_leave) || !empty($can_manage_paid_leave);
         $actionColspan = $showActions ? 7 : 6;
+        $sort = $sort ?? 'id';
+        $direction = $direction ?? 'desc';
+        $sortLink = function (string $key) use ($sort, $direction) {
+            $nextDirection = $sort === $key && $direction === 'asc' ? 'desc' : 'asc';
+
+            return request()->fullUrlWithQuery(['sort' => $key, 'direction' => $nextDirection]);
+        };
+        $sortMark = function (string $key) use ($sort, $direction) {
+            if ($sort !== $key) {
+                return '';
+            }
+
+            return $direction === 'asc' ? ' ↑' : ' ↓';
+        };
     @endphp
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <div>
@@ -96,11 +110,31 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>有給対象者</th>
-                            <th>休む日（開始〜終了）</th>
-                            <th>申請日時</th>
-                            <th>申請者</th>
-                            <th>状態</th>
+                            <th>
+                                <a href="{{ $sortLink('target_staff') }}" class="text-decoration-none text-dark">
+                                    有給対象者{{ $sortMark('target_staff') }}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ $sortLink('starts_at') }}" class="text-decoration-none text-dark">
+                                    休む日（開始〜終了）{{ $sortMark('starts_at') }}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ $sortLink('created_at') }}" class="text-decoration-none text-dark">
+                                    申請日時{{ $sortMark('created_at') }}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ $sortLink('requester') }}" class="text-decoration-none text-dark">
+                                    申請者{{ $sortMark('requester') }}
+                                </a>
+                            </th>
+                            <th>
+                                <a href="{{ $sortLink('status') }}" class="text-decoration-none text-dark">
+                                    状態{{ $sortMark('status') }}
+                                </a>
+                            </th>
                             <th>備考</th>
                             @if ($showActions)
                                 <th style="width: 180px;"></th>

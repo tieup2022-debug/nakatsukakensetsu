@@ -32,7 +32,14 @@ class PaidLeaveController extends Controller
         );
         $manageStaffList = $isMaster ? collect($this->staffService->GetStaffList() ?: []) : collect();
 
-        $list = $this->paidLeaveService->listRecentWithNames(200);
+        $sortOptions = ['target_staff', 'starts_at', 'created_at', 'requester', 'status'];
+        $sort = (string) $request->query('sort', 'id');
+        $direction = strtolower((string) $request->query('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
+        if (! in_array($sort, array_merge($sortOptions, ['id']), true)) {
+            $sort = 'id';
+        }
+
+        $list = $this->paidLeaveService->listRecentWithNames(200, $sort, $direction);
         if ($list === false) {
             $list = collect();
         }
@@ -41,6 +48,8 @@ class PaidLeaveController extends Controller
             'staff_list' => $staffList,
             'manage_staff_list' => $manageStaffList,
             'requests' => $list,
+            'sort' => $sort,
+            'direction' => $direction,
             'can_approve_paid_leave' => (bool) $canApprove,
             'can_manage_paid_leave' => (bool) $isMaster,
             'title' => '有給申請',
