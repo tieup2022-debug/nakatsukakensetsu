@@ -10,12 +10,22 @@
             $totalApproved += $row['approved'];
             $totalPending += $row['pending'];
         }
+        // 「5」「5.5」のように小数が不要なときは省いて表示する
+        $fmtDays = fn ($v) => rtrim(rtrim(number_format((float) $v, 1, '.', ''), '0'), '.');
     @endphp
 
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <div>
             <h1 class="h4 mb-1 fw-semibold">有給取得状況</h1>
-            <div class="text-muted small">{{ $fiscal_year }}年度（{{ $fiscal_year }}年4月〜{{ $fiscal_year + 1 }}年3月）に休む日がある申請を社員別に集計しています。1申請 = 1日として数えます。</div>
+            <div class="text-muted small">
+                {{ $fiscal_year }}年度（{{ $fiscal_year }}年4月〜{{ $fiscal_year + 1 }}年3月）に休む日がある申請を社員別に集計しています。1申請 = 1日として数えます。<br>
+                残数 = 繰越 + 当年度付与 − 取得済み。
+                @if (!empty($can_edit_grants))
+                    繰越・当年度付与を入力して「保存」を押してください。
+                @else
+                    繰越・当年度付与の入力は管理者のみ行えます。
+                @endif
+            </div>
         </div>
         <div class="d-flex align-items-center gap-2">
             <a class="btn btn-outline-secondary btn-sm" href="{{ route('paid-leave.summary', ['fiscal_year' => $fiscal_year - 1]) }}">← {{ $fiscal_year - 1 }}年度</a>
@@ -52,8 +62,15 @@
                     <thead class="table-light">
                         <tr>
                             <th class="text-nowrap">社員</th>
+                            <th class="text-nowrap text-center">繰越</th>
+                            <th class="text-nowrap text-center">当年度付与</th>
+                            @if (!empty($can_edit_grants))
+                                <th></th>
+                            @endif
+                            <th class="text-nowrap text-center">合計</th>
                             <th class="text-nowrap text-center">取得済み</th>
                             <th class="text-nowrap text-center">申請中</th>
+                            <th class="text-nowrap text-center">残数</th>
                             @foreach ($fiscalMonths as $m)
                                 <th class="text-center text-muted" style="min-width: 34px;">{{ $m }}月</th>
                             @endforeach
@@ -63,12 +80,40 @@
                     <tbody>
                     @forelse ($staff_list as $s)
                         @php
-                            $row = $summary[(int) $s->id] ?? null;
+                            $sid = (int) $s->id;
+                            $row = $summary[$sid] ?? null;
                             $approved = $row['approved'] ?? 0;
                             $pending = $row['pending'] ?? 0;
+                            $grant = $grants[$sid] ?? null;
+                            $carryover = (float) ($grant->carryover_days ?? 0);
+                            $granted = (float) ($grant->granted_days ?? 0);
+                            $hasGrant = $grant !== null;
+                            $total = $carryover + $granted;
+                            $remaining = $total - $approved;
+                            $formId = 'grant-form-'.$sid;
                         @endphp
                         <tr>
                             <td class="fw-medium text-nowrap">{{ $s->staff_name }}</td>
+                            @if (!empty($can_edit_grants))
+                                <td class="text-center" style="min-width: 76px;">
+                                    <input type="number" name="carryover_days" form="{{ $formId }}" class="form-control form-control-sm text-end" value="{{ $fmtDays($carryover) }}" min="0" max="999" step="0.5" inputmode="decimal" required>
+                                </td>
+                                <td class="text-center" style="min-width: 76px;">
+                                    <input type="number" name="granted_days" form="{{ $formId }}" class="form-control form-control-sm text-end" value="{{ $fmtDays($granted) }}" min="0" max="999" step="0.5" inputmode="decimal" required>
+                                </td>
+                                <td class="text-center">
+                                    <form method="POST" action="{{ route('paid-leave.grants.update') }}" id="{{ $formId }}">
+                                        @csrf
+                                        <input type="hidden" name="staff_id" value="{{ $sid }}">
+                                        <input type="hidden" name="fiscal_year" value="{{ $fiscal_year }}">
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">保存</button>
+                                    </form>
+                                </td>
+                            @else
+                                <td class="text-center">{{ $hasGrant ? $fmtDays($carryover) : '—' }}</td>
+                                <td class="text-center">{{ $hasGrant ? $fmtDays($granted) : '—' }}</td>
+                            @endif
+                            <td class="text-center fw-medium">{{ $hasGrant ? $fmtDays($total).'日' : '—' }}</td>
                             <td class="text-center">
                                 @if ($approved > 0)
                                     <span class="badge text-bg-success">{{ $approved }}日</span>
@@ -83,6 +128,13 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
+                            <td class="text-center">
+                                @if ($hasGrant)
+                                    <span class="fw-semibold {{ $remaining < 0 ? 'text-danger' : '' }}">{{ $fmtDays($remaining) }}日</span>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                             @foreach ($fiscalMonths as $m)
                                 @php $count = $row['monthly'][$m] ?? 0; @endphp
                                 <td class="text-center {{ $count > 0 ? '' : 'text-muted' }}">{{ $count > 0 ? $count : '' }}</td>
@@ -91,7 +143,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ count($fiscalMonths) + 4 }}" class="text-center text-muted py-4">社員が登録されていません。</td>
+                            <td colspan="{{ count($fiscalMonths) + (!empty($can_edit_grants) ? 9 : 8) }}" class="text-center text-muted py-4">社員が登録されていません。</td>
                         </tr>
                     @endforelse
                     </tbody>

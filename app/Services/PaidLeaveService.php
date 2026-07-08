@@ -502,6 +502,58 @@ class PaidLeaveService
         return $summary;
     }
 
+    /**
+     * 指定年度の繰越・付与日数を社員ごとに取得する。
+     *
+     * @return array<int, object> staff_id => row（carryover_days, granted_days）
+     */
+    public function grantsByStaff(int $fiscalYear): array
+    {
+        try {
+            $rows = DB::table('m_paid_leave_grants')
+                ->where('fiscal_year', '=', $fiscalYear)
+                ->get();
+
+            $map = [];
+            foreach ($rows as $row) {
+                $map[(int) $row->staff_id] = $row;
+            }
+
+            return $map;
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return [];
+        }
+    }
+
+    /**
+     * 繰越・付与日数を保存（社員×年度で upsert）
+     */
+    public function saveGrant(int $staffId, int $fiscalYear, float $carryoverDays, float $grantedDays): bool
+    {
+        try {
+            DB::table('m_paid_leave_grants')->upsert(
+                [[
+                    'staff_id' => $staffId,
+                    'fiscal_year' => $fiscalYear,
+                    'carryover_days' => $carryoverDays,
+                    'granted_days' => $grantedDays,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]],
+                ['staff_id', 'fiscal_year'],
+                ['carryover_days', 'granted_days', 'updated_at']
+            );
+
+            return true;
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return false;
+        }
+    }
+
     private function resolveApproverDisplayName(int $approverStaffId, ?int $approverUserId = null): string
     {
         if ($approverStaffId > 0) {

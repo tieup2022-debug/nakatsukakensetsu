@@ -78,10 +78,42 @@ class PaidLeaveController extends Controller
         return view('paid_leave.summary', [
             'staff_list' => $staffList,
             'summary' => $summary,
+            'grants' => $this->paidLeaveService->grantsByStaff($fiscalYear),
+            'can_edit_grants' => $this->isMasterUser($request),
             'fiscal_year' => $fiscalYear,
             'current_fiscal_year' => $currentFiscalYear,
             'title' => '有給取得状況',
         ]);
+    }
+
+    /**
+     * 繰越・当年度付与日数の保存（管理者のみ）
+     */
+    public function updateGrant(Request $request)
+    {
+        if (! $this->isMasterUser($request)) {
+            return redirect()->route('paid-leave.summary')->with('error', '繰越・付与日数の入力は管理者（権限1）のみ利用できます。');
+        }
+
+        $validated = $request->validate([
+            'staff_id' => ['required', 'integer', 'min:1'],
+            'fiscal_year' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'carryover_days' => ['required', 'numeric', 'min:0', 'max:999'],
+            'granted_days' => ['required', 'numeric', 'min:0', 'max:999'],
+        ]);
+
+        $ok = $this->paidLeaveService->saveGrant(
+            (int) $validated['staff_id'],
+            (int) $validated['fiscal_year'],
+            (float) $validated['carryover_days'],
+            (float) $validated['granted_days']
+        );
+
+        $redirect = redirect()->route('paid-leave.summary', ['fiscal_year' => (int) $validated['fiscal_year']]);
+
+        return $ok
+            ? $redirect->with('status', '繰越・付与日数を保存しました。')
+            : $redirect->with('error', '保存に失敗しました。');
     }
 
     public function store(Request $request)
