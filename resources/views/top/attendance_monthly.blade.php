@@ -20,8 +20,9 @@
         .monthly-table .label-col { position: sticky; left: 120px; z-index: 3; background: #f7f9fc; font-weight: 700; box-shadow: 2px 0 3px rgba(15, 23, 42, 0.12); }
         .monthly-table th.label-col { z-index: 4; background: #eef3f8; }
         .monthly-table td.day-col { padding: 0; }
-        /* 現場名（長くなりがちな行）は1行に収めるため、折り返さずフォントを小さくする */
-        .monthly-table td.day-col.site-cell .cell-edit-link { white-space: nowrap; font-size: 10px; letter-spacing: -0.2px; padding: 2px 2px; }
+        /* 現場名（長くなりがちな行）は列幅を変えずに全文を見せるため、セル内で折り返して収める */
+        .monthly-table td.day-col.site-cell { overflow: visible; white-space: normal; }
+        .monthly-table td.day-col.site-cell .cell-edit-link { white-space: normal; overflow-wrap: anywhere; word-break: break-all; line-height: 1.15; font-size: 10px; letter-spacing: -0.2px; padding: 2px 2px; }
         .cell-edit-link { display: block; padding: 2px 4px; min-height: 1em; color: inherit; text-decoration: none; cursor: pointer; }
         .cell-edit-link:hover { background: #fff3cd; text-decoration: none; color: inherit; }
         .sun { color: #d43f3a; }
