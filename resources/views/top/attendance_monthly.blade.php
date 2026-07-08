@@ -11,12 +11,14 @@
         .monthly-title { background: #2f8dde; color: #fff; font-weight: 700; text-align: center; }
         .monthly-head { background: #eef3f8; font-weight: 700; }
         /* 社員名は横スクロール時も見えるよう左端に固定し、長くても折り返して全て見えるようにする */
-        .monthly-table .staff-col { position: sticky; left: 0; z-index: 3; background: #fff; font-weight: 700; white-space: normal; word-break: break-word; box-shadow: 2px 0 3px rgba(15, 23, 42, 0.12); }
+        .monthly-table .staff-col { position: sticky; left: 0; z-index: 3; background: #fff; font-weight: 700; white-space: normal; word-break: break-word; }
         .monthly-table th.staff-col { z-index: 4; background: #eef3f8; }
         /* 先頭の【…】部分は名前の上の行に小さめで表示する */
         .staff-col .staff-prefix { display: block; font-size: 10px; font-weight: 700; line-height: 1.2; }
         .staff-col .staff-name { display: block; line-height: 1.2; }
-        .label-col { background: #f7f9fc; font-weight: 700; }
+        /* 現場〜実働のラベル列も氏名列の右隣に固定する（氏名列幅 120px 分ずらす） */
+        .monthly-table .label-col { position: sticky; left: 120px; z-index: 3; background: #f7f9fc; font-weight: 700; box-shadow: 2px 0 3px rgba(15, 23, 42, 0.12); }
+        .monthly-table th.label-col { z-index: 4; background: #eef3f8; }
         .monthly-table td.day-col { padding: 0; }
         /* 現場名（長くなりがちな行）は1行に収めるため、折り返さずフォントを小さくする */
         .monthly-table td.day-col.site-cell .cell-edit-link { white-space: nowrap; font-size: 10px; letter-spacing: -0.2px; padding: 2px 2px; }
