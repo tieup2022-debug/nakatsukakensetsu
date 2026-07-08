@@ -56,6 +56,34 @@ class PaidLeaveController extends Controller
         ]);
     }
 
+    /**
+     * 社員別の有給取得状況サマリー（年度 = 4月〜翌3月）
+     */
+    public function summary(Request $request)
+    {
+        $currentFiscalYear = (int) date('n') >= 4 ? (int) date('Y') : (int) date('Y') - 1;
+        $fiscalYear = (int) $request->query('fiscal_year', $currentFiscalYear);
+        if ($fiscalYear < 2000 || $fiscalYear > 2100) {
+            $fiscalYear = $currentFiscalYear;
+        }
+
+        $fromDate = sprintf('%04d-04-01', $fiscalYear);
+        $toDateExclusive = sprintf('%04d-04-01', $fiscalYear + 1);
+
+        $summary = $this->paidLeaveService->summarizeByStaff($fromDate, $toDateExclusive);
+        $staffList = $this->paidLeaveService->filterStaffListForApplicant(
+            $this->staffService->GetStaffList()
+        );
+
+        return view('paid_leave.summary', [
+            'staff_list' => $staffList,
+            'summary' => $summary,
+            'fiscal_year' => $fiscalYear,
+            'current_fiscal_year' => $currentFiscalYear,
+            'title' => '有給取得状況',
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

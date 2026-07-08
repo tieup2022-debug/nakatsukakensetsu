@@ -460,6 +460,48 @@ class PaidLeaveService
         }
     }
 
+    /**
+     * 指定期間（開始日を含み、終了日を含まない）の有給申請を社員ごとに集計する。
+     * 1申請 = 1日として数える。月別内訳・最終取得日は承認済みのみ対象。
+     *
+     * @return array<int, array{approved: int, pending: int, monthly: array<int, int>, last_approved: ?string}>
+     */
+    public function summarizeByStaff(string $fromDate, string $toDateExclusive): array
+    {
+        try {
+            $rows = DB::table('t_paid_leave_requests')
+                ->where('starts_at', '>=', $fromDate.' 00:00:00')
+                ->where('starts_at', '<', $toDateExclusive.' 00:00:00')
+                ->get(['applicant_staff_id', 'status', 'starts_at']);
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return [];
+        }
+
+        $summary = [];
+        foreach ($rows as $row) {
+            $sid = (int) $row->applicant_staff_id;
+            if (! isset($summary[$sid])) {
+                $summary[$sid] = ['approved' => 0, 'pending' => 0, 'monthly' => [], 'last_approved' => null];
+            }
+
+            if ((string) $row->status === 'approved') {
+                $summary[$sid]['approved']++;
+                $month = (int) substr((string) $row->starts_at, 5, 2);
+                $summary[$sid]['monthly'][$month] = ($summary[$sid]['monthly'][$month] ?? 0) + 1;
+                $date = substr((string) $row->starts_at, 0, 10);
+                if ($summary[$sid]['last_approved'] === null || $date > $summary[$sid]['last_approved']) {
+                    $summary[$sid]['last_approved'] = $date;
+                }
+            } else {
+                $summary[$sid]['pending']++;
+            }
+        }
+
+        return $summary;
+    }
+
     private function resolveApproverDisplayName(int $approverStaffId, ?int $approverUserId = null): string
     {
         if ($approverStaffId > 0) {

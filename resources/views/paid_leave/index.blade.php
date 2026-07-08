@@ -24,6 +24,9 @@
             <h1 class="h4 mb-1 fw-semibold">有給申請</h1>
             <div class="text-muted small">有給対象者を選び、<strong>休む日</strong>とその日の<strong>開始・終了時刻</strong>を入力します（1日単位）。下部で全員の申請状況を確認できます。</div>
         </div>
+        <div>
+            <a class="btn btn-outline-primary btn-sm" href="{{ route('paid-leave.summary') }}">取得状況（社員別集計）</a>
+        </div>
     </div>
 
     <div class="card shadow-sm border-0 mb-3">
