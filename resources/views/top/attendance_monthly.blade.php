@@ -2,7 +2,9 @@
 
 @section('content')
     <style>
-        .monthly-wrap { overflow-x: auto; background: #fff; border: 1px solid #dbe3ea; border-radius: 8px; }
+        .app-main > main { min-width: 0; }
+        .app-main > main > .container-fluid { min-width: 0; max-width: 100%; }
+        .monthly-wrap { width: 100%; max-width: 100%; overflow-x: auto; background: #fff; border: 1px solid #dbe3ea; border-radius: 8px; }
         /* table-layout: fixed + colgroup により、全テーブルで列幅を完全に揃え、縦罫線がずれないようにする */
         .monthly-table { border-collapse: collapse; table-layout: fixed; width: 100%; font-size: 12px; }
         .monthly-table th, .monthly-table td { border: 1px solid #8b8f96; padding: 2px 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
