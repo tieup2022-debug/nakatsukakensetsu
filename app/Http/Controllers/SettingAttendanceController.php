@@ -190,6 +190,13 @@ class SettingAttendanceController extends Controller
             $attendance = $this->attendanceService->GetAttendanceStaff($staffId, $workplaceId, $workDate);
             if ($attendance === false || $attendance === null) $attendance = null;
 
+            $dayStartDisp = $this->attendanceService->formatTimeForDisplay($attendance?->start_time ?? null);
+            $dayEndDisp = $this->attendanceService->formatTimeForDisplay($attendance?->end_time ?? null);
+            $nightStartDisp = $this->attendanceService->formatTimeForDisplay($attendance?->midnight_start_time ?? null);
+            $nightEndDisp = $this->attendanceService->formatTimeForDisplay($attendance?->midnight_end_time ?? null);
+            // 夜勤のみの日は昼の欄を既定値で埋めない（埋めると保存時に昼勤務が作られてしまう）
+            $hasNight = $nightStartDisp !== '' || $nightEndDisp !== '';
+
             return view('setting.attendance.input_update')->with([
                 'mode' => 'update',
                 'workplace_id' => $workplaceId,
@@ -197,15 +204,14 @@ class SettingAttendanceController extends Controller
                 'staff_id' => $staffId,
                 'attendance' => $attendance,
                 'staff_name' => $attendance?->staff_name ?? '',
-                'start_time' => $attendance?->start_time ?? ($defaults->start_time ?? ''),
-                'end_time' => $attendance?->end_time ?? ($defaults->end_time ?? ''),
+                'start_time' => $attendance?->start_time ?? ($hasNight ? '' : ($defaults->start_time ?? '')),
+                'end_time' => $attendance?->end_time ?? ($hasNight ? '' : ($defaults->end_time ?? '')),
                 'break_time' => $attendance?->break_time ?? ($defaults->break_time ?? ''),
-                'midnight_time' => $this->attendanceService->formatMidnightForDisplay($attendance?->midnight_minutes ?? null),
+                'midnight_start_time' => $nightStartDisp,
+                'midnight_end_time' => $nightEndDisp,
                 'midnight_auto' => $this->attendanceService->formatMidnightForDisplay(
-                    $this->attendanceService->calcAutoMidnightMinutes(
-                        $this->attendanceService->formatTimeForDisplay($attendance?->start_time ?? null),
-                        $this->attendanceService->formatTimeForDisplay($attendance?->end_time ?? null)
-                    )
+                    $this->attendanceService->calcAutoMidnightMinutes($dayStartDisp, $dayEndDisp)
+                    + $this->attendanceService->calcAutoMidnightMinutes($nightStartDisp, $nightEndDisp)
                 ),
                 'midnight_overtime_time' => $this->attendanceService->formatMidnightForDisplay($attendance?->midnight_overtime_minutes ?? null),
                 'absence_flg' => $attendance?->absence_flg ?? false,
@@ -273,8 +279,9 @@ class SettingAttendanceController extends Controller
             }
 
             $absenceFlg = $this->isTruthyAbsenceInput($request->input('absence_flg'));
-            // 深夜・時間外（深夜）はフォームに常に存在するため、空欄はクリアとして扱う
-            $midnightTime = (string) $request->input('midnight_time', '');
+            // 深夜出勤・退勤・時間外（深夜）はフォームに常に存在するため、空欄はクリアとして扱う
+            $midnightStartTime = (string) $request->input('midnight_start_time', '');
+            $midnightEndTime = (string) $request->input('midnight_end_time', '');
             $midnightOvertimeTime = (string) $request->input('midnight_overtime_time', '');
             $result = $this->attendanceService->AttendanceUpdate(
                 $staffId,
@@ -284,8 +291,9 @@ class SettingAttendanceController extends Controller
                 (string)$endTime,
                 (string)($breakTimeFinal ?? '01:00'),
                 $absenceFlg,
-                $midnightTime,
-                $midnightOvertimeTime
+                $midnightOvertimeTime,
+                $midnightStartTime,
+                $midnightEndTime
             );
             Log::info('SettingAttendance update row result', [
                 'staff_id' => (int) $staffId,

@@ -27,8 +27,10 @@
                             <th style="width: 120px;">出勤</th>
                             <th style="width: 120px;">退勤</th>
                             <th style="width: 120px;">休憩</th>
-                            <th style="width: 120px;">深夜</th>
-                            <th style="width: 120px;">時間外(深夜)</th>
+                            <th style="width: 110px;">深夜出勤</th>
+                            <th style="width: 110px;">深夜退勤</th>
+                            <th style="width: 110px;">深夜時間</th>
+                            <th style="width: 110px;">時間外(深夜)</th>
                             <th style="width: 90px;">欠勤</th>
                             <th style="width: 180px;">操作</th>
                         </tr>
@@ -39,8 +41,10 @@
                                 $startVal = $row->display_start ?? '';
                                 $endVal = $row->display_end ?? '';
                                 $breakVal = $row->display_break ?? '';
-                                // 深夜は手入力が無ければ出退勤からの自動計算値を表示
-                                $midnightVal = $row->display_midnight_effective ?? ($row->display_midnight ?? '');
+                                $midnightStartVal = $row->display_midnight_start ?? '';
+                                $midnightEndVal = $row->display_midnight_end ?? '';
+                                // 深夜時間は昼＋夜の22時〜翌5時重なり合計（自動計算）
+                                $midnightVal = $row->display_midnight_auto ?? '';
                                 $midnightOvertimeVal = $row->display_midnight_overtime ?? '';
                                 $isAbsent = isset($row->absence_flg) && intval($row->absence_flg) === 1;
                             @endphp
@@ -51,6 +55,8 @@
                                 <td><input type="text" class="form-control form-control-sm" value="{{ $startVal }}" readonly></td>
                                 <td><input type="text" class="form-control form-control-sm" value="{{ $endVal }}" readonly></td>
                                 <td><input type="text" class="form-control form-control-sm" value="{{ $breakVal }}" readonly></td>
+                                <td><input type="text" class="form-control form-control-sm" value="{{ $midnightStartVal }}" readonly></td>
+                                <td><input type="text" class="form-control form-control-sm" value="{{ $midnightEndVal }}" readonly></td>
                                 <td><input type="text" class="form-control form-control-sm" value="{{ $midnightVal }}" readonly></td>
                                 <td><input type="text" class="form-control form-control-sm" value="{{ $midnightOvertimeVal }}" readonly></td>
                                 <td class="text-center">{{ $isAbsent ? '〇' : '' }}</td>
@@ -80,7 +86,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-muted">データなし</td>
+                                <td colspan="10" class="text-muted">データなし</td>
                             </tr>
                         @endforelse
                     </tbody>

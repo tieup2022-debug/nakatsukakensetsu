@@ -74,12 +74,14 @@
                             <thead>
                                 <tr>
                                     <th style="min-width: 160px;">社員</th>
-                                    <th style="min-width: 140px;">出勤</th>
-                                    <th style="min-width: 140px;">退勤</th>
-                                    <th style="min-width: 120px;">休憩</th>
-                                    <th style="min-width: 120px;">深夜</th>
+                                    <th style="min-width: 120px;">出勤</th>
+                                    <th style="min-width: 120px;">退勤</th>
+                                    <th style="min-width: 110px;">休憩</th>
+                                    <th style="min-width: 120px;">深夜出勤</th>
+                                    <th style="min-width: 120px;">深夜退勤</th>
+                                    <th style="min-width: 110px;">深夜時間</th>
                                     <th style="min-width: 120px;">時間外(深夜)</th>
-                                    <th style="min-width: 110px;">欠勤</th>
+                                    <th style="min-width: 90px;">欠勤</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -91,21 +93,32 @@
                                             $startVal = '';
                                             $endVal = '';
                                             $breakVal = '';
-                                            $midnightVal = '';
+                                            $midnightStartVal = '';
+                                            $midnightEndVal = '';
                                             $midnightAutoVal = '';
                                             $midnightOvertimeVal = '';
+                                            $dayPrefill = '0';
+                                            $dayRequired = false;
                                         } else {
                                             $startVal = (string) ($row->display_start ?? '');
                                             $endVal = (string) ($row->display_end ?? '');
                                             $breakVal = (string) ($row->display_break ?? '');
-                                            $startVal = $startVal !== '' ? $startVal : '08:00';
-                                            $endVal = $endVal !== '' ? $endVal : '17:00';
+                                            $midnightStartVal = (string) ($row->display_midnight_start ?? '');
+                                            $midnightEndVal = (string) ($row->display_midnight_end ?? '');
+                                            $nightPair = $midnightStartVal !== '' && $midnightEndVal !== '';
+                                            // 夜勤のみの行は昼欄を空のまま（08:00等で埋めると昼勤務として保存されてしまう）
+                                            if (! ($startVal === '' && $endVal === '' && $nightPair)) {
+                                                $startVal = $startVal !== '' ? $startVal : '08:00';
+                                                $endVal = $endVal !== '' ? $endVal : '17:00';
+                                            }
                                             $breakVal = $breakVal !== '' ? $breakVal : '01:00';
-                                            // 深夜: value は手入力のみ。未入力時は出退勤からの自動計算値を placeholder で参考表示
-                                            $midnightVal = (string) ($row->display_midnight ?? '');
+                                            // 深夜時間は表示専用（昼＋夜それぞれの22時〜翌5時重なりの合計を自動計算）
                                             $midnightAutoVal = (string) ($row->display_midnight_auto ?? '');
                                             // 時間外（深夜）は任意入力（既定値なし・未入力は空欄）
                                             $midnightOvertimeVal = (string) ($row->display_midnight_overtime ?? '');
+                                            // 昼欄が既定値の仮表示か（夜勤入力時に JS が昼欄を自動クリアしてよいか）
+                                            $dayPrefill = ($row->display_day_is_fallback ?? false) ? '1' : '0';
+                                            $dayRequired = ! $nightPair;
                                         }
                                     @endphp
                                     @if($sid > 0)
@@ -123,10 +136,11 @@
                                                 inputmode="numeric"
                                                 maxlength="5"
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
-                                                title="半角 時:分 例 08:00"
+                                                title="半角 時:分 例 08:00（夜勤のみの日は空欄）"
                                                 placeholder="{{ $isAbsent ? '' : '08:00' }}"
                                                 autocomplete="off"
-                                                @unless($isAbsent) required @endunless
+                                                data-day-prefill="{{ $dayPrefill }}"
+                                                @if($dayRequired) required @endif
                                             >
                                         </td>
                                         <td>
@@ -138,10 +152,11 @@
                                                 inputmode="numeric"
                                                 maxlength="5"
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
-                                                title="半角 時:分 例 17:30"
+                                                title="半角 時:分 例 17:30（夜勤のみの日は空欄）"
                                                 placeholder="{{ $isAbsent ? '' : '17:00' }}"
                                                 autocomplete="off"
-                                                @unless($isAbsent) required @endunless
+                                                data-day-prefill="{{ $dayPrefill }}"
+                                                @if($dayRequired) required @endif
                                             >
                                         </td>
                                         <td>
@@ -163,16 +178,40 @@
                                             <input
                                                 type="text"
                                                 class="form-control form-control-sm font-monospace js-attendance-time"
-                                                name="times[{{ $sid }}][midnight]"
-                                                value="{{ $midnightVal }}"
+                                                name="times[{{ $sid }}][midnight_start]"
+                                                value="{{ $midnightStartVal }}"
                                                 inputmode="numeric"
                                                 maxlength="5"
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
-                                                title="深夜時間 未入力なら出退勤から自動計算（グレー表示）。上書きする日だけ入力"
-                                                placeholder="{{ $midnightAutoVal }}"
+                                                title="深夜出勤 例 18:00（夜勤の日のみ入力）"
+                                                placeholder=""
                                                 autocomplete="off"
                                                 data-optional="1"
-                                                data-midnight-auto="1"
+                                            >
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="text"
+                                                class="form-control form-control-sm font-monospace js-attendance-time"
+                                                name="times[{{ $sid }}][midnight_end]"
+                                                value="{{ $midnightEndVal }}"
+                                                inputmode="numeric"
+                                                maxlength="5"
+                                                pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                                                title="深夜退勤 例 03:30（夜勤の日のみ入力）"
+                                                placeholder=""
+                                                autocomplete="off"
+                                                data-optional="1"
+                                            >
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="text"
+                                                class="form-control form-control-sm font-monospace js-midnight-total"
+                                                value="{{ $midnightAutoVal }}"
+                                                title="22時〜翌5時の重なりから自動計算（入力不要）"
+                                                readonly
+                                                tabindex="-1"
                                             >
                                         </td>
                                         <td>
@@ -217,7 +256,7 @@
                         var filterForm = document.getElementById('top-attendance-filter-form');
                         if (!saveForm) return;
 
-                        // 深夜の自動計算（サーバー側 calcAutoMidnightMinutes と同じ 22:00〜翌5:00 の重なり）
+                        // 深夜時間の自動計算（サーバー側 calcAutoMidnightMinutes と同じ 22:00〜翌5:00 の重なり）
                         function timeToMin(v) {
                             var m = /^(\d{1,2}):(\d{2})$/.exec((v || '').trim());
                             if (!m) return null;
@@ -225,25 +264,60 @@
                             if (h > 23 || mi > 59) return null;
                             return h * 60 + mi;
                         }
-                        function autoMidnight(startVal, endVal) {
+                        function midnightOverlapMinutes(startVal, endVal) {
                             var s = timeToMin(startVal), e = timeToMin(endVal);
-                            if (s === null || e === null) return '';
+                            if (s === null || e === null) return 0;
                             if (e < s) e += 1440;
                             function ov(a, b) { return Math.max(0, Math.min(e, b) - Math.max(s, a)); }
-                            var t = ov(0, 300) + ov(1320, 1440) + ov(1440, 1740);
-                            if (t <= 0) return '';
-                            return ('0' + Math.floor(t / 60)).slice(-2) + ':' + ('0' + (t % 60)).slice(-2);
+                            return ov(0, 300) + ov(1320, 1440) + ov(1440, 1740);
                         }
-                        function updateMidnightPlaceholder(tr) {
-                            var mn = tr.querySelector('input[name$="[midnight]"]');
-                            if (!mn) return;
+                        function rowInput(tr, suffix) {
+                            return tr.querySelector('input[name$="' + suffix + '"]');
+                        }
+                        function rowValue(tr, suffix) {
+                            var el = rowInput(tr, suffix);
+                            return el ? el.value : '';
+                        }
+                        function nightPairFilled(tr) {
+                            return rowValue(tr, '[midnight_start]').trim() !== ''
+                                && rowValue(tr, '[midnight_end]').trim() !== '';
+                        }
+                        // 深夜時間（表示専用）: 昼＋夜それぞれの重なり合計
+                        function updateMidnightTotal(tr) {
+                            var total = tr.querySelector('input.js-midnight-total');
+                            if (!total) return;
                             if (tr.getAttribute('data-absent-row') === '1') {
-                                mn.placeholder = '';
+                                total.value = '';
                                 return;
                             }
-                            var s = tr.querySelector('input[name$="[start]"]');
-                            var e = tr.querySelector('input[name$="[end]"]');
-                            mn.placeholder = autoMidnight(s && s.value, e && e.value);
+                            var t = midnightOverlapMinutes(rowValue(tr, '[start]'), rowValue(tr, '[end]'))
+                                + midnightOverlapMinutes(rowValue(tr, '[midnight_start]'), rowValue(tr, '[midnight_end]'));
+                            total.value = t > 0
+                                ? ('0' + Math.floor(t / 60)).slice(-2) + ':' + ('0' + (t % 60)).slice(-2)
+                                : '';
+                        }
+                        // 夜勤（深夜出勤・退勤）が入っている行は昼の出退勤を必須にしない
+                        function recalcDayRequired(tr) {
+                            var absent = tr.getAttribute('data-absent-row') === '1';
+                            var night = nightPairFilled(tr);
+                            ['[start]', '[end]'].forEach(function (suffix) {
+                                var el = rowInput(tr, suffix);
+                                if (el) {
+                                    el.required = !absent && !night;
+                                }
+                            });
+                        }
+                        // 夜勤を入力したとき、昼欄が「既定値の仮表示のまま」なら自動で空にする
+                        // （放置すると 08:00〜17:00 の昼勤務として保存されてしまうため）
+                        function clearPrefilledDayIfNight(tr) {
+                            if (!nightPairFilled(tr)) return;
+                            ['[start]', '[end]'].forEach(function (suffix) {
+                                var el = rowInput(tr, suffix);
+                                if (el && el.dataset.dayPrefill === '1' && el.value === el.defaultValue) {
+                                    el.value = '';
+                                    el.dataset.dayPrefill = '0';
+                                }
+                            });
                         }
 
                         function syncAbsentRowTimes(tr) {
@@ -263,12 +337,23 @@
 
                         saveForm.querySelectorAll('tbody tr[data-absent-row]').forEach(function (tr) {
                             syncAbsentRowTimes(tr);
-                            updateMidnightPlaceholder(tr);
+                            recalcDayRequired(tr);
+                            updateMidnightTotal(tr);
                             ['[start]', '[end]'].forEach(function (suffix) {
-                                var el = tr.querySelector('input[name$="' + suffix + '"]');
+                                var el = rowInput(tr, suffix);
                                 if (el) {
                                     el.addEventListener('input', function () {
-                                        updateMidnightPlaceholder(tr);
+                                        updateMidnightTotal(tr);
+                                    });
+                                }
+                            });
+                            ['[midnight_start]', '[midnight_end]'].forEach(function (suffix) {
+                                var el = rowInput(tr, suffix);
+                                if (el) {
+                                    el.addEventListener('input', function () {
+                                        clearPrefilledDayIfNight(tr);
+                                        recalcDayRequired(tr);
+                                        updateMidnightTotal(tr);
                                     });
                                 }
                             });
@@ -283,7 +368,8 @@
                                         force.value = cb.checked ? '1' : '0';
                                     }
                                     syncAbsentRowTimes(tr);
-                                    updateMidnightPlaceholder(tr);
+                                    recalcDayRequired(tr);
+                                    updateMidnightTotal(tr);
                                 }
                             });
                         });

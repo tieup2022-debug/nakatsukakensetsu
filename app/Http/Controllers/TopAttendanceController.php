@@ -240,14 +240,28 @@ class TopAttendanceController extends Controller
                 $start = '';
                 $end = '';
                 $break = '';
-                $midnight = '';
+                $midnightStart = '';
+                $midnightEnd = '';
                 $midnightOvertime = '';
             } else {
-                $start = $this->resolveNestedTimeField($bucket, 'start', $defaultStart, $existing->start_time ?? null);
-                $end = $this->resolveNestedTimeField($bucket, 'end', $defaultEnd, $existing->end_time ?? null);
-                $break = $this->resolveNestedTimeField($bucket, 'break', $defaultBreak, $existing->break_time ?? null);
-                $midnight = $this->resolveMidnightField($bucket, 'midnight');
+                $midnightStart = $this->resolveMidnightField($bucket, 'midnight_start');
+                $midnightEnd = $this->resolveMidnightField($bucket, 'midnight_end');
                 $midnightOvertime = $this->resolveMidnightField($bucket, 'midnight_overtime');
+
+                // 夜勤のみの日: 深夜出勤・退勤が入っていて昼の出退勤が空欄なら、
+                // 既定時刻（08:00等）で埋めずに昼を空のまま保存する
+                $nightProvided = is_string($midnightStart) && $midnightStart !== ''
+                    && is_string($midnightEnd) && $midnightEnd !== '';
+                if ($nightProvided
+                    && $this->postedValueIsEmpty($bucket, 'start')
+                    && $this->postedValueIsEmpty($bucket, 'end')) {
+                    $start = '';
+                    $end = '';
+                } else {
+                    $start = $this->resolveNestedTimeField($bucket, 'start', $defaultStart, $existing->start_time ?? null);
+                    $end = $this->resolveNestedTimeField($bucket, 'end', $defaultEnd, $existing->end_time ?? null);
+                }
+                $break = $this->resolveNestedTimeField($bucket, 'break', $defaultBreak, $existing->break_time ?? null);
             }
 
             $ok = $this->attendanceService->AttendanceUpdate(
@@ -258,8 +272,9 @@ class TopAttendanceController extends Controller
                 $end,
                 $break,
                 $absenceFlg,
-                $midnight,
-                $midnightOvertime
+                $midnightOvertime,
+                $midnightStart,
+                $midnightEnd
             );
 
             Log::info('TopAttendance update row result', [
@@ -344,7 +359,21 @@ class TopAttendanceController extends Controller
     }
 
     /**
-     * 深夜・時間外（深夜）は任意入力の時間量（既定値なし）。キーが POST に無ければ変更しない(null)、
+     * POST された値が「キーはあるが空欄」かどうか（夜勤のみの日の昼欄判定用）。
+     *
+     * @param  array<string, mixed>  $bucket
+     */
+    private function postedValueIsEmpty(array $bucket, string $key): bool
+    {
+        if (! array_key_exists($key, $bucket)) {
+            return false;
+        }
+
+        return trim((string) ($this->unwrapPostedScalar($bucket[$key]) ?? '')) === '';
+    }
+
+    /**
+     * 深夜出勤・退勤・時間外（深夜）は任意入力（既定値なし）。キーが POST に無ければ変更しない(null)、
      * 空欄はクリア('')、HH:MM に解釈できればその値、解釈不能なら変更しない。
      *
      * @param  array<string, mixed>  $bucket
