@@ -38,6 +38,23 @@ jobs:
             exit 1
           fi
 
+      # migrate 失敗時に復旧できるよう、ファイル同期・migrate より前に必ずDBバックアップを取る。
+      # バックアップに失敗した場合はデプロイ自体を中止する。
+      - name: Backup production database before deploy
+        run: |
+          ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" \
+            "cd '${{ secrets.XSERVER_DEPLOY_PATH }}' && \
+             /opt/php-8.3/bin/php artisan backup:database && \
+             ls -lt storage/app/database-backups | head -n 4"
+
+      # 定期バックアップ（日次3:15）の有効状態を確認する（読み取りのみ・デプロイは止めない）
+      - name: Report scheduled backup status
+        run: |
+          ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" \
+            "cd '${{ secrets.XSERVER_DEPLOY_PATH }}' && \
+             (grep -E '^BACKUP_DATABASE_SCHEDULE_ENABLED=' .env || echo 'BACKUP_DATABASE_SCHEDULE_ENABLED: 未設定（既定 false = 定期バックアップ無効）') ; \
+             (crontab -l 2>/dev/null | grep -F 'schedule:run' && echo 'cron: schedule:run 登録済み' || echo 'cron: schedule:run 未登録（定期バックアップは動きません）')" || true
+
       - name: Sync files to Xserver (primary)
         run: |
           rsync -az --checksum \
