@@ -72,9 +72,22 @@ class BackupDatabaseCommand extends Command
     {
         $binary = config('backup.database.mysqldump_binary', 'mysqldump');
         if (! is_executable((string) $binary) && $binary === 'mysqldump') {
-            $found = (new ExecutableFinder)->find('mysqldump');
-            if ($found !== null) {
-                $binary = $found;
+            $candidates = [
+                '/usr/bin/mysqldump',
+                '/usr/local/bin/mysqldump',
+                '/opt/mysql/bin/mysqldump',
+            ];
+            foreach ($candidates as $candidate) {
+                if (is_executable($candidate)) {
+                    $binary = $candidate;
+                    break;
+                }
+            }
+            if ($binary === 'mysqldump') {
+                $found = (new ExecutableFinder)->find('mysqldump');
+                if ($found !== null) {
+                    $binary = $found;
+                }
             }
         }
 

@@ -143,6 +143,44 @@ jobs:
              /opt/php-8.3/bin/php -r 'if (function_exists(\"opcache_reset\")) { opcache_reset(); }' && \
              test -f resources/views/top/attendance.blade.php && grep -q 'absence_active' resources/views/top/attendance.blade.php"
 
+      # 日次バックアップ（03:15）を有効化。本番 .env のみ更新（rsync 対象外）。
+      - name: Enable scheduled database backup (production .env)
+        run: |
+          ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" bash -s <<REMOTE
+          set -euo pipefail
+          cd '${{ secrets.XSERVER_DEPLOY_PATH }}'
+          if grep -q '^BACKUP_DATABASE_SCHEDULE_ENABLED=' .env; then
+            sed -i 's/^BACKUP_DATABASE_SCHEDULE_ENABLED=.*/BACKUP_DATABASE_SCHEDULE_ENABLED=true/' .env
+          else
+            printf '\n# 日次 DB バックアップ（毎日 03:15）\nBACKUP_DATABASE_SCHEDULE_ENABLED=true\n' >> .env
+          fi
+          /opt/php-8.3/bin/php artisan config:clear
+          grep '^BACKUP_DATABASE_SCHEDULE_ENABLED=' .env
+          REMOTE
+
+      # Laravel スケジューラ用 cron。未登録なら追加（Xserver で crontab が使えない場合はパネル手動設定）。
+      - name: Install schedule:run cron if missing (production)
+        continue-on-error: true
+        run: |
+          ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" bash -s <<REMOTE
+          set -euo pipefail
+          CRON_LINE='* * * * * cd "${{ secrets.XSERVER_DEPLOY_PATH }}" && /opt/php-8.3/bin/php artisan schedule:run >> "${{ secrets.XSERVER_DEPLOY_PATH }}/storage/logs/schedule-run.log" 2>&1'
+          if crontab -l 2>/dev/null | grep -Fq 'artisan schedule:run'; then
+            echo 'cron: schedule:run は既に登録済み'
+            crontab -l 2>/dev/null | grep 'schedule:run' || true
+          else
+            (crontab -l 2>/dev/null; echo "\${CRON_LINE}") | crontab -
+            echo 'cron: schedule:run を追加しました'
+            crontab -l 2>/dev/null | grep 'schedule:run' || true
+          fi
+          REMOTE
+
+      - name: Verify backup setup (production)
+        continue-on-error: true
+        run: |
+          ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" \
+            "cd '${{ secrets.XSERVER_DEPLOY_PATH }}' && /opt/php-8.3/bin/php artisan backup:doctor"
+
       - name: Run migrate and Laravel clear commands (staging)
         if: steps.staging.outputs.path != ''
         run: |
