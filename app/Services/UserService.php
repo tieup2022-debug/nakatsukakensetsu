@@ -48,6 +48,10 @@ class UserService
 
     public function create($userName, $loginId, $permission)
     {
+        // 初期パスワードは固定「0000」ではなくランダム発行し、成功時は平文を
+        // 呼び出し元へ返す（管理者が本人へ伝えるため）。既存ユーザーのログインには影響しない。
+        $initialPassword = $this->generateInitialPassword();
+
         try {
             if (!isset($userName) || !isset($loginId) || !isset($permission)) {
                 return false;
@@ -67,14 +71,14 @@ class UserService
             DB::table('m_user')->insert([
                 'user_name' => $userName,
                 'login_id' => $loginId,
-                'password' => Hash::make('0000'),
+                'password' => Hash::make($initialPassword),
                 'permission' => $permission,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
             DB::commit();
-            return true;
+            return $initialPassword;
         } catch (\Exception $e) {
             DB::rollback();
             error($e, __FILE__, __METHOD__, __LINE__);
@@ -96,10 +100,27 @@ class UserService
                     'permission' => (int)$permission,
                     'hidden_flg' => 0,
                 ];
-                return $this->writeLocalUsers($rows);
+                return $this->writeLocalUsers($rows) ? $initialPassword : false;
             }
             return false;
         }
+    }
+
+    /**
+     * 新規ユーザーの初期パスワードを生成する。
+     * 紛らわしい文字（0/O/1/l/I 等）を除いた英数字10文字。管理者が口頭/紙で
+     * 伝えやすいよう記号は含めない。random_int で暗号論的に安全に生成する。
+     */
+    private function generateInitialPassword(int $length = 10): string
+    {
+        $alphabet = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $maxIndex = strlen($alphabet) - 1;
+        $password = '';
+        for ($i = 0; $i < $length; $i++) {
+            $password .= $alphabet[random_int(0, $maxIndex)];
+        }
+
+        return $password;
     }
 
     public function update($userId, $userName, $loginId, $permission)

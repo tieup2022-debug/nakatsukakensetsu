@@ -7,7 +7,17 @@
 
     @if (!is_null($result))
         <div class="alert {{ $result ? 'alert-success' : 'alert-danger' }} mb-3">
-            {{ $result ? '登録しました' : '登録に失敗しました' }}
+            {{ $result ? '登録しました' : '登録に失敗しました（ログインIDが重複している可能性があります）' }}
+        </div>
+    @endif
+
+    @if (!empty($initialPassword))
+        <div class="alert alert-warning mb-3">
+            <div class="fw-semibold mb-1">初期パスワードを本人にお伝えください</div>
+            <div class="small mb-2">この画面を離れると再表示できません。本人には安全な方法で伝え、初回ログイン後の変更を案内してください。</div>
+            <div class="d-flex align-items-center gap-2">
+                <code class="fs-5 fw-bold user-select-all">{{ $initialPassword }}</code>
+            </div>
         </div>
     @endif
 
@@ -30,8 +40,8 @@
             <label><input type="radio" name="permission" value="3" required> 利用者</label>
         </div>
 
-        <div class="mb-4 small text-danger fw-semibold">
-            初期パスワードは「0000」です。
+        <div class="mb-4 small text-muted">
+            初期パスワードは登録時にランダム自動発行され、登録後にこの画面へ表示されます（英数字10文字）。
         </div>
 
         <div class="text-center">

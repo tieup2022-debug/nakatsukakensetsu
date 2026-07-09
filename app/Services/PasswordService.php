@@ -18,6 +18,11 @@ class PasswordService
                 return false;
             }
 
+            // 最低8文字。既存ユーザーのログインには影響せず、新しく設定する時のみ適用。
+            if (strlen((string) $password1) < 8) {
+                return false;
+            }
+
             DB::beginTransaction();
 
             DB::table('m_user')
@@ -45,7 +50,7 @@ class PasswordService
             return false;
         }
 
-        if (strlen($password1) < 4) {
+        if (strlen($password1) < 8) {
             return false;
         }
 

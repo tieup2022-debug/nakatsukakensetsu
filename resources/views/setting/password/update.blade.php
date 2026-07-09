@@ -10,7 +10,7 @@
 
     @if (!is_null($result))
         <div class="alert {{ $result ? 'alert-success' : 'alert-danger' }} mb-3">
-            {{ $result ? '更新しました' : '更新に失敗しました' }}
+            {{ $result ? '更新しました' : '更新に失敗しました（8文字以上で、確認欄と一致させてください）' }}
         </div>
     @endif
 
@@ -20,13 +20,13 @@
                 @csrf
 
                 <div class="mb-3">
-                    <label class="form-label small text-muted">新しいパスワード</label>
-                    <input type="password" name="password1" class="form-control" required>
+                    <label class="form-label small text-muted">新しいパスワード（8文字以上）</label>
+                    <input type="password" name="password1" class="form-control" required autocomplete="new-password" minlength="8">
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label small text-muted">新しいパスワード（確認）</label>
-                    <input type="password" name="password2" class="form-control" required>
+                    <input type="password" name="password2" class="form-control" required autocomplete="new-password" minlength="8">
                 </div>
 
                 <div class="d-flex justify-content-end gap-2">

@@ -58,16 +58,23 @@ class SettingUserController extends Controller
         }
 
         $result = null;
+        $initialPassword = null;
 
         if ($request->isMethod('POST')) {
-            $result = $this->userService->create(
+            $created = $this->userService->create(
                 $request->input('user_name'),
                 $request->input('login_id'),
                 $request->input('permission')
             );
+            // create() は成功時に初期パスワード（平文）を返し、失敗時に false を返す。
+            $result = ($created !== false);
+            $initialPassword = is_string($created) ? $created : null;
         }
 
-        return view('setting.user.create')->with(['result' => $result]);
+        return view('setting.user.create')->with([
+            'result' => $result,
+            'initialPassword' => $initialPassword,
+        ]);
     }
 
     public function list(Request $request)
@@ -166,7 +173,7 @@ class SettingUserController extends Controller
 
         $validated = $request->validate([
             'user_id' => ['required', 'integer', 'min:1'],
-            'password1' => ['required', 'string', 'min:4', 'max:255'],
+            'password1' => ['required', 'string', 'min:8', 'max:255'],
             'password2' => ['required', 'same:password1'],
         ]);
 

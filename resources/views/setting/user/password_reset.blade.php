@@ -36,13 +36,13 @@
                 <input type="hidden" name="user_id" value="{{ $target->id }}">
 
                 <div class="mb-3">
-                    <label class="form-label small text-muted">新しいパスワード（4文字以上）</label>
-                    <input type="password" name="password1" class="form-control" required autocomplete="new-password" minlength="4">
+                    <label class="form-label small text-muted">新しいパスワード（8文字以上）</label>
+                    <input type="password" name="password1" class="form-control" required autocomplete="new-password" minlength="8">
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label small text-muted">新しいパスワード（確認）</label>
-                    <input type="password" name="password2" class="form-control" required autocomplete="new-password" minlength="4">
+                    <input type="password" name="password2" class="form-control" required autocomplete="new-password" minlength="8">
                 </div>
 
                 <div class="d-flex justify-content-end gap-2">
