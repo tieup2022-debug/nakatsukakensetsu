@@ -39,7 +39,8 @@
                                 $startVal = $row->display_start ?? '';
                                 $endVal = $row->display_end ?? '';
                                 $breakVal = $row->display_break ?? '';
-                                $midnightVal = $row->display_midnight ?? '';
+                                // 深夜は手入力が無ければ出退勤からの自動計算値を表示
+                                $midnightVal = $row->display_midnight_effective ?? ($row->display_midnight ?? '');
                                 $midnightOvertimeVal = $row->display_midnight_overtime ?? '';
                                 $isAbsent = isset($row->absence_flg) && intval($row->absence_flg) === 1;
                             @endphp

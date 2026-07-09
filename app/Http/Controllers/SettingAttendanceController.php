@@ -201,6 +201,12 @@ class SettingAttendanceController extends Controller
                 'end_time' => $attendance?->end_time ?? ($defaults->end_time ?? ''),
                 'break_time' => $attendance?->break_time ?? ($defaults->break_time ?? ''),
                 'midnight_time' => $this->attendanceService->formatMidnightForDisplay($attendance?->midnight_minutes ?? null),
+                'midnight_auto' => $this->attendanceService->formatMidnightForDisplay(
+                    $this->attendanceService->calcAutoMidnightMinutes(
+                        $this->attendanceService->formatTimeForDisplay($attendance?->start_time ?? null),
+                        $this->attendanceService->formatTimeForDisplay($attendance?->end_time ?? null)
+                    )
+                ),
                 'midnight_overtime_time' => $this->attendanceService->formatMidnightForDisplay($attendance?->midnight_overtime_minutes ?? null),
                 'absence_flg' => $attendance?->absence_flg ?? false,
             ]);

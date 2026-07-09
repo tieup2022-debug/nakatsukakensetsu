@@ -92,6 +92,7 @@
                                             $endVal = '';
                                             $breakVal = '';
                                             $midnightVal = '';
+                                            $midnightAutoVal = '';
                                             $midnightOvertimeVal = '';
                                         } else {
                                             $startVal = (string) ($row->display_start ?? '');
@@ -100,8 +101,10 @@
                                             $startVal = $startVal !== '' ? $startVal : '08:00';
                                             $endVal = $endVal !== '' ? $endVal : '17:00';
                                             $breakVal = $breakVal !== '' ? $breakVal : '01:00';
-                                            // 深夜・時間外（深夜）は任意入力（既定値なし・未入力は空欄）
+                                            // 深夜: value は手入力のみ。未入力時は出退勤からの自動計算値を placeholder で参考表示
                                             $midnightVal = (string) ($row->display_midnight ?? '');
+                                            $midnightAutoVal = (string) ($row->display_midnight_auto ?? '');
+                                            // 時間外（深夜）は任意入力（既定値なし・未入力は空欄）
                                             $midnightOvertimeVal = (string) ($row->display_midnight_overtime ?? '');
                                         }
                                     @endphp
@@ -165,10 +168,11 @@
                                                 inputmode="numeric"
                                                 maxlength="5"
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
-                                                title="深夜時間 半角 時:分 例 01:30（未入力可）"
-                                                placeholder=""
+                                                title="深夜時間 未入力なら出退勤から自動計算（グレー表示）。上書きする日だけ入力"
+                                                placeholder="{{ $midnightAutoVal }}"
                                                 autocomplete="off"
                                                 data-optional="1"
+                                                data-midnight-auto="1"
                                             >
                                         </td>
                                         <td>
@@ -213,6 +217,35 @@
                         var filterForm = document.getElementById('top-attendance-filter-form');
                         if (!saveForm) return;
 
+                        // 深夜の自動計算（サーバー側 calcAutoMidnightMinutes と同じ 22:00〜翌5:00 の重なり）
+                        function timeToMin(v) {
+                            var m = /^(\d{1,2}):(\d{2})$/.exec((v || '').trim());
+                            if (!m) return null;
+                            var h = +m[1], mi = +m[2];
+                            if (h > 23 || mi > 59) return null;
+                            return h * 60 + mi;
+                        }
+                        function autoMidnight(startVal, endVal) {
+                            var s = timeToMin(startVal), e = timeToMin(endVal);
+                            if (s === null || e === null) return '';
+                            if (e < s) e += 1440;
+                            function ov(a, b) { return Math.max(0, Math.min(e, b) - Math.max(s, a)); }
+                            var t = ov(0, 300) + ov(1320, 1440) + ov(1440, 1740);
+                            if (t <= 0) return '';
+                            return ('0' + Math.floor(t / 60)).slice(-2) + ':' + ('0' + (t % 60)).slice(-2);
+                        }
+                        function updateMidnightPlaceholder(tr) {
+                            var mn = tr.querySelector('input[name$="[midnight]"]');
+                            if (!mn) return;
+                            if (tr.getAttribute('data-absent-row') === '1') {
+                                mn.placeholder = '';
+                                return;
+                            }
+                            var s = tr.querySelector('input[name$="[start]"]');
+                            var e = tr.querySelector('input[name$="[end]"]');
+                            mn.placeholder = autoMidnight(s && s.value, e && e.value);
+                        }
+
                         function syncAbsentRowTimes(tr) {
                             var absentCb = tr.querySelector('input[type="checkbox"][name^="absence_flg"]');
                             var isAbsent = absentCb && absentCb.checked;
@@ -228,7 +261,18 @@
                             });
                         }
 
-                        saveForm.querySelectorAll('tbody tr[data-absent-row]').forEach(syncAbsentRowTimes);
+                        saveForm.querySelectorAll('tbody tr[data-absent-row]').forEach(function (tr) {
+                            syncAbsentRowTimes(tr);
+                            updateMidnightPlaceholder(tr);
+                            ['[start]', '[end]'].forEach(function (suffix) {
+                                var el = tr.querySelector('input[name$="' + suffix + '"]');
+                                if (el) {
+                                    el.addEventListener('input', function () {
+                                        updateMidnightPlaceholder(tr);
+                                    });
+                                }
+                            });
+                        });
 
                         saveForm.querySelectorAll('input[type="checkbox"][name^="absence_flg"]').forEach(function (cb) {
                             cb.addEventListener('change', function () {
@@ -239,6 +283,7 @@
                                         force.value = cb.checked ? '1' : '0';
                                     }
                                     syncAbsentRowTimes(tr);
+                                    updateMidnightPlaceholder(tr);
                                 }
                             });
                         });

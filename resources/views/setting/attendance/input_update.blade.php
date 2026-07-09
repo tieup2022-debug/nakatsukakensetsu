@@ -39,9 +39,11 @@
 
                 <div class="row g-2 mb-3">
                     <div class="col-md-4">
-                        <label class="form-label small text-muted">深夜時間（未入力可）</label>
+                        <label class="form-label small text-muted">深夜時間（未入力なら自動計算）</label>
                         <input type="time" class="form-control form-control-sm" name="midnight_time" value="{{ $midnight_time ?? '' }}">
-                        <div class="form-text">22時〜翌5時に働いた時間量を 時:分 で入力（例 01:30）。空欄で削除。</div>
+                        <div class="form-text">
+                            空欄の場合は出退勤から自動計算します{{ ($midnight_auto ?? '') !== '' ? '（この出退勤なら '.$midnight_auto.'）' : '' }}。上書きする日だけ入力。
+                        </div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label small text-muted">時間外（深夜）（未入力可）</label>

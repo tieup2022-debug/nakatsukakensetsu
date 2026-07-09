@@ -170,6 +170,8 @@ class AttendanceService
                 $row->display_end = '';
                 $row->display_break = '';
                 $row->display_midnight = '';
+                $row->display_midnight_auto = '';
+                $row->display_midnight_effective = '';
                 $row->display_midnight_overtime = '';
             }
 
@@ -645,6 +647,36 @@ class AttendanceService
     }
 
     /**
+     * 出退勤時刻から深夜時間（22:00〜翌5:00 との重なり・分）を自動計算する。
+     * 退勤が出勤より前の場合は日跨ぎとして扱う。
+     * 手入力（midnight_minutes）が NULL の日の既定値として使う（手入力があればそちら優先）。
+     */
+    public function calcAutoMidnightMinutes(string $startTime, string $endTime): int
+    {
+        $start = $this->timeToMinutes($startTime);
+        $end = $this->timeToMinutes($endTime);
+        if ($start === null || $end === null) {
+            return 0;
+        }
+
+        if ($end < $start) {
+            $end += 24 * 60;
+        }
+
+        return $this->overlapMinutes($start, $end, 0, 300)
+            + $this->overlapMinutes($start, $end, 1320, 1440)
+            + $this->overlapMinutes($start, $end, 1440, 1740);
+    }
+
+    private function overlapMinutes(int $start, int $end, int $rangeStart, int $rangeEnd): int
+    {
+        $s = max($start, $rangeStart);
+        $e = min($end, $rangeEnd);
+
+        return max(0, $e - $s);
+    }
+
+    /**
      * 深夜時間の入力値（HH:MM または 分の整数）を保存用の分へ。空文字は NULL（未入力）扱い。
      */
     public function midnightInputToMinutes($input): ?int
@@ -705,6 +737,8 @@ class AttendanceService
                 $row->display_end = '';
                 $row->display_break = '';
                 $row->display_midnight = '';
+                $row->display_midnight_auto = '';
+                $row->display_midnight_effective = '';
                 $row->display_midnight_overtime = '';
 
                 return $row;
@@ -717,8 +751,17 @@ class AttendanceService
             $row->display_start = $s !== '' ? $s : $fallbackStart;
             $row->display_end = $e !== '' ? $e : $fallbackEnd;
             $row->display_break = $b !== '' ? $b : $fallbackBreak;
-            // 深夜・時間外（深夜）は既定値を持たない（未入力は空欄のまま）
+            // 深夜: 手入力（display_midnight）が無ければ出退勤からの自動計算（display_midnight_auto）を使う。
+            // 入力欄の value には手入力のみを入れ、自動計算値は placeholder 表示にする
+            // （自動値を value に入れると保存時に手入力として固定され、出退勤変更に追従しなくなるため）。
             $row->display_midnight = $this->formatMidnightForDisplay($row->midnight_minutes ?? null);
+            $row->display_midnight_auto = $this->formatMidnightForDisplay(
+                $this->calcAutoMidnightMinutes($row->display_start, $row->display_end)
+            );
+            $row->display_midnight_effective = $row->display_midnight !== ''
+                ? $row->display_midnight
+                : $row->display_midnight_auto;
+            // 時間外（深夜）は手入力のみ（既定値なし・未入力は空欄）
             $row->display_midnight_overtime = $this->formatMidnightForDisplay($row->midnight_overtime_minutes ?? null);
 
             return $row;
@@ -2288,8 +2331,11 @@ class AttendanceService
                                 }
                             }
 
-                            // 深夜・時間外（深夜）は勤怠入力時の手入力値のみ（出退勤時刻からの自動計算はしない）
-                            $midnightMinutes = max(0, (int) ($row->midnight_minutes ?? 0));
+                            // 深夜: 手入力があればそれを優先し、無ければ出退勤（22:00〜翌5:00の重なり）から自動計算
+                            $midnightMinutes = ($row->midnight_minutes ?? null) !== null
+                                ? max(0, (int) $row->midnight_minutes)
+                                : $this->calcAutoMidnightMinutes($startDisplay, $endDisplay);
+                            // 時間外（深夜）は手入力値のみ
                             $midnightOvertimeMinutes = max(0, (int) ($row->midnight_overtime_minutes ?? 0));
                         }
                     }
