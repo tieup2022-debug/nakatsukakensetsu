@@ -241,11 +241,13 @@ class TopAttendanceController extends Controller
                 $end = '';
                 $break = '';
                 $midnight = '';
+                $midnightOvertime = '';
             } else {
                 $start = $this->resolveNestedTimeField($bucket, 'start', $defaultStart, $existing->start_time ?? null);
                 $end = $this->resolveNestedTimeField($bucket, 'end', $defaultEnd, $existing->end_time ?? null);
                 $break = $this->resolveNestedTimeField($bucket, 'break', $defaultBreak, $existing->break_time ?? null);
-                $midnight = $this->resolveMidnightField($bucket);
+                $midnight = $this->resolveMidnightField($bucket, 'midnight');
+                $midnightOvertime = $this->resolveMidnightField($bucket, 'midnight_overtime');
             }
 
             $ok = $this->attendanceService->AttendanceUpdate(
@@ -256,7 +258,8 @@ class TopAttendanceController extends Controller
                 $end,
                 $break,
                 $absenceFlg,
-                $midnight
+                $midnight,
+                $midnightOvertime
             );
 
             Log::info('TopAttendance update row result', [
@@ -341,23 +344,23 @@ class TopAttendanceController extends Controller
     }
 
     /**
-     * 深夜は任意入力の時間量（既定値なし）。キーが POST に無ければ変更しない(null)、
+     * 深夜・時間外（深夜）は任意入力の時間量（既定値なし）。キーが POST に無ければ変更しない(null)、
      * 空欄はクリア('')、HH:MM に解釈できればその値、解釈不能なら変更しない。
      *
      * @param  array<string, mixed>  $bucket
      */
-    private function resolveMidnightField(array $bucket): ?string
+    private function resolveMidnightField(array $bucket, string $key): ?string
     {
-        if (! array_key_exists('midnight', $bucket)) {
+        if (! array_key_exists($key, $bucket)) {
             return null;
         }
 
-        $raw = trim((string) ($this->unwrapPostedScalar($bucket['midnight']) ?? ''));
+        $raw = trim((string) ($this->unwrapPostedScalar($bucket[$key]) ?? ''));
         if ($raw === '') {
             return '';
         }
 
-        return $this->tryParseTimeInput($bucket['midnight']);
+        return $this->tryParseTimeInput($bucket[$key]);
     }
 
     /**

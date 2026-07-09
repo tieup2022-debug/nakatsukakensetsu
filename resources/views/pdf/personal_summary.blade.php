@@ -77,7 +77,7 @@
             line-height: 1.18;
         }
         .sum-label {
-            width: 16.66%;
+            width: 14.28%;
             background: #eef1f5;
             font-weight: 700;
             font-size: 7pt;
@@ -125,6 +125,7 @@
                         <th class="sum-label">時間外</th>
                         <th class="sum-label">休日時間</th>
                         <th class="sum-label">(深夜)</th>
+                        <th class="sum-label">時間外(深夜)</th>
                     </tr>
                     <tr>
                         <td class="sum-val">{{ (int) ($person['weekday_work_days'] ?? 0) }}日</td>
@@ -133,6 +134,7 @@
                         <td class="sum-val">{{ number_format((($person['overtime_minutes'] ?? 0) / 60), 2, '.', '') }}時間</td>
                         <td class="sum-val">{{ number_format((($person['holiday_minutes'] ?? 0) / 60), 2, '.', '') }}時間</td>
                         <td class="sum-val">{{ number_format((($person['midnight_minutes'] ?? 0) / 60), 2, '.', '') }}時間</td>
+                        <td class="sum-val">{{ number_format((($person['midnight_overtime_minutes'] ?? 0) / 60), 2, '.', '') }}時間</td>
                     </tr>
                 </table>
 
@@ -170,6 +172,13 @@
                             @foreach($halfDates as $d)
                                 @php $c = $person['daily'][$d] ?? []; @endphp
                                 <td class="day-cell">{{ $c['midnight'] ?? '0.00' }}</td>
+                            @endforeach
+                        </tr>
+                        <tr>
+                            <td class="row-lbl">時間外(深夜)</td>
+                            @foreach($halfDates as $d)
+                                @php $c = $person['daily'][$d] ?? []; @endphp
+                                <td class="day-cell">{{ $c['midnight_overtime'] ?? '0.00' }}</td>
                             @endforeach
                         </tr>
                     </table>

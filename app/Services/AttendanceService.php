@@ -165,10 +165,12 @@ class AttendanceService
                 $row->end_time = null;
                 $row->break_time = null;
                 $row->midnight_minutes = null;
+                $row->midnight_overtime_minutes = null;
                 $row->display_start = '';
                 $row->display_end = '';
                 $row->display_break = '';
                 $row->display_midnight = '';
+                $row->display_midnight_overtime = '';
             }
 
             return $row;
@@ -346,11 +348,13 @@ class AttendanceService
                 $row->end_time = null;
                 $row->break_time = null;
                 $row->midnight_minutes = null;
+                $row->midnight_overtime_minutes = null;
             } else {
                 $row->start_time = $raw->start_time;
                 $row->end_time = $raw->end_time;
                 $row->break_time = $raw->break_time;
                 $row->midnight_minutes = $raw->midnight_minutes ?? null;
+                $row->midnight_overtime_minutes = $raw->midnight_overtime_minutes ?? null;
             }
 
             return $row;
@@ -421,6 +425,7 @@ class AttendanceService
                 $row->end_time = null;
                 $row->break_time = null;
                 $row->midnight_minutes = null;
+                $row->midnight_overtime_minutes = null;
             }
 
             return $row;
@@ -700,6 +705,7 @@ class AttendanceService
                 $row->display_end = '';
                 $row->display_break = '';
                 $row->display_midnight = '';
+                $row->display_midnight_overtime = '';
 
                 return $row;
             }
@@ -711,8 +717,9 @@ class AttendanceService
             $row->display_start = $s !== '' ? $s : $fallbackStart;
             $row->display_end = $e !== '' ? $e : $fallbackEnd;
             $row->display_break = $b !== '' ? $b : $fallbackBreak;
-            // 深夜は既定値を持たない（未入力は空欄のまま）
+            // 深夜・時間外（深夜）は既定値を持たない（未入力は空欄のまま）
             $row->display_midnight = $this->formatMidnightForDisplay($row->midnight_minutes ?? null);
+            $row->display_midnight_overtime = $this->formatMidnightForDisplay($row->midnight_overtime_minutes ?? null);
 
             return $row;
         });
@@ -771,8 +778,9 @@ class AttendanceService
      * 勤怠 更新
      *
      * @param  string|null  $midnightTime  深夜時間。null=変更しない / 空文字=クリア(NULL) / 'HH:MM'または分=設定
+     * @param  string|null  $midnightOvertimeTime  時間外（深夜）。扱いは $midnightTime と同じ
      */
-    public function AttendanceUpdate($staffId, $workplaceId, $workDate, $startTime, $endTime, $breakTime, $absenceFlg = false, $midnightTime = null)
+    public function AttendanceUpdate($staffId, $workplaceId, $workDate, $startTime, $endTime, $breakTime, $absenceFlg = false, $midnightTime = null, $midnightOvertimeTime = null)
     {
         try {
             // 個別編集では休憩未入力や type=time の未送信で null になり得るため、時刻は空文字に正規化して扱う
@@ -788,12 +796,15 @@ class AttendanceService
 
             $absenceForDb = (int) ((bool) $absenceFlg);
 
-            // 深夜時間はマイグレーション未適用の環境でも保存本体を止めない
+            // 深夜・時間外（深夜）はマイグレーション未適用の環境でも保存本体を止めない
             $hasMidnightColumn = false;
+            $hasMidnightOvertimeColumn = false;
             try {
                 $hasMidnightColumn = Schema::hasColumn('t_attendance', 'midnight_minutes');
+                $hasMidnightOvertimeColumn = Schema::hasColumn('t_attendance', 'midnight_overtime_minutes');
             } catch (\Throwable) {
                 $hasMidnightColumn = false;
+                $hasMidnightOvertimeColumn = false;
             }
 
             // 欠勤時に start_time/end_time へ空文字を書くと MySQL の TIME 型で例外になり、
@@ -810,6 +821,9 @@ class AttendanceService
                 if ($hasMidnightColumn) {
                     // 欠勤日に深夜時間は残さない
                     $payload['midnight_minutes'] = null;
+                }
+                if ($hasMidnightOvertimeColumn) {
+                    $payload['midnight_overtime_minutes'] = null;
                 }
             } else {
                 $startTime = (string) ($startTime ?? '');
@@ -831,6 +845,9 @@ class AttendanceService
                 ];
                 if ($hasMidnightColumn && $midnightTime !== null) {
                     $payload['midnight_minutes'] = $this->midnightInputToMinutes($midnightTime);
+                }
+                if ($hasMidnightOvertimeColumn && $midnightOvertimeTime !== null) {
+                    $payload['midnight_overtime_minutes'] = $this->midnightInputToMinutes($midnightOvertimeTime);
                 }
             }
 
@@ -856,6 +873,9 @@ class AttendanceService
                     ];
                     if ($hasMidnightColumn) {
                         $absentUpdate['midnight_minutes'] = null;
+                    }
+                    if ($hasMidnightOvertimeColumn) {
+                        $absentUpdate['midnight_overtime_minutes'] = null;
                     }
                     DB::table('t_attendance')
                         ->whereIn('id', $ids)
@@ -989,7 +1009,8 @@ class AttendanceService
                     (string) $endTime,
                     (string) $breakTime,
                     (int) $absenceFlg,
-                    $midnightTime
+                    $midnightTime,
+                    $midnightOvertimeTime
                 );
 
                 return true;
@@ -1543,6 +1564,7 @@ class AttendanceService
                 'end_time' => (string) ($att['end_time'] ?? ''),
                 'break_time' => (string) ($att['break_time'] ?? ''),
                 'midnight_minutes' => $att['midnight_minutes'] ?? null,
+                'midnight_overtime_minutes' => $att['midnight_overtime_minutes'] ?? null,
             ];
         }
 
@@ -1576,6 +1598,7 @@ class AttendanceService
                     'break_time' => (string) ($row['break_time'] ?? ''),
                     'absence_flg' => intval($row['absence_flg'] ?? 0),
                     'midnight_minutes' => $row['midnight_minutes'] ?? null,
+                    'midnight_overtime_minutes' => $row['midnight_overtime_minutes'] ?? null,
                 ];
             }
         }
@@ -1619,7 +1642,8 @@ class AttendanceService
         string $endTime,
         string $breakTime,
         int $absenceFlg,
-        $midnightTime = null
+        $midnightTime = null,
+        $midnightOvertimeTime = null
     ): void {
         $rows = $this->readLocalJson(self::LOCAL_ATTENDANCE_FILE);
 
@@ -1634,8 +1658,14 @@ class AttendanceService
                 $row['absence_flg'] = $absenceFlg;
                 if ($absenceFlg === 1) {
                     $row['midnight_minutes'] = null;
-                } elseif ($midnightTime !== null) {
-                    $row['midnight_minutes'] = $this->midnightInputToMinutes($midnightTime);
+                    $row['midnight_overtime_minutes'] = null;
+                } else {
+                    if ($midnightTime !== null) {
+                        $row['midnight_minutes'] = $this->midnightInputToMinutes($midnightTime);
+                    }
+                    if ($midnightOvertimeTime !== null) {
+                        $row['midnight_overtime_minutes'] = $this->midnightInputToMinutes($midnightOvertimeTime);
+                    }
                 }
                 $row['updated_at'] = now()->toDateTimeString();
                 $found = true;
@@ -1659,6 +1689,7 @@ class AttendanceService
                 'break_time' => $breakTime,
                 'absence_flg' => $absenceFlg,
                 'midnight_minutes' => $absenceFlg === 1 ? null : $this->midnightInputToMinutes($midnightTime),
+                'midnight_overtime_minutes' => $absenceFlg === 1 ? null : $this->midnightInputToMinutes($midnightOvertimeTime),
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString(),
             ];
@@ -2207,6 +2238,7 @@ class AttendanceService
                     'overtime_minutes' => 0,
                     'holiday_minutes' => 0,
                     'midnight_minutes' => 0,
+                    'midnight_overtime_minutes' => 0,
                     'daily' => [],
                 ];
 
@@ -2220,6 +2252,7 @@ class AttendanceService
                     $overtimeMinutes = 0;
                     $holidayMinutes = 0;
                     $midnightMinutes = 0;
+                    $midnightOvertimeMinutes = 0;
                     $absence = false;
                     $startDisplay = '';
                     $endDisplay = '';
@@ -2255,8 +2288,9 @@ class AttendanceService
                                 }
                             }
 
-                            // 深夜は勤怠入力時の手入力値のみ（出退勤時刻からの自動計算はしない）
+                            // 深夜・時間外（深夜）は勤怠入力時の手入力値のみ（出退勤時刻からの自動計算はしない）
                             $midnightMinutes = max(0, (int) ($row->midnight_minutes ?? 0));
+                            $midnightOvertimeMinutes = max(0, (int) ($row->midnight_overtime_minutes ?? 0));
                         }
                     }
 
@@ -2264,6 +2298,7 @@ class AttendanceService
                     $personal['overtime_minutes'] += $overtimeMinutes;
                     $personal['holiday_minutes'] += $holidayMinutes;
                     $personal['midnight_minutes'] += $midnightMinutes;
+                    $personal['midnight_overtime_minutes'] += $midnightOvertimeMinutes;
 
                     $personal['daily'][$date] = [
                         'start' => $startDisplay,
@@ -2274,6 +2309,7 @@ class AttendanceService
                         'overtime' => $this->minutesToHourDecimal($overtimeMinutes),
                         'holiday' => $this->minutesToHourDecimal($holidayMinutes),
                         'midnight' => $this->minutesToHourDecimal($midnightMinutes),
+                        'midnight_overtime' => $this->minutesToHourDecimal($midnightOvertimeMinutes),
                         'absence' => $absence,
                     ];
                 }

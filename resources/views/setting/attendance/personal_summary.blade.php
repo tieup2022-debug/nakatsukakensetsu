@@ -107,6 +107,7 @@
                             <th class="head-title sum-col">時間外</th>
                             <th class="head-title sum-col">休日時間</th>
                             <th class="head-title sum-col">(深夜)</th>
+                            <th class="head-title sum-col">時間外(深夜)</th>
                             @foreach($date_list as $date)
                                 @php
                                     $dowClass = '';
@@ -127,6 +128,7 @@
                                 'worked' => '実働時間',
                                 'holiday' => '休日',
                                 'midnight' => '(深夜)',
+                                'midnight_overtime' => '時間外(深夜)',
                             ];
                         @endphp
                         @foreach($rows as $key => $label)
@@ -142,6 +144,7 @@
                                     <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['overtime_minutes'] ?? 0) / 60, 2) }}時間</td>
                                     <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['holiday_minutes'] ?? 0) / 60, 2) }}時間</td>
                                     <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['midnight_minutes'] ?? 0) / 60, 2) }}時間</td>
+                                    <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['midnight_overtime_minutes'] ?? 0) / 60, 2) }}時間</td>
                                 @endif
                                 @foreach($date_list as $date)
                                     @php

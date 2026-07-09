@@ -78,6 +78,7 @@
                                     <th style="min-width: 140px;">退勤</th>
                                     <th style="min-width: 120px;">休憩</th>
                                     <th style="min-width: 120px;">深夜</th>
+                                    <th style="min-width: 120px;">時間外(深夜)</th>
                                     <th style="min-width: 110px;">欠勤</th>
                                 </tr>
                             </thead>
@@ -91,6 +92,7 @@
                                             $endVal = '';
                                             $breakVal = '';
                                             $midnightVal = '';
+                                            $midnightOvertimeVal = '';
                                         } else {
                                             $startVal = (string) ($row->display_start ?? '');
                                             $endVal = (string) ($row->display_end ?? '');
@@ -98,8 +100,9 @@
                                             $startVal = $startVal !== '' ? $startVal : '08:00';
                                             $endVal = $endVal !== '' ? $endVal : '17:00';
                                             $breakVal = $breakVal !== '' ? $breakVal : '01:00';
-                                            // 深夜は任意入力（既定値なし・未入力は空欄）
+                                            // 深夜・時間外（深夜）は任意入力（既定値なし・未入力は空欄）
                                             $midnightVal = (string) ($row->display_midnight ?? '');
+                                            $midnightOvertimeVal = (string) ($row->display_midnight_overtime ?? '');
                                         }
                                     @endphp
                                     @if($sid > 0)
@@ -163,6 +166,21 @@
                                                 maxlength="5"
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
                                                 title="深夜時間 半角 時:分 例 01:30（未入力可）"
+                                                placeholder=""
+                                                autocomplete="off"
+                                                data-optional="1"
+                                            >
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="text"
+                                                class="form-control form-control-sm font-monospace js-attendance-time"
+                                                name="times[{{ $sid }}][midnight_overtime]"
+                                                value="{{ $midnightOvertimeVal }}"
+                                                inputmode="numeric"
+                                                maxlength="5"
+                                                pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                                                title="時間外（深夜） 半角 時:分 例 00:30（未入力可）"
                                                 placeholder=""
                                                 autocomplete="off"
                                                 data-optional="1"

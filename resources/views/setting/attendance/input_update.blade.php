@@ -43,6 +43,11 @@
                         <input type="time" class="form-control form-control-sm" name="midnight_time" value="{{ $midnight_time ?? '' }}">
                         <div class="form-text">22時〜翌5時に働いた時間量を 時:分 で入力（例 01:30）。空欄で削除。</div>
                     </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">時間外（深夜）（未入力可）</label>
+                        <input type="time" class="form-control form-control-sm" name="midnight_overtime_time" value="{{ $midnight_overtime_time ?? '' }}">
+                        <div class="form-text">時間外労働のうち深夜帯にかかった時間量（例 00:30）。空欄で削除。</div>
+                    </div>
                 </div>
 
                 <div class="mb-3">
