@@ -17,6 +17,7 @@ $app = Application::configure(basePath: $basePath)
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'nakatsuka.auth' => \App\Http\Middleware\NakatsukaAuth::class,
+            'nakatsuka.admin' => \App\Http\Middleware\NakatsukaAdmin::class,
         ]);
         $middleware->encryptCookies(except: [
             (string) env('REMEMBER_WEB_COOKIE', 'nakatsuka_remember_web'),

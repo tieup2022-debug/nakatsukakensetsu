@@ -52,44 +52,44 @@ Route::post('/top/machine-schedule/unavailable/clear', [MachineScheduleControlle
 Route::get('/top/setting', [TopSettingController::class, 'index'])->middleware('nakatsuka.auth')->name('top.setting');
 
 // staff
-Route::get('/setting/staff/manage', [SettingStaffController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.staff.manage');
-Route::get('/setting/staff/create', [SettingStaffController::class, 'showCreate'])->middleware('nakatsuka.auth')->name('setting.staff.create');
-Route::post('/setting/staff/create', [SettingStaffController::class, 'create'])->middleware('nakatsuka.auth')->name('setting.staff.create.submit');
-Route::get('/setting/staff/list', [SettingStaffController::class, 'list'])->middleware('nakatsuka.auth')->name('setting.staff.list');
-Route::post('/setting/staff/sort', [SettingStaffController::class, 'sort'])->middleware('nakatsuka.auth')->name('setting.staff.sort');
-Route::get('/setting/staff/update', [SettingStaffController::class, 'showUpdate'])->middleware('nakatsuka.auth')->name('setting.staff.update');
-Route::post('/setting/staff/update', [SettingStaffController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.staff.update.submit');
-Route::post('/setting/staff/delete', [SettingStaffController::class, 'delete'])->middleware('nakatsuka.auth')->name('setting.staff.delete');
+Route::get('/setting/staff/manage', [SettingStaffController::class, 'manage'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.staff.manage');
+Route::get('/setting/staff/create', [SettingStaffController::class, 'showCreate'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.staff.create');
+Route::post('/setting/staff/create', [SettingStaffController::class, 'create'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.staff.create.submit');
+Route::get('/setting/staff/list', [SettingStaffController::class, 'list'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.staff.list');
+Route::post('/setting/staff/sort', [SettingStaffController::class, 'sort'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.staff.sort');
+Route::get('/setting/staff/update', [SettingStaffController::class, 'showUpdate'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.staff.update');
+Route::post('/setting/staff/update', [SettingStaffController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.staff.update.submit');
+Route::post('/setting/staff/delete', [SettingStaffController::class, 'delete'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.staff.delete');
 
 // workplace
-Route::get('/setting/workplace/manage', [SettingWorkplaceController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.workplace.manage');
-Route::get('/setting/workplace/create', [SettingWorkplaceController::class, 'showCreate'])->middleware('nakatsuka.auth')->name('setting.workplace.create');
-Route::post('/setting/workplace/create', [SettingWorkplaceController::class, 'create'])->middleware('nakatsuka.auth')->name('setting.workplace.create.submit');
-Route::get('/setting/workplace/list', [SettingWorkplaceController::class, 'list'])->middleware('nakatsuka.auth')->name('setting.workplace.list');
-Route::get('/setting/workplace/completed/list', [SettingWorkplaceController::class, 'listCompleted'])->middleware('nakatsuka.auth')->name('setting.workplace.completed.list');
-Route::get('/setting/workplace/update', [SettingWorkplaceController::class, 'showUpdate'])->middleware('nakatsuka.auth')->name('setting.workplace.update');
-Route::post('/setting/workplace/update', [SettingWorkplaceController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.workplace.update.submit');
-Route::post('/setting/workplace/delete', [SettingWorkplaceController::class, 'delete'])->middleware('nakatsuka.auth')->name('setting.workplace.delete');
+Route::get('/setting/workplace/manage', [SettingWorkplaceController::class, 'manage'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.workplace.manage');
+Route::get('/setting/workplace/create', [SettingWorkplaceController::class, 'showCreate'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.workplace.create');
+Route::post('/setting/workplace/create', [SettingWorkplaceController::class, 'create'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.workplace.create.submit');
+Route::get('/setting/workplace/list', [SettingWorkplaceController::class, 'list'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.workplace.list');
+Route::get('/setting/workplace/completed/list', [SettingWorkplaceController::class, 'listCompleted'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.workplace.completed.list');
+Route::get('/setting/workplace/update', [SettingWorkplaceController::class, 'showUpdate'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.workplace.update');
+Route::post('/setting/workplace/update', [SettingWorkplaceController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.workplace.update.submit');
+Route::post('/setting/workplace/delete', [SettingWorkplaceController::class, 'delete'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.workplace.delete');
 
 // vehicle
-Route::get('/setting/vehicle/manage', [SettingVehicleController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.vehicle.manage');
-Route::get('/setting/vehicle/create', [SettingVehicleController::class, 'showCreate'])->middleware('nakatsuka.auth')->name('setting.vehicle.create');
-Route::post('/setting/vehicle/create', [SettingVehicleController::class, 'create'])->middleware('nakatsuka.auth')->name('setting.vehicle.create.submit');
-Route::get('/setting/vehicle/list', [SettingVehicleController::class, 'list'])->middleware('nakatsuka.auth')->name('setting.vehicle.list');
-Route::post('/setting/vehicle/sort', [SettingVehicleController::class, 'sort'])->middleware('nakatsuka.auth')->name('setting.vehicle.sort');
-Route::get('/setting/vehicle/update', [SettingVehicleController::class, 'showUpdate'])->middleware('nakatsuka.auth')->name('setting.vehicle.update');
-Route::post('/setting/vehicle/update', [SettingVehicleController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.vehicle.update.submit');
-Route::post('/setting/vehicle/delete', [SettingVehicleController::class, 'delete'])->middleware('nakatsuka.auth')->name('setting.vehicle.delete');
+Route::get('/setting/vehicle/manage', [SettingVehicleController::class, 'manage'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.vehicle.manage');
+Route::get('/setting/vehicle/create', [SettingVehicleController::class, 'showCreate'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.vehicle.create');
+Route::post('/setting/vehicle/create', [SettingVehicleController::class, 'create'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.vehicle.create.submit');
+Route::get('/setting/vehicle/list', [SettingVehicleController::class, 'list'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.vehicle.list');
+Route::post('/setting/vehicle/sort', [SettingVehicleController::class, 'sort'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.vehicle.sort');
+Route::get('/setting/vehicle/update', [SettingVehicleController::class, 'showUpdate'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.vehicle.update');
+Route::post('/setting/vehicle/update', [SettingVehicleController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.vehicle.update.submit');
+Route::post('/setting/vehicle/delete', [SettingVehicleController::class, 'delete'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.vehicle.delete');
 
 // equipment
-Route::get('/setting/equipment/manage', [SettingEquipmentController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.equipment.manage');
-Route::get('/setting/equipment/create', [SettingEquipmentController::class, 'showCreate'])->middleware('nakatsuka.auth')->name('setting.equipment.create');
-Route::post('/setting/equipment/create', [SettingEquipmentController::class, 'create'])->middleware('nakatsuka.auth')->name('setting.equipment.create.submit');
-Route::get('/setting/equipment/list', [SettingEquipmentController::class, 'list'])->middleware('nakatsuka.auth')->name('setting.equipment.list');
-Route::post('/setting/equipment/sort', [SettingEquipmentController::class, 'sort'])->middleware('nakatsuka.auth')->name('setting.equipment.sort');
-Route::get('/setting/equipment/update', [SettingEquipmentController::class, 'showUpdate'])->middleware('nakatsuka.auth')->name('setting.equipment.update');
-Route::post('/setting/equipment/update', [SettingEquipmentController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.equipment.update.submit');
-Route::post('/setting/equipment/delete', [SettingEquipmentController::class, 'delete'])->middleware('nakatsuka.auth')->name('setting.equipment.delete');
+Route::get('/setting/equipment/manage', [SettingEquipmentController::class, 'manage'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.equipment.manage');
+Route::get('/setting/equipment/create', [SettingEquipmentController::class, 'showCreate'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.equipment.create');
+Route::post('/setting/equipment/create', [SettingEquipmentController::class, 'create'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.equipment.create.submit');
+Route::get('/setting/equipment/list', [SettingEquipmentController::class, 'list'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.equipment.list');
+Route::post('/setting/equipment/sort', [SettingEquipmentController::class, 'sort'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.equipment.sort');
+Route::get('/setting/equipment/update', [SettingEquipmentController::class, 'showUpdate'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.equipment.update');
+Route::post('/setting/equipment/update', [SettingEquipmentController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.equipment.update.submit');
+Route::post('/setting/equipment/delete', [SettingEquipmentController::class, 'delete'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.equipment.delete');
 
 // attendance settings
 Route::get('/setting/attendance/manage', [SettingAttendanceController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.attendance.manage');
@@ -114,17 +114,17 @@ Route::get('/setting/attendance/personal-summary', [SettingAttendanceController:
 Route::get('/setting/attendance/personal-summary/pdf', [SettingAttendanceController::class, 'personalSummaryPdf'])->middleware('nakatsuka.auth')->name('setting.attendance.personal.summary.pdf');
 
 // assignment settings
-Route::get('/setting/assignment/manage', [SettingAssignmentController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.assignment.manage');
-Route::get('/setting/assignment/edit', [SettingAssignmentController::class, 'edit'])->middleware('nakatsuka.auth')->name('setting.assignment.edit');
-Route::post('/setting/assignment/update', [SettingAssignmentController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.assignment.update');
-Route::post('/setting/assignment/copy', [SettingAssignmentController::class, 'copy'])->middleware('nakatsuka.auth')->name('setting.assignment.copy');
+Route::get('/setting/assignment/manage', [SettingAssignmentController::class, 'manage'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.assignment.manage');
+Route::get('/setting/assignment/edit', [SettingAssignmentController::class, 'edit'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.assignment.edit');
+Route::post('/setting/assignment/update', [SettingAssignmentController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.assignment.update');
+Route::post('/setting/assignment/copy', [SettingAssignmentController::class, 'copy'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.assignment.copy');
 
 // assignment daily/monthly PDF
-Route::get('/setting/assignment/monthly', [MonthlyAssignmentController::class, 'form'])->middleware('nakatsuka.auth')->name('setting.assignment.monthly.form');
-Route::post('/setting/assignment/monthly/download', [MonthlyAssignmentController::class, 'download'])->middleware('nakatsuka.auth')->name('setting.assignment.monthly.download');
+Route::get('/setting/assignment/monthly', [MonthlyAssignmentController::class, 'form'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.assignment.monthly.form');
+Route::post('/setting/assignment/monthly/download', [MonthlyAssignmentController::class, 'download'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.assignment.monthly.download');
 
 // utilization rate
-Route::get('/setting/utilizationrate', [SettingUtilizationRateController::class, 'getUtilizationRate'])->middleware('nakatsuka.auth')->name('setting.utilizationrate.index');
+Route::get('/setting/utilizationrate', [SettingUtilizationRateController::class, 'getUtilizationRate'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.utilizationrate.index');
 
 // user management
 Route::get('/setting/user/manage', [SettingUserController::class, 'manage'])->middleware('nakatsuka.auth')->name('setting.user.manage');
@@ -138,9 +138,9 @@ Route::post('/setting/user/password-reset', [SettingUserController::class, 'rese
 Route::post('/setting/user/delete', [SettingUserController::class, 'delete'])->middleware('nakatsuka.auth')->name('setting.user.delete');
 
 // news
-Route::get('/setting/news/update', [SettingNewsController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.news.update');
-Route::post('/setting/news/update', [SettingNewsController::class, 'update'])->middleware('nakatsuka.auth')->name('setting.news.update.submit');
-Route::get('/setting/news/history', [SettingNewsController::class, 'history'])->middleware('nakatsuka.auth')->name('setting.news.history');
+Route::get('/setting/news/update', [SettingNewsController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.news.update');
+Route::post('/setting/news/update', [SettingNewsController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.news.update.submit');
+Route::get('/setting/news/history', [SettingNewsController::class, 'history'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.news.history');
 
 // account (link user / password)
 Route::get('/setting/account/linkuser/update', [SettingAccountController::class, 'linkUserUpdate'])->middleware('nakatsuka.auth')->name('setting.account.linkuser.update');
