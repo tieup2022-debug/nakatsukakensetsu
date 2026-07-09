@@ -158,7 +158,7 @@ jobs:
              /opt/php-8.3/bin/php artisan migrate --no-interaction --force && \
              /opt/php-8.3/bin/php artisan view:clear && \
              /opt/php-8.3/bin/php artisan optimize:clear && \
-             /opt/php-8.3/bin/php artisan package:discover --force && \
+             /opt/php-8.3/bin/php artisan package:discover && \
              /opt/php-8.3/bin/php -r 'if (function_exists(\"opcache_reset\")) { opcache_reset(); }' && \
              test -f resources/views/top/attendance.blade.php && grep -q 'absence_active' resources/views/top/attendance.blade.php"
 
@@ -208,7 +208,7 @@ jobs:
              /opt/php-8.3/bin/php artisan migrate --no-interaction --force && \
              /opt/php-8.3/bin/php artisan view:clear && \
              /opt/php-8.3/bin/php artisan optimize:clear && \
-             /opt/php-8.3/bin/php artisan package:discover --force && \
+             /opt/php-8.3/bin/php artisan package:discover && \
              test -f resources/views/top/attendance.blade.php && grep -q 'absence_active' resources/views/top/attendance.blade.php && \
              /opt/php-8.3/bin/php -r 'if (function_exists(\"opcache_reset\")) { opcache_reset(); }' && \
              echo 'staging deploy ok'"
