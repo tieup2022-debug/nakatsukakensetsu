@@ -164,9 +164,11 @@ class AttendanceService
                 $row->start_time = null;
                 $row->end_time = null;
                 $row->break_time = null;
+                $row->midnight_minutes = null;
                 $row->display_start = '';
                 $row->display_end = '';
                 $row->display_break = '';
+                $row->display_midnight = '';
             }
 
             return $row;
@@ -343,10 +345,12 @@ class AttendanceService
                 $row->start_time = null;
                 $row->end_time = null;
                 $row->break_time = null;
+                $row->midnight_minutes = null;
             } else {
                 $row->start_time = $raw->start_time;
                 $row->end_time = $raw->end_time;
                 $row->break_time = $raw->break_time;
+                $row->midnight_minutes = $raw->midnight_minutes ?? null;
             }
 
             return $row;
@@ -416,6 +420,7 @@ class AttendanceService
                 $row->start_time = null;
                 $row->end_time = null;
                 $row->break_time = null;
+                $row->midnight_minutes = null;
             }
 
             return $row;
@@ -619,6 +624,43 @@ class AttendanceService
     }
 
     /**
+     * 深夜時間（分・NULL可）の表示用整形。未入力(NULL)・0 は空文字（休憩と違い既定値を持たない）。
+     */
+    public function formatMidnightForDisplay($midnightMinutes): string
+    {
+        if ($midnightMinutes === null || $midnightMinutes === '') {
+            return '';
+        }
+        $minutes = (int) $midnightMinutes;
+        if ($minutes <= 0) {
+            return '';
+        }
+
+        return sprintf('%02d:%02d', intdiv($minutes, 60), $minutes % 60);
+    }
+
+    /**
+     * 深夜時間の入力値（HH:MM または 分の整数）を保存用の分へ。空文字は NULL（未入力）扱い。
+     */
+    public function midnightInputToMinutes($input): ?int
+    {
+        $s = trim((string) ($input ?? ''));
+        if ($s === '') {
+            return null;
+        }
+
+        if (preg_match('/^(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/', $s, $m) === 1) {
+            return ((int) $m[1]) * 60 + ((int) $m[2]);
+        }
+
+        if (preg_match('/^\d+$/', $s) === 1) {
+            return (int) $s;
+        }
+
+        return null;
+    }
+
+    /**
      * 休憩時間の表示用整形（HH:MM）。
      *
      * break_time 列は「分」を整数で保存する（60=1時間, 15=15分）。
@@ -657,6 +699,7 @@ class AttendanceService
                 $row->display_start = '';
                 $row->display_end = '';
                 $row->display_break = '';
+                $row->display_midnight = '';
 
                 return $row;
             }
@@ -668,6 +711,8 @@ class AttendanceService
             $row->display_start = $s !== '' ? $s : $fallbackStart;
             $row->display_end = $e !== '' ? $e : $fallbackEnd;
             $row->display_break = $b !== '' ? $b : $fallbackBreak;
+            // 深夜は既定値を持たない（未入力は空欄のまま）
+            $row->display_midnight = $this->formatMidnightForDisplay($row->midnight_minutes ?? null);
 
             return $row;
         });
@@ -724,8 +769,10 @@ class AttendanceService
 
     /**
      * 勤怠 更新
+     *
+     * @param  string|null  $midnightTime  深夜時間。null=変更しない / 空文字=クリア(NULL) / 'HH:MM'または分=設定
      */
-    public function AttendanceUpdate($staffId, $workplaceId, $workDate, $startTime, $endTime, $breakTime, $absenceFlg = false)
+    public function AttendanceUpdate($staffId, $workplaceId, $workDate, $startTime, $endTime, $breakTime, $absenceFlg = false, $midnightTime = null)
     {
         try {
             // 個別編集では休憩未入力や type=time の未送信で null になり得るため、時刻は空文字に正規化して扱う
@@ -741,6 +788,14 @@ class AttendanceService
 
             $absenceForDb = (int) ((bool) $absenceFlg);
 
+            // 深夜時間はマイグレーション未適用の環境でも保存本体を止めない
+            $hasMidnightColumn = false;
+            try {
+                $hasMidnightColumn = Schema::hasColumn('t_attendance', 'midnight_minutes');
+            } catch (\Throwable) {
+                $hasMidnightColumn = false;
+            }
+
             // 欠勤時に start_time/end_time へ空文字を書くと MySQL の TIME 型で例外になり、
             // APP_ENV=local では DB を更新せず upsertLocalAttendance だけ成功して「欠勤保存したのに反映されない」になる。
             if ($absenceForDb === 1) {
@@ -752,6 +807,10 @@ class AttendanceService
                     'absence_flg' => 1,
                     'updated_at' => now(),
                 ];
+                if ($hasMidnightColumn) {
+                    // 欠勤日に深夜時間は残さない
+                    $payload['midnight_minutes'] = null;
+                }
             } else {
                 $startTime = (string) ($startTime ?? '');
                 $endTime = (string) ($endTime ?? '');
@@ -770,6 +829,9 @@ class AttendanceService
                     'absence_flg' => 0,
                     'updated_at' => now(),
                 ];
+                if ($hasMidnightColumn && $midnightTime !== null) {
+                    $payload['midnight_minutes'] = $this->midnightInputToMinutes($midnightTime);
+                }
             }
 
             DB::beginTransaction();
@@ -786,14 +848,18 @@ class AttendanceService
                 // 1行だけ更新すると、表示側が別行（欠勤=0）を拾って初期値に見えることがある。
                 if ($candidateRows->isNotEmpty()) {
                     $ids = $candidateRows->pluck('id')->map(fn ($id) => (int) $id)->all();
+                    $absentUpdate = [
+                        'workplace_id' => (int) $workplaceId,
+                        'break_time' => $this->prepareBreakTimeForStorage(''),
+                        'absence_flg' => 1,
+                        'updated_at' => now(),
+                    ];
+                    if ($hasMidnightColumn) {
+                        $absentUpdate['midnight_minutes'] = null;
+                    }
                     DB::table('t_attendance')
                         ->whereIn('id', $ids)
-                        ->update([
-                            'workplace_id' => (int) $workplaceId,
-                            'break_time' => $this->prepareBreakTimeForStorage(''),
-                            'absence_flg' => 1,
-                            'updated_at' => now(),
-                        ]);
+                        ->update($absentUpdate);
 
                     $chosenByStaff = $this->pickBestAttendanceRowPerStaff($candidateRows, (int) $workplaceId);
                     $row = $chosenByStaff[(int) $staffId] ?? $candidateRows->first();
@@ -922,7 +988,8 @@ class AttendanceService
                     (string) $startTime,
                     (string) $endTime,
                     (string) $breakTime,
-                    (int) $absenceFlg
+                    (int) $absenceFlg,
+                    $midnightTime
                 );
 
                 return true;
@@ -1475,6 +1542,7 @@ class AttendanceService
                 'start_time' => (string) ($att['start_time'] ?? ''),
                 'end_time' => (string) ($att['end_time'] ?? ''),
                 'break_time' => (string) ($att['break_time'] ?? ''),
+                'midnight_minutes' => $att['midnight_minutes'] ?? null,
             ];
         }
 
@@ -1507,6 +1575,7 @@ class AttendanceService
                     'end_time' => (string) ($row['end_time'] ?? ''),
                     'break_time' => (string) ($row['break_time'] ?? ''),
                     'absence_flg' => intval($row['absence_flg'] ?? 0),
+                    'midnight_minutes' => $row['midnight_minutes'] ?? null,
                 ];
             }
         }
@@ -1549,7 +1618,8 @@ class AttendanceService
         string $startTime,
         string $endTime,
         string $breakTime,
-        int $absenceFlg
+        int $absenceFlg,
+        $midnightTime = null
     ): void {
         $rows = $this->readLocalJson(self::LOCAL_ATTENDANCE_FILE);
 
@@ -1562,6 +1632,11 @@ class AttendanceService
                 $row['end_time'] = $endTime;
                 $row['break_time'] = $breakTime;
                 $row['absence_flg'] = $absenceFlg;
+                if ($absenceFlg === 1) {
+                    $row['midnight_minutes'] = null;
+                } elseif ($midnightTime !== null) {
+                    $row['midnight_minutes'] = $this->midnightInputToMinutes($midnightTime);
+                }
                 $row['updated_at'] = now()->toDateTimeString();
                 $found = true;
                 break;
@@ -1583,6 +1658,7 @@ class AttendanceService
                 'end_time' => $endTime,
                 'break_time' => $breakTime,
                 'absence_flg' => $absenceFlg,
+                'midnight_minutes' => $absenceFlg === 1 ? null : $this->midnightInputToMinutes($midnightTime),
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString(),
             ];
@@ -2177,12 +2253,10 @@ class AttendanceService
                                     $overtimeMinutes = max(0, $workedMinutes - 480);
                                     $personal['weekday_work_days']++;
                                 }
-
-                                $midnightMinutes = $this->calcMidnightMinutes(
-                                    $startDisplay,
-                                    $endDisplay
-                                );
                             }
+
+                            // 深夜は勤怠入力時の手入力値のみ（出退勤時刻からの自動計算はしない）
+                            $midnightMinutes = max(0, (int) ($row->midnight_minutes ?? 0));
                         }
                     }
 
@@ -2250,33 +2324,6 @@ class AttendanceService
         $breakMinutes = $this->timeToMinutes($breakTime, true) ?? 0;
 
         return max(0, ($end - $start) - $breakMinutes);
-    }
-
-    private function calcMidnightMinutes(string $startTime, string $endTime): int
-    {
-        $start = $this->timeToMinutes($startTime);
-        $end = $this->timeToMinutes($endTime);
-        if ($start === null || $end === null) {
-            return 0;
-        }
-
-        if ($end < $start) {
-            $end += 24 * 60;
-        }
-
-        $midnight1 = $this->overlapMinutes($start, $end, 0, 300);
-        $midnight2 = $this->overlapMinutes($start, $end, 1320, 1440);
-        $midnight3 = $this->overlapMinutes($start, $end, 1440, 1740);
-
-        return $midnight1 + $midnight2 + $midnight3;
-    }
-
-    private function overlapMinutes(int $start, int $end, int $rangeStart, int $rangeEnd): int
-    {
-        $s = max($start, $rangeStart);
-        $e = min($end, $rangeEnd);
-
-        return max(0, $e - $s);
     }
 
     private function timeToMinutes(string $time, bool $allowDuration = false): ?int

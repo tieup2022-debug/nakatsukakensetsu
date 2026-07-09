@@ -27,6 +27,7 @@
                             <th style="width: 120px;">出勤</th>
                             <th style="width: 120px;">退勤</th>
                             <th style="width: 120px;">休憩</th>
+                            <th style="width: 120px;">深夜</th>
                             <th style="width: 90px;">欠勤</th>
                             <th style="width: 180px;">操作</th>
                         </tr>
@@ -37,6 +38,7 @@
                                 $startVal = $row->display_start ?? '';
                                 $endVal = $row->display_end ?? '';
                                 $breakVal = $row->display_break ?? '';
+                                $midnightVal = $row->display_midnight ?? '';
                                 $isAbsent = isset($row->absence_flg) && intval($row->absence_flg) === 1;
                             @endphp
                             <tr>
@@ -46,6 +48,7 @@
                                 <td><input type="text" class="form-control form-control-sm" value="{{ $startVal }}" readonly></td>
                                 <td><input type="text" class="form-control form-control-sm" value="{{ $endVal }}" readonly></td>
                                 <td><input type="text" class="form-control form-control-sm" value="{{ $breakVal }}" readonly></td>
+                                <td><input type="text" class="form-control form-control-sm" value="{{ $midnightVal }}" readonly></td>
                                 <td class="text-center">{{ $isAbsent ? '〇' : '' }}</td>
                                 <td>
                                     <a
@@ -73,7 +76,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-muted">データなし</td>
+                                <td colspan="7" class="text-muted">データなし</td>
                             </tr>
                         @endforelse
                     </tbody>

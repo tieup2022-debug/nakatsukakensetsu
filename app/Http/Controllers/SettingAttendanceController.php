@@ -200,6 +200,7 @@ class SettingAttendanceController extends Controller
                 'start_time' => $attendance?->start_time ?? ($defaults->start_time ?? ''),
                 'end_time' => $attendance?->end_time ?? ($defaults->end_time ?? ''),
                 'break_time' => $attendance?->break_time ?? ($defaults->break_time ?? ''),
+                'midnight_time' => $this->attendanceService->formatMidnightForDisplay($attendance?->midnight_minutes ?? null),
                 'absence_flg' => $attendance?->absence_flg ?? false,
             ]);
         }
@@ -265,6 +266,8 @@ class SettingAttendanceController extends Controller
             }
 
             $absenceFlg = $this->isTruthyAbsenceInput($request->input('absence_flg'));
+            // 深夜はフォームに常に存在するため、空欄はクリアとして扱う
+            $midnightTime = (string) $request->input('midnight_time', '');
             $result = $this->attendanceService->AttendanceUpdate(
                 $staffId,
                 $workplaceId,
@@ -272,7 +275,8 @@ class SettingAttendanceController extends Controller
                 (string)$startTime,
                 (string)$endTime,
                 (string)($breakTimeFinal ?? '01:00'),
-                $absenceFlg
+                $absenceFlg,
+                $midnightTime
             );
             Log::info('SettingAttendance update row result', [
                 'staff_id' => (int) $staffId,
