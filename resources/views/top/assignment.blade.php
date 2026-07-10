@@ -11,12 +11,14 @@
                 {{ $display_date ?: '—' }}
             </div>
         </div>
-        <a
-            class="btn btn-outline-dark btn-sm align-self-center"
-            href="{{ route('setting.assignment.manage', ['workplace_id' => $workplace_id, 'work_date' => $work_date]) }}"
-        >
-            配置入力
-        </a>
+        @if (!empty($canAccessAssignmentSettings))
+            <a
+                class="btn btn-outline-dark btn-sm align-self-center"
+                href="{{ route('setting.assignment.manage', ['workplace_id' => $workplace_id, 'work_date' => $work_date]) }}"
+            >
+                配置入力
+            </a>
+        @endif
     </div>
 
     <div class="card shadow-sm border-0 mb-3">

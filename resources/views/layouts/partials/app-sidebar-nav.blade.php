@@ -36,9 +36,11 @@
         </a>
     </li>
     <li class="nav-item">
-        <a href="{{ route('setting.assignment.manage') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('setting.assignment.*') ? 'active' : 'text-white-50' }}">
-            <span class="me-2">📋</span> 配置入力
-        </a>
+        @if (!empty($canAccessAssignmentSettings))
+            <a href="{{ route('setting.assignment.manage') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('setting.assignment.*') ? 'active' : 'text-white-50' }}">
+                <span class="me-2">📋</span> 配置入力
+            </a>
+        @endif
     </li>
     <li class="nav-item mt-2">
         <a href="{{ route('paid-leave.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('paid-leave.*') ? 'active' : 'text-white-50' }}">

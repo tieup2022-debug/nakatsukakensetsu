@@ -8,9 +8,7 @@
         </div>
     </div>
 
-    @if (session('status'))
-        <div class="alert alert-info mb-3">{{ session('status') }}</div>
-    @endif
+    </div>
 
     <div class="row g-3">
         <div class="col-md-6 col-lg-4">
@@ -38,15 +36,17 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <h2 class="h6 fw-semibold mb-2">配置入力</h2>
-                    <p class="text-muted small mb-3">日々の配置（スタッフ/車両/重機）を管理します。</p>
-                    <a href="{{ route('setting.assignment.manage') }}" class="btn btn-primary w-100">開く</a>
+        @if (!empty($can_access_assignment_settings))
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h2 class="h6 fw-semibold mb-2">配置入力</h2>
+                        <p class="text-muted small mb-3">日々の配置（スタッフ/車両/重機）を管理します。</p>
+                        <a href="{{ route('setting.assignment.manage') }}" class="btn btn-primary w-100">開く</a>
+                    </div>
                 </div>
             </div>
-        </div>
+        @endif
 
         <div class="col-md-6 col-lg-4">
             <div class="card shadow-sm border-0 h-100">

@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Services\InAppNotificationService;
 use App\Services\LinkUserService;
 use App\Services\PaidLeaveService;
+use App\Services\UserService;
+use App\Support\UserPermission;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -38,10 +40,11 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('layouts.app', function ($view) {
             if (! session()->has('login_user_id')) {
-                $view->with([
-                    'inAppUnreadCount' => 0,
-                    'canApprovePaidLeave' => false,
-                ]);
+            $view->with([
+                'inAppUnreadCount' => 0,
+                'canApprovePaidLeave' => false,
+                'canAccessAssignmentSettings' => false,
+            ]);
 
                 return;
             }
@@ -50,10 +53,13 @@ class AppServiceProvider extends ServiceProvider
             $unread = app(InAppNotificationService::class)->unreadCount($uid);
             $staff = app(LinkUserService::class)->GetLinkedStaff($uid);
             $canApprove = $staff && app(PaidLeaveService::class)->isApproverStaffId((int) $staff->id);
+            $loginUser = app(UserService::class)->GetUser($uid);
+            $canAccessAssignmentSettings = $loginUser && UserPermission::isManager($loginUser->permission ?? null);
 
             $view->with([
                 'inAppUnreadCount' => $unread,
                 'canApprovePaidLeave' => (bool) $canApprove,
+                'canAccessAssignmentSettings' => (bool) $canAccessAssignmentSettings,
             ]);
         });
 
