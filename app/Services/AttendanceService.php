@@ -681,6 +681,50 @@ class AttendanceService
     }
 
     /**
+     * 月次表用: 深夜ブロックが日付を跨ぐ場合（深夜退勤＜深夜出勤）、翌日の列へ持ち越す情報を作る。
+     * 跨がない深夜・深夜なし・欠勤は null（当日表示のまま）。
+     *
+     * @param  \Illuminate\Support\Collection<string, string>|array<int|string, string>  $workplaceMap
+     * @return array<string, mixed>|null
+     */
+    private function buildMidnightCarry(?object $raw, $workplaceMap): ?array
+    {
+        if (! $raw || (int) ($raw->absence_flg ?? 0) !== 0) {
+            return null;
+        }
+
+        $ns = $this->formatTimeShort($raw->midnight_start_time ?? '');
+        $ne = $this->formatTimeShort($raw->midnight_end_time ?? '');
+        if ($ns === '' || $ne === '') {
+            return null;
+        }
+        $s = $this->timeToMinutes($ns);
+        $e = $this->timeToMinutes($ne);
+        if ($s === null || $e === null || $e >= $s) {
+            return null;
+        }
+
+        $dayStart = $this->formatTimeShort($raw->start_time ?? '');
+        $nightMinutes = $this->blockMinutes($ns, $ne);
+        $breakDisplay = $this->formatBreakForDisplay($raw->break_time ?? '');
+        $breakMinutes = $this->timeToMinutes($breakDisplay, true) ?? 0;
+        $nightOnly = $dayStart === '';
+
+        return [
+            'start' => $ns,
+            'end' => $ne,
+            'midnight_minutes' => $this->calcAutoMidnightMinutes($ns, $ne),
+            'overtime' => $this->formatMidnightForDisplay($raw->midnight_overtime_minutes ?? null),
+            // 夜勤のみの日は休憩を深夜ブロック側から引く（昼の勤務が無いため）
+            'worked_minutes' => $nightOnly ? max(0, $nightMinutes - $breakMinutes) : $nightMinutes,
+            'break' => $nightOnly ? $breakDisplay : '',
+            'workplace_id' => (int) ($raw->workplace_id ?? 0),
+            'workplace_name' => (string) ($workplaceMap[(int) ($raw->workplace_id ?? 0)] ?? ''),
+            'night_only' => $nightOnly,
+        ];
+    }
+
+    /**
      * 深夜出勤・退勤の入力値を TIME 保存用へ（空文字は NULL）。
      */
     private function clockValueOrNull($time): ?string
@@ -1916,6 +1960,16 @@ class AttendanceService
                 $attendanceDataList = [];
                 $staffHasMidnight = false;
 
+                // 前月末日の深夜ブロックが日跨ぎの場合、当月1日の列に表示する
+                $carryMidnight = null;
+                try {
+                    $prevLastDate = date('Y-m-d', strtotime(sprintf('%04d-%02d-01', (int) $year, (int) $month).' -1 day'));
+                    $prevRaw = $this->resolveAttendanceRawForMonthly((int) $staff->id, $prevLastDate, 0);
+                    $carryMidnight = $this->buildMidnightCarry($prevRaw, $workplaceMap);
+                } catch (\Throwable) {
+                    $carryMidnight = null;
+                }
+
                 for ($day = 1; $day <= $daysInMonth; $day++) {
                     $fullDate = "$year-$month-".sprintf('%02d', $day);
                     $attendanceDataList[$fullDate]['work_date'] = $fullDate;
@@ -1926,6 +1980,8 @@ class AttendanceService
                     $attendanceDataList[$fullDate]['midnight_end'] = '';
                     $attendanceDataList[$fullDate]['midnight_time'] = '';
                     $attendanceDataList[$fullDate]['midnight_overtime'] = '';
+                    // この日の深夜ブロックが日跨ぎの場合の翌日持ち越し（本処理内で設定される）
+                    $carryForNext = null;
 
                     // 月次表はビュー1行目だと別現場の通常勤務が先に返ることがあるため、欠勤は実テーブルで先に判定する。
                     if ($this->isStaffAbsentOnDate((int) $staff->id, $fullDate)) {
@@ -1936,6 +1992,16 @@ class AttendanceService
                         $attendanceDataList[$fullDate]['break_time'] = '';
                         $attendanceDataList[$fullDate]['worked_time'] = '';
                         $attendanceDataList[$fullDate]['absence'] = '休み';
+
+                        // 前日の深夜ブロック（日跨ぎ分）は欠勤日でも時刻だけ表示する
+                        if ($carryMidnight !== null) {
+                            $attendanceDataList[$fullDate]['midnight_start'] = $carryMidnight['start'];
+                            $attendanceDataList[$fullDate]['midnight_end'] = $carryMidnight['end'];
+                            $attendanceDataList[$fullDate]['midnight_time'] = $this->formatMidnightForDisplay($carryMidnight['midnight_minutes']);
+                            $attendanceDataList[$fullDate]['midnight_overtime'] = $carryMidnight['overtime'];
+                            $staffHasMidnight = true;
+                        }
+                        $carryMidnight = null;
 
                         continue;
                     }
@@ -2029,25 +2095,51 @@ class AttendanceService
                         $attendanceDataList[$fullDate]['break_time'] = $breakTime;
                         $dayStR = $attendanceRaw ? $this->formatTimeShort($attendanceRaw->start_time ?? '') : '';
                         $dayEnR = $attendanceRaw ? $this->formatTimeShort($attendanceRaw->end_time ?? '') : '';
-                        if ($nsR !== '' || $neR !== '') {
-                            // 夜勤あり（夜勤のみ・昼＋夜の二部制とも）: 実働は両ブロック合計から休憩を引く
-                            $twoBlockMinutes = $this->calcWorkedMinutesTwoBlocks($dayStR, $dayEnR, $nsR, $neR, $breakTime);
-                            $attendanceDataList[$fullDate]['worked_time'] = $twoBlockMinutes > 0
-                                ? sprintf('%02d:%02d', intdiv($twoBlockMinutes, 60), $twoBlockMinutes % 60)
-                                : '';
+
+                        // 深夜ブロックが日付を跨ぐ場合（深夜退勤＜深夜出勤）は翌日の列へ持ち越す
+                        $carryForNext = $this->buildMidnightCarry($attendanceRaw, $workplaceMap);
+                        if ($carryForNext !== null) {
+                            if ($carryForNext['night_only']) {
+                                // 夜勤のみの日: 当日は空欄にして翌日へまとめて表示する
+                                $attendanceDataList[$fullDate]['workplace_name'] = '';
+                                $attendanceDataList[$fullDate]['workplace_id'] = 0;
+                                $attendanceDataList[$fullDate]['start_time'] = '';
+                                $attendanceDataList[$fullDate]['end_time'] = '';
+                                $attendanceDataList[$fullDate]['break_time'] = '';
+                                $attendanceDataList[$fullDate]['worked_time'] = '';
+                            } else {
+                                // 昼＋夜の二部制: 当日は昼の分のみ
+                                $dayOnlyMinutes = $this->calcWorkedMinutesTwoBlocks($dayStR, $dayEnR, '', '', $breakTime);
+                                $attendanceDataList[$fullDate]['worked_time'] = $dayOnlyMinutes > 0
+                                    ? sprintf('%02d:%02d', intdiv($dayOnlyMinutes, 60), $dayOnlyMinutes % 60)
+                                    : '';
+                            }
+                            $attendanceDataList[$fullDate]['midnight_start'] = '';
+                            $attendanceDataList[$fullDate]['midnight_end'] = '';
+                            $attendanceDataList[$fullDate]['midnight_time'] = $this->formatMidnightForDisplay(
+                                $this->calcAutoMidnightMinutes($dayStR, $dayEnR)
+                            );
+                            $attendanceDataList[$fullDate]['midnight_overtime'] = '';
                         } else {
-                            $attendanceDataList[$fullDate]['worked_time'] = $this->workedTimeDisplay($startTime, $endTime, $breakTime);
+                            if ($nsR !== '' || $neR !== '') {
+                                // 跨がない夜勤: 実働は両ブロック合計から休憩を引き、当日に表示する
+                                $twoBlockMinutes = $this->calcWorkedMinutesTwoBlocks($dayStR, $dayEnR, $nsR, $neR, $breakTime);
+                                $attendanceDataList[$fullDate]['worked_time'] = $twoBlockMinutes > 0
+                                    ? sprintf('%02d:%02d', intdiv($twoBlockMinutes, 60), $twoBlockMinutes % 60)
+                                    : '';
+                            } else {
+                                $attendanceDataList[$fullDate]['worked_time'] = $this->workedTimeDisplay($startTime, $endTime, $breakTime);
+                            }
+                            // 深夜行（深夜出勤/深夜退勤/深夜時間/時間外(深夜)）: 深夜作業がある社員のみ月次表に表示する
+                            $attendanceDataList[$fullDate]['midnight_start'] = $nsR;
+                            $attendanceDataList[$fullDate]['midnight_end'] = $neR;
+                            $attendanceDataList[$fullDate]['midnight_time'] = $this->formatMidnightForDisplay(
+                                $this->calcAutoMidnightMinutes($dayStR, $dayEnR) + $this->calcAutoMidnightMinutes($nsR, $neR)
+                            );
+                            $attendanceDataList[$fullDate]['midnight_overtime'] = $this->formatMidnightForDisplay(
+                                $attendanceRaw->midnight_overtime_minutes ?? null
+                            );
                         }
-                        $attendanceDataList[$fullDate]['absence'] = '';
-                        // 深夜行（深夜出勤/深夜退勤/深夜時間/時間外(深夜)）: 深夜作業がある社員のみ月次表に表示する
-                        $attendanceDataList[$fullDate]['midnight_start'] = $nsR;
-                        $attendanceDataList[$fullDate]['midnight_end'] = $neR;
-                        $attendanceDataList[$fullDate]['midnight_time'] = $this->formatMidnightForDisplay(
-                            $this->calcAutoMidnightMinutes($dayStR, $dayEnR) + $this->calcAutoMidnightMinutes($nsR, $neR)
-                        );
-                        $attendanceDataList[$fullDate]['midnight_overtime'] = $this->formatMidnightForDisplay(
-                            $attendanceRaw->midnight_overtime_minutes ?? null
-                        );
                     } else {
                         $attendanceDataList[$fullDate]['workplace_name'] = '';
                         $attendanceDataList[$fullDate]['workplace_id'] = 0;
@@ -2078,6 +2170,40 @@ class AttendanceService
                     if ($absenceExists) {
                         $attendanceDataList[$fullDate]['workplace_name'] = '#absence';
                     }
+
+                    // 前日の深夜ブロック（日跨ぎ分）をこの日の列に表示する
+                    if ($carryMidnight !== null) {
+                        $isAbsCell = ($attendanceDataList[$fullDate]['workplace_name'] ?? '') === '#absence';
+
+                        $attendanceDataList[$fullDate]['midnight_start'] = $carryMidnight['start'];
+                        $attendanceDataList[$fullDate]['midnight_end'] = $carryMidnight['end'];
+                        $ownMidnight = $this->timeToMinutes((string) ($attendanceDataList[$fullDate]['midnight_time'] ?? ''), true) ?? 0;
+                        $attendanceDataList[$fullDate]['midnight_time'] = $this->formatMidnightForDisplay(
+                            $ownMidnight + $carryMidnight['midnight_minutes']
+                        );
+                        if ($carryMidnight['overtime'] !== '') {
+                            $attendanceDataList[$fullDate]['midnight_overtime'] = $carryMidnight['overtime'];
+                        }
+
+                        if (! $isAbsCell) {
+                            if (($attendanceDataList[$fullDate]['workplace_name'] ?? '') === '') {
+                                $attendanceDataList[$fullDate]['workplace_name'] = $carryMidnight['workplace_name'];
+                                $attendanceDataList[$fullDate]['workplace_id'] = $carryMidnight['workplace_id'];
+                            }
+                            if ($carryMidnight['break'] !== '' && ($attendanceDataList[$fullDate]['break_time'] ?? '') === '') {
+                                $attendanceDataList[$fullDate]['break_time'] = $carryMidnight['break'];
+                            }
+                            // 実働へ持ち越し分を加算（未保存の参考表示セルはそのまま）
+                            if (empty($attendanceDataList[$fullDate]['is_reference'])) {
+                                $currentWorked = $this->timeToMinutes((string) ($attendanceDataList[$fullDate]['worked_time'] ?? '')) ?? 0;
+                                $newWorked = $currentWorked + (int) $carryMidnight['worked_minutes'];
+                                $attendanceDataList[$fullDate]['worked_time'] = $newWorked > 0
+                                    ? sprintf('%02d:%02d', intdiv($newWorked, 60), $newWorked % 60)
+                                    : '';
+                            }
+                        }
+                    }
+                    $carryMidnight = $carryForNext;
 
                     if (($attendanceDataList[$fullDate]['midnight_start'] ?? '') !== ''
                         || ($attendanceDataList[$fullDate]['midnight_end'] ?? '') !== ''
