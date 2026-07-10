@@ -1914,12 +1914,18 @@ class AttendanceService
 
             foreach ($staffList as $staff) {
                 $attendanceDataList = [];
+                $staffHasMidnight = false;
 
                 for ($day = 1; $day <= $daysInMonth; $day++) {
                     $fullDate = "$year-$month-".sprintf('%02d', $day);
                     $attendanceDataList[$fullDate]['work_date'] = $fullDate;
                     $attendanceDataList[$fullDate]['week_day'] = $weekdays[date('N', strtotime($fullDate)) - 1];
                     $attendanceDataList[$fullDate]['staff_name'] = $staff->staff_name;
+                    // 深夜行の既定値（深夜作業がある日だけ後段で上書きされる）
+                    $attendanceDataList[$fullDate]['midnight_start'] = '';
+                    $attendanceDataList[$fullDate]['midnight_end'] = '';
+                    $attendanceDataList[$fullDate]['midnight_time'] = '';
+                    $attendanceDataList[$fullDate]['midnight_overtime'] = '';
 
                     // 月次表はビュー1行目だと別現場の通常勤務が先に返ることがあるため、欠勤は実テーブルで先に判定する。
                     if ($this->isStaffAbsentOnDate((int) $staff->id, $fullDate)) {
@@ -1987,15 +1993,9 @@ class AttendanceService
                             $attendanceDataList[$fullDate]['workplace_id'] = (int) ($attendanceData->workplace_id ?? 0);
                         }
 
-                        // 夜勤の時刻（深夜出勤・退勤）。夜勤のみの日は月次表の出退勤セルに表示する
+                        // 夜勤の時刻（深夜出勤・退勤）は月次表では専用行に表示する（出勤・退勤セルには流用しない）
                         $nsR = $attendanceRaw ? $this->formatTimeShort($attendanceRaw->midnight_start_time ?? '') : '';
                         $neR = $attendanceRaw ? $this->formatTimeShort($attendanceRaw->midnight_end_time ?? '') : '';
-                        if ($startTime === '' && $nsR !== '') {
-                            $startTime = $nsR;
-                        }
-                        if ($endTime === '' && $neR !== '') {
-                            $endTime = $neR;
-                        }
 
                         // 現場はあるが DB に保存済みの時刻が無い日だけ、月次表では参考として初期時間を表示
                         $wpNameForFallback = (string) ($attendanceDataList[$fullDate]['workplace_name'] ?? '');
@@ -2029,8 +2029,8 @@ class AttendanceService
                         $attendanceDataList[$fullDate]['break_time'] = $breakTime;
                         $dayStR = $attendanceRaw ? $this->formatTimeShort($attendanceRaw->start_time ?? '') : '';
                         $dayEnR = $attendanceRaw ? $this->formatTimeShort($attendanceRaw->end_time ?? '') : '';
-                        if ($dayStR !== '' && $nsR !== '') {
-                            // 昼＋夜の二部制勤務: 実働は両ブロック合計から休憩を引く
+                        if ($nsR !== '' || $neR !== '') {
+                            // 夜勤あり（夜勤のみ・昼＋夜の二部制とも）: 実働は両ブロック合計から休憩を引く
                             $twoBlockMinutes = $this->calcWorkedMinutesTwoBlocks($dayStR, $dayEnR, $nsR, $neR, $breakTime);
                             $attendanceDataList[$fullDate]['worked_time'] = $twoBlockMinutes > 0
                                 ? sprintf('%02d:%02d', intdiv($twoBlockMinutes, 60), $twoBlockMinutes % 60)
@@ -2039,6 +2039,15 @@ class AttendanceService
                             $attendanceDataList[$fullDate]['worked_time'] = $this->workedTimeDisplay($startTime, $endTime, $breakTime);
                         }
                         $attendanceDataList[$fullDate]['absence'] = '';
+                        // 深夜行（深夜出勤/深夜退勤/深夜時間/時間外(深夜)）: 深夜作業がある社員のみ月次表に表示する
+                        $attendanceDataList[$fullDate]['midnight_start'] = $nsR;
+                        $attendanceDataList[$fullDate]['midnight_end'] = $neR;
+                        $attendanceDataList[$fullDate]['midnight_time'] = $this->formatMidnightForDisplay(
+                            $this->calcAutoMidnightMinutes($dayStR, $dayEnR) + $this->calcAutoMidnightMinutes($nsR, $neR)
+                        );
+                        $attendanceDataList[$fullDate]['midnight_overtime'] = $this->formatMidnightForDisplay(
+                            $attendanceRaw->midnight_overtime_minutes ?? null
+                        );
                     } else {
                         $attendanceDataList[$fullDate]['workplace_name'] = '';
                         $attendanceDataList[$fullDate]['workplace_id'] = 0;
@@ -2061,13 +2070,25 @@ class AttendanceService
                         $attendanceDataList[$fullDate]['end_time'] = '';
                         $attendanceDataList[$fullDate]['break_time'] = '';
                         $attendanceDataList[$fullDate]['worked_time'] = '';
+                        $attendanceDataList[$fullDate]['midnight_start'] = '';
+                        $attendanceDataList[$fullDate]['midnight_end'] = '';
+                        $attendanceDataList[$fullDate]['midnight_time'] = '';
+                        $attendanceDataList[$fullDate]['midnight_overtime'] = '';
                     }
                     if ($absenceExists) {
                         $attendanceDataList[$fullDate]['workplace_name'] = '#absence';
                     }
+
+                    if (($attendanceDataList[$fullDate]['midnight_start'] ?? '') !== ''
+                        || ($attendanceDataList[$fullDate]['midnight_end'] ?? '') !== ''
+                        || ($attendanceDataList[$fullDate]['midnight_time'] ?? '') !== ''
+                        || ($attendanceDataList[$fullDate]['midnight_overtime'] ?? '') !== '') {
+                        $staffHasMidnight = true;
+                    }
                 }
 
                 $attendanceDataList['staff_name'] = $staff->staff_name;
+                $attendanceDataList['has_midnight'] = $staffHasMidnight;
                 $onePageData[] = $attendanceDataList;
 
                 if ($cnt >= 4) {
@@ -2186,11 +2207,16 @@ class AttendanceService
             $staffName = (string) ($staff['staff_name'] ?? '');
 
             $attendanceDataList = [];
+            $staffHasMidnight = false;
             for ($day = 1; $day <= $daysInMonth; $day++) {
                 $fullDate = sprintf('%04d-%02d-%02d', (int) $year, (int) $month, (int) $day);
                 $attendanceDataList[$fullDate]['work_date'] = $fullDate;
                 $attendanceDataList[$fullDate]['week_day'] = $weekdays[date('N', strtotime($fullDate)) - 1] ?? '';
                 $attendanceDataList[$fullDate]['staff_name'] = $staffName;
+                $attendanceDataList[$fullDate]['midnight_start'] = '';
+                $attendanceDataList[$fullDate]['midnight_end'] = '';
+                $attendanceDataList[$fullDate]['midnight_time'] = '';
+                $attendanceDataList[$fullDate]['midnight_overtime'] = '';
 
                 $workplaceId = $assignmentWorkplaceByStaffAndDate[$staffId][$fullDate] ?? 0;
                 $attRow = null;
@@ -2211,12 +2237,35 @@ class AttendanceService
                         $startDisp = $this->formatTimeShort($attRow['start_time'] ?? '');
                         $endDisp = $this->formatTimeShort($attRow['end_time'] ?? '');
                         $breakDisp = $this->formatBreakForDisplay($attRow['break_time'] ?? '');
+                        $nsL = $this->formatTimeShort($attRow['midnight_start_time'] ?? '');
+                        $neL = $this->formatTimeShort($attRow['midnight_end_time'] ?? '');
                         $attendanceDataList[$fullDate]['workplace_name'] = $workplaceNameById[$workplaceId] ?? '';
                         $attendanceDataList[$fullDate]['start_time'] = $startDisp;
                         $attendanceDataList[$fullDate]['end_time'] = $endDisp;
                         $attendanceDataList[$fullDate]['break_time'] = $breakDisp;
-                        $attendanceDataList[$fullDate]['worked_time'] = $this->workedTimeDisplay($startDisp, $endDisp, $breakDisp);
+                        if ($nsL !== '' || $neL !== '') {
+                            $twoBlockMinutes = $this->calcWorkedMinutesTwoBlocks($startDisp, $endDisp, $nsL, $neL, $breakDisp);
+                            $attendanceDataList[$fullDate]['worked_time'] = $twoBlockMinutes > 0
+                                ? sprintf('%02d:%02d', intdiv($twoBlockMinutes, 60), $twoBlockMinutes % 60)
+                                : '';
+                        } else {
+                            $attendanceDataList[$fullDate]['worked_time'] = $this->workedTimeDisplay($startDisp, $endDisp, $breakDisp);
+                        }
                         $attendanceDataList[$fullDate]['absence'] = '';
+                        $attendanceDataList[$fullDate]['midnight_start'] = $nsL;
+                        $attendanceDataList[$fullDate]['midnight_end'] = $neL;
+                        $attendanceDataList[$fullDate]['midnight_time'] = $this->formatMidnightForDisplay(
+                            $this->calcAutoMidnightMinutes($startDisp, $endDisp) + $this->calcAutoMidnightMinutes($nsL, $neL)
+                        );
+                        $attendanceDataList[$fullDate]['midnight_overtime'] = $this->formatMidnightForDisplay(
+                            $attRow['midnight_overtime_minutes'] ?? null
+                        );
+                        if ($attendanceDataList[$fullDate]['midnight_start'] !== ''
+                            || $attendanceDataList[$fullDate]['midnight_end'] !== ''
+                            || $attendanceDataList[$fullDate]['midnight_time'] !== ''
+                            || $attendanceDataList[$fullDate]['midnight_overtime'] !== '') {
+                            $staffHasMidnight = true;
+                        }
                     } else {
                         $attendanceDataList[$fullDate]['workplace_name'] = '';
                         $attendanceDataList[$fullDate]['start_time'] = '';
@@ -2229,6 +2278,7 @@ class AttendanceService
             }
 
             $attendanceDataList['staff_name'] = $staffName;
+            $attendanceDataList['has_midnight'] = $staffHasMidnight;
             $onePageData[] = $attendanceDataList;
 
             if ($cnt >= 4) {

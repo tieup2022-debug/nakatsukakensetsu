@@ -18,6 +18,8 @@
         .staff-col .staff-name { display: block; line-height: 1.2; }
         /* 現場〜実働のラベル列も氏名列の右隣に固定する（氏名列幅 120px 分ずらす） */
         .monthly-table .label-col { position: sticky; left: 120px; z-index: 3; background: #f7f9fc; font-weight: 700; box-shadow: 2px 0 3px rgba(15, 23, 42, 0.12); }
+        /* 深夜系の長いラベル（時間外(深夜)等）は列幅を変えずに折り返して収める */
+        .monthly-table td.label-col { white-space: normal; line-height: 1.2; font-size: 11px; }
         .monthly-table th.label-col { z-index: 4; background: #eef3f8; }
         .monthly-table td.day-col { padding: 0; }
         /* 現場名（長くなりがちな行）は列幅を変えずに全文を見せるため、セル内で折り返して収める */
@@ -91,11 +93,16 @@
                             $staffPrefix = $m[1];
                             $staffMain = $m[2];
                         }
+                        // 深夜作業がある社員だけ深夜4行（深夜出勤/深夜退勤/深夜時間/時間外(深夜)）を追加する
+                        $rowLabels = ['現場', '出勤', '退勤', '休憩', '実働'];
+                        if (!empty($staffRow['has_midnight'])) {
+                            $rowLabels = array_merge($rowLabels, ['深夜出勤', '深夜退勤', '深夜時間', '時間外(深夜)']);
+                        }
                     @endphp
-                    @foreach(['現場', '出勤', '退勤', '休憩', '実働'] as $rowIdx => $label)
+                    @foreach($rowLabels as $rowIdx => $label)
                         <tr>
                             @if($rowIdx === 0)
-                                <td class="staff-col" rowspan="5">
+                                <td class="staff-col" rowspan="{{ count($rowLabels) }}">
                                     @if($staffPrefix !== '')
                                         <span class="staff-prefix">{{ $staffPrefix }}</span>
                                     @endif
@@ -120,6 +127,14 @@
                                             $value = $cell['break_time'] ?? '';
                                         } elseif ($label === '実働') {
                                             $value = $cell['worked_time'] ?? '';
+                                        } elseif ($label === '深夜出勤') {
+                                            $value = $cell['midnight_start'] ?? '';
+                                        } elseif ($label === '深夜退勤') {
+                                            $value = $cell['midnight_end'] ?? '';
+                                        } elseif ($label === '深夜時間') {
+                                            $value = $cell['midnight_time'] ?? '';
+                                        } elseif ($label === '時間外(深夜)') {
+                                            $value = $cell['midnight_overtime'] ?? '';
                                         }
                                     }
 
