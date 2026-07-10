@@ -2574,11 +2574,29 @@ class AttendanceService
                     'daily' => [],
                 ];
 
+                // 前月末日の跨ぎ夜勤（深夜退勤＜深夜出勤）は当月1日に計上する（月次表と同じ帰属）
+                $carryMidnight = null;
+                try {
+                    $prevLastDate = date('Y-m-d', strtotime(sprintf('%04d-%02d-01', $year, $month).' -1 day'));
+                    $prevQuery = DB::table('t_attendance')
+                        ->where('staff_id', '=', $staff->id)
+                        ->whereNull('deleted_at');
+                    $this->applyWorkDateScope($prevQuery, $prevLastDate);
+                    $prevRow = $this->pickBestDailyRowForSummary($prevQuery->orderByDesc('id')->get());
+                    $carryMidnight = $this->buildMidnightCarry($prevRow, []);
+                } catch (\Throwable) {
+                    $carryMidnight = null;
+                }
+
                 foreach ($dateList as $date) {
                     $dow = (int) date('N', strtotime($date));
                     $isSaturday = ($dow === 6);
                     $isSunday = ($dow === 7);
                     $row = $dailyRows->get($date);
+
+                    // 前日（または前月末日）の跨ぎ夜勤をこの日に計上する
+                    $carryIn = $carryMidnight;
+                    $carryMidnight = null;
 
                     $normalMinutes = 0;
                     $overtimeMinutes = 0;
@@ -2599,41 +2617,71 @@ class AttendanceService
                             $nightStart = $this->formatTimeShort((string) ($row->midnight_start_time ?? ''));
                             $nightEnd = $this->formatTimeShort((string) ($row->midnight_end_time ?? ''));
 
-                            // 夜勤のみの日は出退勤欄に深夜出勤・退勤を表示する
+                            // 深夜ブロックが日付を跨ぐ場合は翌日へ計上する（月次表と同じ帰属）
+                            $carryMidnight = $this->buildMidnightCarry($row, []);
+                            if ($carryMidnight !== null) {
+                                $nightStart = '';
+                                $nightEnd = '';
+                            }
+
+                            // 夜勤のみ（跨がない）の日は出退勤欄に深夜出勤・退勤を表示する
                             $startDisplay = $dayStart !== '' ? $dayStart : $nightStart;
                             $endDisplay = $dayEnd !== '' ? $dayEnd : $nightEnd;
                             $breakDisplay = $this->formatBreakForDisplay($row->break_time ?? '');
-                            $breakMinutes = $this->timeToMinutes($breakDisplay, true) ?? 0;
-                            // 実働は昼＋夜の2ブロック合計から休憩を引く
-                            $workedMinutes = $this->calcWorkedMinutesTwoBlocks(
-                                $dayStart,
-                                $dayEnd,
-                                $nightStart,
-                                $nightEnd,
-                                $breakDisplay
-                            );
-
-                            if ($workedMinutes > 0) {
-                                if ($isSunday) {
-                                    // 日曜は出勤時のみ「休日出勤日」カウントし、全時間を休日時間に集計
-                                    $holidayMinutes = $workedMinutes;
-                                    $personal['holiday_work_days']++;
-                                } elseif ($isSaturday) {
-                                    // 土曜は全時間を時間外として集計
-                                    $overtimeMinutes = $workedMinutes;
-                                } else {
-                                    // 平日は8時間まで通常、8時間超を時間外として集計
-                                    $normalMinutes = min(480, $workedMinutes);
-                                    $overtimeMinutes = max(0, $workedMinutes - 480);
-                                    $personal['weekday_work_days']++;
-                                }
+                            if ($carryMidnight !== null && ($carryMidnight['night_only'] ?? false)) {
+                                // 夜勤のみで跨ぐ日: 休憩・実働とも翌日側で計上する
+                                $breakMinutes = 0;
+                                $workedMinutes = 0;
+                            } else {
+                                $breakMinutes = $this->timeToMinutes($breakDisplay, true) ?? 0;
+                                // 実働は昼＋夜（当日分）の2ブロック合計から休憩を引く
+                                $workedMinutes = $this->calcWorkedMinutesTwoBlocks(
+                                    $dayStart,
+                                    $dayEnd,
+                                    $nightStart,
+                                    $nightEnd,
+                                    $breakDisplay
+                                );
                             }
 
                             // 深夜: 昼・夜それぞれの 22:00〜翌5:00 重なりの合計を常に自動計算（手入力なし）
                             $midnightMinutes = $this->calcAutoMidnightMinutes($dayStart, $dayEnd)
                                 + $this->calcAutoMidnightMinutes($nightStart, $nightEnd);
-                            // 時間外（深夜）は手入力値のみ
-                            $midnightOvertimeMinutes = max(0, (int) ($row->midnight_overtime_minutes ?? 0));
+                            // 時間外（深夜）は手入力値のみ（跨ぐ場合は夜勤ブロックと一緒に翌日へ）
+                            $midnightOvertimeMinutes = $carryMidnight !== null
+                                ? 0
+                                : max(0, (int) ($row->midnight_overtime_minutes ?? 0));
+                        }
+                    }
+
+                    if ($carryIn !== null) {
+                        $workedMinutes += (int) $carryIn['worked_minutes'];
+                        $midnightMinutes += (int) $carryIn['midnight_minutes'];
+                        $midnightOvertimeMinutes += $this->midnightInputToMinutes($carryIn['overtime']) ?? 0;
+                        $breakMinutes += $this->timeToMinutes((string) $carryIn['break'], true) ?? 0;
+                        if ($startDisplay === '') {
+                            $startDisplay = $carryIn['start'];
+                            $endDisplay = $carryIn['end'];
+                        }
+                    }
+
+                    if ($workedMinutes > 0) {
+                        if ($isSunday) {
+                            // 日曜は出勤時のみ「休日出勤日」カウントし、全時間を休日時間に集計
+                            $holidayMinutes = $workedMinutes;
+                            if (! $absence) {
+                                $personal['holiday_work_days']++;
+                            }
+                        } elseif ($isSaturday) {
+                            // 土曜は全時間を時間外として集計
+                            $overtimeMinutes = $workedMinutes;
+                        } else {
+                            // 平日は8時間まで通常、8時間超を時間外として集計
+                            $normalMinutes = min(480, $workedMinutes);
+                            $overtimeMinutes = max(0, $workedMinutes - 480);
+                            if (! $absence) {
+                                $personal['weekday_work_days']++;
+                            }
                         }
                     }
 
