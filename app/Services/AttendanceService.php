@@ -2574,6 +2574,8 @@ class AttendanceService
                     'daily' => [],
                 ];
 
+                $personHasMidnight = false;
+
                 // 前月末日の跨ぎ夜勤（深夜退勤＜深夜出勤）は当月1日に計上する（月次表と同じ帰属）
                 $carryMidnight = null;
                 try {
@@ -2606,6 +2608,8 @@ class AttendanceService
                     $absence = false;
                     $startDisplay = '';
                     $endDisplay = '';
+                    $midnightStartDisplay = '';
+                    $midnightEndDisplay = '';
                     $breakMinutes = 0;
                     $workedMinutes = 0;
 
@@ -2624,9 +2628,11 @@ class AttendanceService
                                 $nightEnd = '';
                             }
 
-                            // 夜勤のみ（跨がない）の日は出退勤欄に深夜出勤・退勤を表示する
-                            $startDisplay = $dayStart !== '' ? $dayStart : $nightStart;
-                            $endDisplay = $dayEnd !== '' ? $dayEnd : $nightEnd;
+                            // 出勤・退勤は昼の分のみ。深夜出勤・退勤は専用行（midnight_start/end）に表示する
+                            $startDisplay = $dayStart;
+                            $endDisplay = $dayEnd;
+                            $midnightStartDisplay = $nightStart;
+                            $midnightEndDisplay = $nightEnd;
                             $breakDisplay = $this->formatBreakForDisplay($row->break_time ?? '');
                             if ($carryMidnight !== null && ($carryMidnight['night_only'] ?? false)) {
                                 // 夜勤のみで跨ぐ日: 休憩・実働とも翌日側で計上する
@@ -2659,10 +2665,9 @@ class AttendanceService
                         $midnightMinutes += (int) $carryIn['midnight_minutes'];
                         $midnightOvertimeMinutes += $this->midnightInputToMinutes($carryIn['overtime']) ?? 0;
                         $breakMinutes += $this->timeToMinutes((string) $carryIn['break'], true) ?? 0;
-                        if ($startDisplay === '') {
-                            $startDisplay = $carryIn['start'];
-                            $endDisplay = $carryIn['end'];
-                        }
+                        // 持ち越した夜勤の時刻は深夜出勤・退勤の行に表示する
+                        $midnightStartDisplay = $carryIn['start'];
+                        $midnightEndDisplay = $carryIn['end'];
                     }
 
                     if ($workedMinutes > 0) {
@@ -2691,9 +2696,16 @@ class AttendanceService
                     $personal['midnight_minutes'] += $midnightMinutes;
                     $personal['midnight_overtime_minutes'] += $midnightOvertimeMinutes;
 
+                    if ($midnightStartDisplay !== '' || $midnightEndDisplay !== ''
+                        || $midnightMinutes > 0 || $midnightOvertimeMinutes > 0) {
+                        $personHasMidnight = true;
+                    }
+
                     $personal['daily'][$date] = [
                         'start' => $startDisplay,
                         'end' => $endDisplay,
+                        'midnight_start' => $midnightStartDisplay,
+                        'midnight_end' => $midnightEndDisplay,
                         'break' => $this->minutesToHourDecimal($breakMinutes),
                         'worked' => $this->minutesToHourDecimal($workedMinutes),
                         'normal' => $this->minutesToHourDecimal($normalMinutes),
@@ -2704,6 +2716,9 @@ class AttendanceService
                         'absence' => $absence,
                     ];
                 }
+
+                // 深夜関連の行・列は深夜作業がある社員だけ表示する
+                $personal['has_midnight'] = $personHasMidnight;
 
                 $summaryList[] = $personal;
             }

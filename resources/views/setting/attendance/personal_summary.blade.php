@@ -97,6 +97,10 @@
         @foreach($summary_list as $person)
             <div class="personal-wrap mb-3">
                 <table class="personal-table">
+                    @php
+                        // 深夜関連の行・列は深夜作業がある社員だけ表示する
+                        $personHasMidnight = !empty($person['has_midnight']);
+                    @endphp
                     <thead>
                         <tr>
                             <th class="head-title staff-col">社員名</th>
@@ -106,8 +110,10 @@
                             <th class="head-title sum-col">普通時間</th>
                             <th class="head-title sum-col">時間外</th>
                             <th class="head-title sum-col">休日時間</th>
-                            <th class="head-title sum-col">(深夜)</th>
-                            <th class="head-title sum-col">時間外(深夜)</th>
+                            @if($personHasMidnight)
+                                <th class="head-title sum-col">(深夜)</th>
+                                <th class="head-title sum-col">時間外(深夜)</th>
+                            @endif
                             @foreach($date_list as $date)
                                 @php
                                     $dowClass = '';
@@ -127,9 +133,13 @@
                                 'break' => '休憩時間',
                                 'worked' => '実働時間',
                                 'holiday' => '休日',
-                                'midnight' => '(深夜)',
-                                'midnight_overtime' => '時間外(深夜)',
                             ];
+                            if ($personHasMidnight) {
+                                $rows['midnight_start'] = '深夜出勤時間';
+                                $rows['midnight_end'] = '深夜退勤時間';
+                                $rows['midnight'] = '(深夜)';
+                                $rows['midnight_overtime'] = '時間外(深夜)';
+                            }
                         @endphp
                         @foreach($rows as $key => $label)
                             <tr>
@@ -143,14 +153,18 @@
                                     <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['normal_minutes'] ?? 0) / 60, 2) }}時間</td>
                                     <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['overtime_minutes'] ?? 0) / 60, 2) }}時間</td>
                                     <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['holiday_minutes'] ?? 0) / 60, 2) }}時間</td>
-                                    <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['midnight_minutes'] ?? 0) / 60, 2) }}時間</td>
-                                    <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['midnight_overtime_minutes'] ?? 0) / 60, 2) }}時間</td>
+                                    @if($personHasMidnight)
+                                        <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['midnight_minutes'] ?? 0) / 60, 2) }}時間</td>
+                                        <td class="sum-col" rowspan="{{ count($rows) }}">{{ number_format(($person['midnight_overtime_minutes'] ?? 0) / 60, 2) }}時間</td>
+                                    @endif
                                 @endif
                                 @foreach($date_list as $date)
                                     @php
                                         $cell = $person['daily'][$date] ?? null;
                                         $isAbsence = !empty($cell['absence']);
-                                        $hasAttendance = !empty($cell['start']) || !empty($cell['end']);
+                                        // 前日から持ち越した夜勤だけの日（出退勤は空・深夜出勤あり）も出勤日として扱う
+                                        $hasAttendance = !empty($cell['start']) || !empty($cell['end'])
+                                            || !empty($cell['midnight_start']) || !empty($cell['midnight_end']);
                                         $isPastNoAttendance = !$isAbsence && !$hasAttendance && $date < $todayDate;
                                         $isFutureOrTodayNoAttendance = !$isAbsence && !$hasAttendance && $date >= $todayDate;
                                         $dowClass = '';
@@ -166,7 +180,7 @@
                                         <td class="day-col {{ $dowClass }}"></td>
                                     @else
                                         <td class="day-col {{ $dowClass }}">
-                                            @if(in_array($key, ['start', 'end'], true))
+                                            @if(in_array($key, ['start', 'end', 'midnight_start', 'midnight_end'], true))
                                                 {{ $cell[$key] ?? '' }}
                                             @else
                                                 {{ $cell[$key] ?? '0.00' }}

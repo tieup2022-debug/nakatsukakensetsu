@@ -116,16 +116,23 @@
                     &nbsp;&nbsp;{{ $person['staff_name'] ?? '' }}
                 </div>
 
-                {{-- 月間サマリー（休日時間はここで確認。日次グリッドは縦スペースのため3行のみ） --}}
+                {{-- 月間サマリー（休日時間はここで確認。日次グリッドは縦スペースのため最小行数） --}}
+                @php
+                    // 深夜関連の行・列は深夜作業がある社員だけ表示する
+                    $personHasMidnight = !empty($person['has_midnight']);
+                    $sumColWidth = $personHasMidnight ? '14.28%' : '20%';
+                @endphp
                 <table class="grid grid-sum mb-sum">
                     <tr>
-                        <th class="sum-label">平日出勤</th>
-                        <th class="sum-label">休日出勤</th>
-                        <th class="sum-label">普通時間</th>
-                        <th class="sum-label">時間外</th>
-                        <th class="sum-label">休日時間</th>
-                        <th class="sum-label">(深夜)</th>
-                        <th class="sum-label">時間外(深夜)</th>
+                        <th class="sum-label" style="width: {{ $sumColWidth }}">平日出勤</th>
+                        <th class="sum-label" style="width: {{ $sumColWidth }}">休日出勤</th>
+                        <th class="sum-label" style="width: {{ $sumColWidth }}">普通時間</th>
+                        <th class="sum-label" style="width: {{ $sumColWidth }}">時間外</th>
+                        <th class="sum-label" style="width: {{ $sumColWidth }}">休日時間</th>
+                        @if($personHasMidnight)
+                            <th class="sum-label" style="width: {{ $sumColWidth }}">(深夜)</th>
+                            <th class="sum-label" style="width: {{ $sumColWidth }}">時間外(深夜)</th>
+                        @endif
                     </tr>
                     <tr>
                         <td class="sum-val">{{ (int) ($person['weekday_work_days'] ?? 0) }}日</td>
@@ -133,8 +140,10 @@
                         <td class="sum-val">{{ number_format((($person['normal_minutes'] ?? 0) / 60), 2, '.', '') }}時間</td>
                         <td class="sum-val">{{ number_format((($person['overtime_minutes'] ?? 0) / 60), 2, '.', '') }}時間</td>
                         <td class="sum-val">{{ number_format((($person['holiday_minutes'] ?? 0) / 60), 2, '.', '') }}時間</td>
-                        <td class="sum-val">{{ number_format((($person['midnight_minutes'] ?? 0) / 60), 2, '.', '') }}時間</td>
-                        <td class="sum-val">{{ number_format((($person['midnight_overtime_minutes'] ?? 0) / 60), 2, '.', '') }}時間</td>
+                        @if($personHasMidnight)
+                            <td class="sum-val">{{ number_format((($person['midnight_minutes'] ?? 0) / 60), 2, '.', '') }}時間</td>
+                            <td class="sum-val">{{ number_format((($person['midnight_overtime_minutes'] ?? 0) / 60), 2, '.', '') }}時間</td>
+                        @endif
                     </tr>
                 </table>
 
@@ -167,20 +176,22 @@
                                 <td class="day-cell">{{ $c['overtime'] ?? '0.00' }}</td>
                             @endforeach
                         </tr>
-                        <tr>
-                            <td class="row-lbl">(深夜)</td>
-                            @foreach($halfDates as $d)
-                                @php $c = $person['daily'][$d] ?? []; @endphp
-                                <td class="day-cell">{{ $c['midnight'] ?? '0.00' }}</td>
-                            @endforeach
-                        </tr>
-                        <tr>
-                            <td class="row-lbl">時間外(深夜)</td>
-                            @foreach($halfDates as $d)
-                                @php $c = $person['daily'][$d] ?? []; @endphp
-                                <td class="day-cell">{{ $c['midnight_overtime'] ?? '0.00' }}</td>
-                            @endforeach
-                        </tr>
+                        @if($personHasMidnight)
+                            <tr>
+                                <td class="row-lbl">(深夜)</td>
+                                @foreach($halfDates as $d)
+                                    @php $c = $person['daily'][$d] ?? []; @endphp
+                                    <td class="day-cell">{{ $c['midnight'] ?? '0.00' }}</td>
+                                @endforeach
+                            </tr>
+                            <tr>
+                                <td class="row-lbl">時間外(深夜)</td>
+                                @foreach($halfDates as $d)
+                                    @php $c = $person['daily'][$d] ?? []; @endphp
+                                    <td class="day-cell">{{ $c['midnight_overtime'] ?? '0.00' }}</td>
+                                @endforeach
+                            </tr>
+                        @endif
                     </table>
                     @endif
                 @endforeach
