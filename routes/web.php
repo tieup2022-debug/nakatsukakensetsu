@@ -113,15 +113,15 @@ Route::post('/setting/attendance/monthly/download', [MonthlyAttendanceController
 Route::get('/setting/attendance/personal-summary', [SettingAttendanceController::class, 'personalSummary'])->middleware('nakatsuka.auth')->name('setting.attendance.personal.summary');
 Route::get('/setting/attendance/personal-summary/pdf', [SettingAttendanceController::class, 'personalSummaryPdf'])->middleware('nakatsuka.auth')->name('setting.attendance.personal.summary.pdf');
 
-// assignment settings
-Route::get('/setting/assignment/manage', [SettingAssignmentController::class, 'manage'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.assignment.manage');
-Route::get('/setting/assignment/edit', [SettingAssignmentController::class, 'edit'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.assignment.edit');
-Route::post('/setting/assignment/update', [SettingAssignmentController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.assignment.update');
-Route::post('/setting/assignment/copy', [SettingAssignmentController::class, 'copy'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.assignment.copy');
+// assignment settings（権限1・2: マスター・担当者）
+Route::get('/setting/assignment/manage', [SettingAssignmentController::class, 'manage'])->middleware(['nakatsuka.auth', 'nakatsuka.manager'])->name('setting.assignment.manage');
+Route::get('/setting/assignment/edit', [SettingAssignmentController::class, 'edit'])->middleware(['nakatsuka.auth', 'nakatsuka.manager'])->name('setting.assignment.edit');
+Route::post('/setting/assignment/update', [SettingAssignmentController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.manager'])->name('setting.assignment.update');
+Route::post('/setting/assignment/copy', [SettingAssignmentController::class, 'copy'])->middleware(['nakatsuka.auth', 'nakatsuka.manager'])->name('setting.assignment.copy');
 
 // assignment daily/monthly PDF
-Route::get('/setting/assignment/monthly', [MonthlyAssignmentController::class, 'form'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.assignment.monthly.form');
-Route::post('/setting/assignment/monthly/download', [MonthlyAssignmentController::class, 'download'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.assignment.monthly.download');
+Route::get('/setting/assignment/monthly', [MonthlyAssignmentController::class, 'form'])->middleware(['nakatsuka.auth', 'nakatsuka.manager'])->name('setting.assignment.monthly.form');
+Route::post('/setting/assignment/monthly/download', [MonthlyAssignmentController::class, 'download'])->middleware(['nakatsuka.auth', 'nakatsuka.manager'])->name('setting.assignment.monthly.download');
 
 // utilization rate
 Route::get('/setting/utilizationrate', [SettingUtilizationRateController::class, 'getUtilizationRate'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.utilizationrate.index');
