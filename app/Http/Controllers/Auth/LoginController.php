@@ -46,15 +46,17 @@ class LoginController extends Controller
             $request->session()->regenerate();
             $request->session()->put('login_user_id', $user->id);
 
-            $request->session()->put(
-                config('tokens.app_token'),
-                $appFlag ? $this->authenticationService->GenerateToken($user->id, true) : null
-            );
-            $request->session()->put(
-                config('tokens.web_token'),
-                !$appFlag ? $this->authenticationService->GenerateToken($user->id, false) : null
-            );
-            $request->session()->forget($appFlag ? config('tokens.web_token') : config('tokens.app_token'));
+            if ($appFlag) {
+                $request->session()->put(
+                    config('tokens.app_token'),
+                    $this->authenticationService->GenerateToken($user->id, true)
+                );
+                $request->session()->forget(config('tokens.web_token'));
+            } else {
+                // Web の長期ログイントークンは redirectAfterWebLogin で端末ごとに発行する。
+                $request->session()->forget(config('tokens.app_token'));
+                $request->session()->forget(config('tokens.web_token'));
+            }
 
             return $this->redirectAfterWebLogin($request, $user->id, $appFlag);
         }
@@ -80,7 +82,8 @@ class LoginController extends Controller
     {
         $uid = (int) $request->session()->get('login_user_id');
         if ($uid > 0) {
-            app(WebRememberService::class)->invalidateWebToken($uid);
+            // 他の端末はログイン状態を維持し、この端末の Remember Token だけを無効化する。
+            app(WebRememberService::class)->revokeCurrentDevice($request, $uid);
         }
 
         $request->session()->invalidate();
@@ -97,27 +100,36 @@ class LoginController extends Controller
     private function redirectAfterWebLogin(Request $request, int $userId, bool $appFlag)
     {
         $response = redirect()->route('top.assignment');
+        $remember = app(WebRememberService::class);
 
         if ($appFlag) {
+            $remember->revokeCurrentDevice($request);
             Cookie::queue(cookie()->forget(config('remember_web.cookie'), '/', config('session.domain')));
 
             return $response;
         }
 
         if (! $request->boolean('remember')) {
+            $remember->revokeCurrentDevice($request);
             Cookie::queue(cookie()->forget(config('remember_web.cookie'), '/', config('session.domain')));
 
             return $response;
         }
 
-        $webToken = $request->session()->get(config('tokens.web_token'));
-        if (! is_string($webToken) || $webToken === '') {
+        // 同じ端末で再ログインした場合は古い行を消し、新しい端末用トークンに入れ替える。
+        $remember->revokeCurrentDevice($request);
+        $deviceToken = $remember->issueDeviceToken($userId, $request->userAgent());
+        if ($deviceToken === null) {
             return $response;
         }
 
-        $remember = app(WebRememberService::class);
+        $request->session()->put(
+            config('tokens.web_token'),
+            $deviceToken['sel'] !== '' ? $deviceToken['sel'] : $deviceToken['tok']
+        );
+
         $minutes = (int) config('remember_web.lifetime_minutes', 43200);
-        $payload = Crypt::encryptString(json_encode(['uid' => $userId, 'tok' => $webToken]));
+        $payload = Crypt::encryptString(json_encode($deviceToken, JSON_THROW_ON_ERROR));
 
         return $response->withCookie(cookie(
             config('remember_web.cookie'),
@@ -132,4 +144,3 @@ class LoginController extends Controller
         ));
     }
 }
-

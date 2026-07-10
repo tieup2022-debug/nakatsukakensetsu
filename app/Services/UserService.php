@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class UserService
 {
@@ -187,6 +188,10 @@ class UserService
 
             DB::beginTransaction();
 
+            if (Schema::hasTable('t_web_remember_tokens')) {
+                DB::table('t_web_remember_tokens')->where('user_id', $userId)->delete();
+            }
+
             DB::table('m_user')
                 ->where('id', '=', $userId)
                 ->whereNull('deleted_at')
@@ -230,4 +235,3 @@ class UserService
         return @file_put_contents($path, json_encode(array_values($rows), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)) !== false;
     }
 }
-

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class PasswordService
 {
@@ -29,8 +30,14 @@ class PasswordService
                 ->where('id', '=', $userId)
                 ->update([
                     'password' => Hash::make($password1),
+                    'access_token_web' => null,
+                    'access_token_app' => null,
                     'updated_at' => now(),
                 ]);
+
+            if (Schema::hasTable('t_web_remember_tokens')) {
+                DB::table('t_web_remember_tokens')->where('user_id', $userId)->delete();
+            }
 
             DB::commit();
             return true;
@@ -67,6 +74,10 @@ class PasswordService
                     'updated_at' => now(),
                 ]);
 
+            if (Schema::hasTable('t_web_remember_tokens')) {
+                DB::table('t_web_remember_tokens')->where('user_id', $targetUserId)->delete();
+            }
+
             DB::commit();
 
             return $updated > 0;
@@ -78,4 +89,3 @@ class PasswordService
         }
     }
 }
-
