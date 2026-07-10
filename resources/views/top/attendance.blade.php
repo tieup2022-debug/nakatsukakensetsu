@@ -80,6 +80,8 @@
                                     <th style="min-width: 120px;">深夜出勤</th>
                                     <th style="min-width: 120px;">深夜退勤</th>
                                     <th style="min-width: 110px;">深夜時間</th>
+                                    <th style="min-width: 110px;">深夜休憩</th>
+                                    <th style="min-width: 80px;" title="チェックすると深夜時間から深夜休憩を差し引きます（休憩を22時〜翌5時の間に取った場合）">深夜控除</th>
                                     <th style="min-width: 120px;">時間外(深夜)</th>
                                     <th style="min-width: 90px;">欠勤</th>
                                 </tr>
@@ -95,6 +97,8 @@
                                             $breakVal = '';
                                             $midnightStartVal = '';
                                             $midnightEndVal = '';
+                                            $midnightBreakVal = '';
+                                            $midnightDeductChecked = false;
                                             $midnightAutoVal = '';
                                             $midnightOvertimeVal = '';
                                             $dayPrefill = '0';
@@ -106,13 +110,16 @@
                                             $midnightStartVal = (string) ($row->display_midnight_start ?? '');
                                             $midnightEndVal = (string) ($row->display_midnight_end ?? '');
                                             $nightPair = $midnightStartVal !== '' && $midnightEndVal !== '';
-                                            // 夜勤のみの行は昼欄を空のまま（08:00等で埋めると昼勤務として保存されてしまう）
+                                            // 夜勤のみの行は昼欄（出退勤・休憩）を空のまま（08:00等で埋めると昼勤務として保存されてしまう）
                                             if (! ($startVal === '' && $endVal === '' && $nightPair)) {
                                                 $startVal = $startVal !== '' ? $startVal : '08:00';
                                                 $endVal = $endVal !== '' ? $endVal : '17:00';
+                                                $breakVal = $breakVal !== '' ? $breakVal : '01:00';
                                             }
-                                            $breakVal = $breakVal !== '' ? $breakVal : '01:00';
-                                            // 深夜時間は表示専用（昼＋夜それぞれの22時〜翌5時重なりの合計を自動計算）
+                                            // 深夜休憩（夜勤入力時の既定は01:00・JSで自動セット）と控除チェック
+                                            $midnightBreakVal = (string) ($row->display_midnight_break ?? '');
+                                            $midnightDeductChecked = (bool) ($row->display_midnight_deduct ?? false);
+                                            // 深夜時間は表示専用（昼＋夜それぞれの22時〜翌5時重なりの合計を自動計算。控除ONなら深夜休憩を差引）
                                             $midnightAutoVal = (string) ($row->display_midnight_auto ?? '');
                                             // 時間外（深夜）は任意入力（既定値なし・未入力は空欄）
                                             $midnightOvertimeVal = (string) ($row->display_midnight_overtime ?? '');
@@ -168,10 +175,11 @@
                                                 inputmode="numeric"
                                                 maxlength="5"
                                                 pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
-                                                title="半角 時:分 例 01:00"
+                                                title="昼の勤務の休憩 半角 時:分 例 01:00（夜勤の休憩は深夜休憩へ）"
                                                 placeholder="{{ $isAbsent ? '' : '01:00' }}"
                                                 autocomplete="off"
-                                                @unless($isAbsent) required @endunless
+                                                data-day-prefill="{{ $dayPrefill }}"
+                                                @if($dayRequired) required @endif
                                             >
                                         </td>
                                         <td>
@@ -212,6 +220,31 @@
                                                 title="22時〜翌5時の重なりから自動計算（入力不要）"
                                                 readonly
                                                 tabindex="-1"
+                                            >
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="text"
+                                                class="form-control form-control-sm font-monospace js-attendance-time"
+                                                name="times[{{ $sid }}][midnight_break]"
+                                                value="{{ $midnightBreakVal }}"
+                                                inputmode="numeric"
+                                                maxlength="5"
+                                                pattern="^(?:[01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                                                title="深夜休憩 例 01:00（夜勤入力時は自動で01:00が入ります）"
+                                                placeholder=""
+                                                autocomplete="off"
+                                                data-optional="1"
+                                            >
+                                        </td>
+                                        <td class="text-center">
+                                            <input
+                                                type="checkbox"
+                                                class="form-check-input"
+                                                name="times[{{ $sid }}][midnight_deduct]"
+                                                value="1"
+                                                title="チェックすると深夜時間から深夜休憩を差し引きます"
+                                                {{ $midnightDeductChecked ? 'checked' : '' }}
                                             >
                                         </td>
                                         <td>
@@ -282,7 +315,7 @@
                             return rowValue(tr, '[midnight_start]').trim() !== ''
                                 && rowValue(tr, '[midnight_end]').trim() !== '';
                         }
-                        // 深夜時間（表示専用）: 昼＋夜それぞれの重なり合計
+                        // 深夜時間（表示専用）: 昼＋夜それぞれの重なり合計。控除チェックONなら深夜休憩を差し引く
                         function updateMidnightTotal(tr) {
                             var total = tr.querySelector('input.js-midnight-total');
                             if (!total) return;
@@ -292,15 +325,34 @@
                             }
                             var t = midnightOverlapMinutes(rowValue(tr, '[start]'), rowValue(tr, '[end]'))
                                 + midnightOverlapMinutes(rowValue(tr, '[midnight_start]'), rowValue(tr, '[midnight_end]'));
+                            var deduct = tr.querySelector('input[name$="[midnight_deduct]"]');
+                            if (deduct && deduct.checked) {
+                                t -= (timeToMin(rowValue(tr, '[midnight_break]')) || 0);
+                            }
+                            if (t < 0) t = 0;
                             total.value = t > 0
                                 ? ('0' + Math.floor(t / 60)).slice(-2) + ':' + ('0' + (t % 60)).slice(-2)
                                 : '';
                         }
-                        // 夜勤（深夜出勤・退勤）が入っている行は昼の出退勤を必須にしない
+                        // 深夜休憩の既定値: 深夜出勤・退勤が揃ったら 01:00 を自動セット（手で編集したら触らない）
+                        function syncMidnightBreakDefault(tr) {
+                            var br = rowInput(tr, '[midnight_break]');
+                            if (!br || br.dataset.breakEdited === '1') return;
+                            if (nightPairFilled(tr)) {
+                                if (br.value.trim() === '') {
+                                    br.value = '01:00';
+                                    br.dataset.autoBreak = '1';
+                                }
+                            } else if (br.dataset.autoBreak === '1' && br.value === '01:00') {
+                                br.value = '';
+                                br.dataset.autoBreak = '';
+                            }
+                        }
+                        // 夜勤（深夜出勤・退勤）が入っている行は昼の出退勤・休憩を必須にしない
                         function recalcDayRequired(tr) {
                             var absent = tr.getAttribute('data-absent-row') === '1';
                             var night = nightPairFilled(tr);
-                            ['[start]', '[end]'].forEach(function (suffix) {
+                            ['[start]', '[end]', '[break]'].forEach(function (suffix) {
                                 var el = rowInput(tr, suffix);
                                 if (el) {
                                     el.required = !absent && !night;
@@ -318,6 +370,15 @@
                                     el.dataset.dayPrefill = '0';
                                 }
                             });
+                            // 夜勤のみ（昼の出退勤が空）になった行は、昼の休憩の仮表示も空にする
+                            // （夜勤の休憩は深夜休憩欄で扱うため、二重に引かれないようにする）
+                            if (rowValue(tr, '[start]').trim() === '' && rowValue(tr, '[end]').trim() === '') {
+                                var brDay = rowInput(tr, '[break]');
+                                if (brDay && brDay.dataset.dayPrefill === '1' && brDay.value === brDay.defaultValue) {
+                                    brDay.value = '';
+                                    brDay.dataset.dayPrefill = '0';
+                                }
+                            }
                         }
 
                         function syncAbsentRowTimes(tr) {
@@ -333,6 +394,12 @@
                                     el.placeholder = '';
                                 }
                             });
+                            if (isAbsent) {
+                                var deductCb = tr.querySelector('input[name$="[midnight_deduct]"]');
+                                if (deductCb) {
+                                    deductCb.checked = false;
+                                }
+                            }
                         }
 
                         saveForm.querySelectorAll('tbody tr[data-absent-row]').forEach(function (tr) {
@@ -352,11 +419,26 @@
                                 if (el) {
                                     el.addEventListener('input', function () {
                                         clearPrefilledDayIfNight(tr);
+                                        syncMidnightBreakDefault(tr);
                                         recalcDayRequired(tr);
                                         updateMidnightTotal(tr);
                                     });
                                 }
                             });
+                            var brEl = rowInput(tr, '[midnight_break]');
+                            if (brEl) {
+                                brEl.addEventListener('input', function () {
+                                    // 手で編集した深夜休憩は自動セットで上書きしない
+                                    brEl.dataset.breakEdited = '1';
+                                    updateMidnightTotal(tr);
+                                });
+                            }
+                            var deductEl = tr.querySelector('input[name$="[midnight_deduct]"]');
+                            if (deductEl) {
+                                deductEl.addEventListener('change', function () {
+                                    updateMidnightTotal(tr);
+                                });
+                            }
                         });
 
                         saveForm.querySelectorAll('input[type="checkbox"][name^="absence_flg"]').forEach(function (cb) {

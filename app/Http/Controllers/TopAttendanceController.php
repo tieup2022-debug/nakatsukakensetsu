@@ -242,10 +242,15 @@ class TopAttendanceController extends Controller
                 $break = '';
                 $midnightStart = '';
                 $midnightEnd = '';
+                $midnightBreak = '';
+                $midnightDeduct = 0;
                 $midnightOvertime = '';
             } else {
                 $midnightStart = $this->resolveMidnightField($bucket, 'midnight_start');
                 $midnightEnd = $this->resolveMidnightField($bucket, 'midnight_end');
+                $midnightBreak = $this->resolveMidnightField($bucket, 'midnight_break');
+                // チェックボックスは未チェックだと POST に載らないため、常に 0/1 を確定して保存する
+                $midnightDeduct = (int) $this->isTruthyAbsenceValue($bucket['midnight_deduct'] ?? null);
                 $midnightOvertime = $this->resolveMidnightField($bucket, 'midnight_overtime');
 
                 // 夜勤のみの日: 深夜出勤・退勤が入っていて昼の出退勤が空欄なら、
@@ -257,11 +262,15 @@ class TopAttendanceController extends Controller
                     && $this->postedValueIsEmpty($bucket, 'end')) {
                     $start = '';
                     $end = '';
+                    // 夜勤のみ: 昼の休憩も空のまま保存する（夜勤の休憩は深夜休憩で扱い、既定値で埋めない）
+                    $break = $this->postedValueIsEmpty($bucket, 'break')
+                        ? ''
+                        : $this->resolveNestedTimeField($bucket, 'break', $defaultBreak, $existing->break_time ?? null);
                 } else {
                     $start = $this->resolveNestedTimeField($bucket, 'start', $defaultStart, $existing->start_time ?? null);
                     $end = $this->resolveNestedTimeField($bucket, 'end', $defaultEnd, $existing->end_time ?? null);
+                    $break = $this->resolveNestedTimeField($bucket, 'break', $defaultBreak, $existing->break_time ?? null);
                 }
-                $break = $this->resolveNestedTimeField($bucket, 'break', $defaultBreak, $existing->break_time ?? null);
             }
 
             $ok = $this->attendanceService->AttendanceUpdate(
@@ -274,7 +283,9 @@ class TopAttendanceController extends Controller
                 $absenceFlg,
                 $midnightOvertime,
                 $midnightStart,
-                $midnightEnd
+                $midnightEnd,
+                $midnightBreak,
+                $midnightDeduct
             );
 
             Log::info('TopAttendance update row result', [

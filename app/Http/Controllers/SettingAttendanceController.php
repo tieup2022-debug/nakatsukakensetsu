@@ -209,6 +209,8 @@ class SettingAttendanceController extends Controller
                 'break_time' => $attendance?->break_time ?? ($defaults->break_time ?? ''),
                 'midnight_start_time' => $nightStartDisp,
                 'midnight_end_time' => $nightEndDisp,
+                'midnight_break_time' => $this->attendanceService->formatMidnightForDisplay($attendance?->midnight_break_time ?? null),
+                'midnight_break_deduct' => (int) ($attendance?->midnight_break_deduct_flg ?? 0) === 1,
                 'midnight_auto' => $this->attendanceService->formatMidnightForDisplay(
                     $this->attendanceService->calcAutoMidnightMinutes($dayStartDisp, $dayEndDisp)
                     + $this->attendanceService->calcAutoMidnightMinutes($nightStartDisp, $nightEndDisp)
@@ -279,9 +281,11 @@ class SettingAttendanceController extends Controller
             }
 
             $absenceFlg = $this->isTruthyAbsenceInput($request->input('absence_flg'));
-            // 深夜出勤・退勤・時間外（深夜）はフォームに常に存在するため、空欄はクリアとして扱う
+            // 深夜出勤・退勤・深夜休憩・時間外（深夜）はフォームに常に存在するため、空欄はクリアとして扱う
             $midnightStartTime = (string) $request->input('midnight_start_time', '');
             $midnightEndTime = (string) $request->input('midnight_end_time', '');
+            $midnightBreakTime = (string) $request->input('midnight_break_time', '');
+            $midnightBreakDeduct = (int) $this->isTruthyAbsenceInput($request->input('midnight_break_deduct'));
             $midnightOvertimeTime = (string) $request->input('midnight_overtime_time', '');
             $result = $this->attendanceService->AttendanceUpdate(
                 $staffId,
@@ -293,7 +297,9 @@ class SettingAttendanceController extends Controller
                 $absenceFlg,
                 $midnightOvertimeTime,
                 $midnightStartTime,
-                $midnightEndTime
+                $midnightEndTime,
+                $midnightBreakTime,
+                $midnightBreakDeduct
             );
             Log::info('SettingAttendance update row result', [
                 'staff_id' => (int) $staffId,

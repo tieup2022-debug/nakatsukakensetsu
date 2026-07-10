@@ -47,6 +47,21 @@
                         <input type="time" class="form-control form-control-sm" name="midnight_end_time" value="{{ $midnight_end_time ?? '' }}">
                     </div>
                     <div class="col-md-4">
+                        <label class="form-label small text-muted">深夜休憩（夜勤時の既定 01:00）</label>
+                        <input type="time" class="form-control form-control-sm" name="midnight_break_time" value="{{ $midnight_break_time ?? '' }}">
+                        <div class="form-check mt-1">
+                            <input
+                                type="checkbox"
+                                class="form-check-input"
+                                id="midnight_break_deduct"
+                                name="midnight_break_deduct"
+                                value="1"
+                                {{ !empty($midnight_break_deduct) ? 'checked' : '' }}
+                            >
+                            <label class="form-check-label small" for="midnight_break_deduct">深夜時間から差し引く（休憩を22時〜翌5時に取った場合）</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
                         <label class="form-label small text-muted">時間外（深夜）（未入力可）</label>
                         <input type="time" class="form-control form-control-sm" name="midnight_overtime_time" value="{{ $midnight_overtime_time ?? '' }}">
                     </div>

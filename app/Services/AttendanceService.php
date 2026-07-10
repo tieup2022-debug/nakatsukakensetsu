@@ -166,6 +166,8 @@ class AttendanceService
                 $row->break_time = null;
                 $row->midnight_start_time = null;
                 $row->midnight_end_time = null;
+                $row->midnight_break_time = null;
+                $row->midnight_break_deduct_flg = 0;
                 $row->midnight_overtime_minutes = null;
                 $row->display_start = '';
                 $row->display_end = '';
@@ -173,6 +175,8 @@ class AttendanceService
                 $row->display_day_is_fallback = false;
                 $row->display_midnight_start = '';
                 $row->display_midnight_end = '';
+                $row->display_midnight_break = '';
+                $row->display_midnight_deduct = false;
                 $row->display_midnight_auto = '';
                 $row->display_midnight_overtime = '';
             }
@@ -353,6 +357,8 @@ class AttendanceService
                 $row->break_time = null;
                 $row->midnight_start_time = null;
                 $row->midnight_end_time = null;
+                $row->midnight_break_time = null;
+                $row->midnight_break_deduct_flg = 0;
                 $row->midnight_overtime_minutes = null;
             } else {
                 $row->start_time = $raw->start_time;
@@ -360,6 +366,8 @@ class AttendanceService
                 $row->break_time = $raw->break_time;
                 $row->midnight_start_time = $raw->midnight_start_time ?? null;
                 $row->midnight_end_time = $raw->midnight_end_time ?? null;
+                $row->midnight_break_time = $raw->midnight_break_time ?? null;
+                $row->midnight_break_deduct_flg = (int) ($raw->midnight_break_deduct_flg ?? 0);
                 $row->midnight_overtime_minutes = $raw->midnight_overtime_minutes ?? null;
             }
 
@@ -432,6 +440,8 @@ class AttendanceService
                 $row->break_time = null;
                 $row->midnight_start_time = null;
                 $row->midnight_end_time = null;
+                $row->midnight_break_time = null;
+                $row->midnight_break_deduct_flg = 0;
                 $row->midnight_overtime_minutes = null;
             }
 
@@ -706,18 +716,17 @@ class AttendanceService
 
         $dayStart = $this->formatTimeShort($raw->start_time ?? '');
         $nightMinutes = $this->blockMinutes($ns, $ne);
-        $breakDisplay = $this->formatBreakForDisplay($raw->break_time ?? '');
-        $breakMinutes = $this->timeToMinutes($breakDisplay, true) ?? 0;
         $nightOnly = $dayStart === '';
+        // 深夜休憩は夜勤ブロックの休憩として実働から控除し、フラグONなら深夜時間からも引く
+        $nightBreakMinutes = $this->resolveNightBreakMinutes($raw);
 
         return [
             'start' => $ns,
             'end' => $ne,
-            'midnight_minutes' => $this->calcAutoMidnightMinutes($ns, $ne),
+            'midnight_minutes' => max(0, $this->calcAutoMidnightMinutes($ns, $ne) - $this->midnightDeductMinutes($raw)),
             'overtime' => $this->formatMidnightForDisplay($raw->midnight_overtime_minutes ?? null),
-            // 夜勤のみの日は休憩を深夜ブロック側から引く（昼の勤務が無いため）
-            'worked_minutes' => $nightOnly ? max(0, $nightMinutes - $breakMinutes) : $nightMinutes,
-            'break' => $nightOnly ? $breakDisplay : '',
+            'worked_minutes' => max(0, $nightMinutes - $nightBreakMinutes),
+            'break' => $nightBreakMinutes > 0 ? $this->formatMidnightForDisplay($nightBreakMinutes) : '',
             'workplace_id' => (int) ($raw->workplace_id ?? 0),
             'workplace_name' => (string) ($workplaceMap[(int) ($raw->workplace_id ?? 0)] ?? ''),
             'night_only' => $nightOnly,
@@ -752,17 +761,61 @@ class AttendanceService
     }
 
     /**
-     * 昼（出勤〜退勤）＋夜（深夜出勤〜深夜退勤）の2ブロック合計から休憩を引いた実働（分）。
+     * 昼（出勤〜退勤）＋夜（深夜出勤〜深夜退勤）の実働（分）。
+     * 休憩（$breakTime）は昼ブロックから、深夜休憩（$nightBreakMinutes）は夜ブロックから引く。
+     * $nightBreakMinutes が null（旧データ）で夜勤のみの場合は、従来どおり休憩を夜ブロックから引く。
      */
-    public function calcWorkedMinutesTwoBlocks(string $dayStart, string $dayEnd, string $nightStart, string $nightEnd, string $breakTime): int
+    public function calcWorkedMinutesTwoBlocks(string $dayStart, string $dayEnd, string $nightStart, string $nightEnd, string $breakTime, ?int $nightBreakMinutes = null): int
     {
-        $total = $this->blockMinutes($dayStart, $dayEnd) + $this->blockMinutes($nightStart, $nightEnd);
-        if ($total <= 0) {
+        $dayBlock = $this->blockMinutes($dayStart, $dayEnd);
+        $nightBlock = $this->blockMinutes($nightStart, $nightEnd);
+        if ($dayBlock + $nightBlock <= 0) {
             return 0;
         }
-        $breakMinutes = $this->timeToMinutes($breakTime, true) ?? 0;
 
-        return max(0, $total - $breakMinutes);
+        $dayBreak = $this->timeToMinutes($breakTime, true) ?? 0;
+        $nightBreak = max(0, (int) ($nightBreakMinutes ?? 0));
+        if ($nightBreakMinutes === null && $dayBlock === 0) {
+            // 旧データ互換: 深夜休憩の列が無い頃の夜勤のみの日は「休憩」を夜勤から引いていた
+            $nightBreak = $dayBreak;
+            $dayBreak = 0;
+        }
+
+        return max(0, $dayBlock - ($dayBlock > 0 ? $dayBreak : 0)) + max(0, $nightBlock - $nightBreak);
+    }
+
+    /**
+     * 夜勤ブロックに適用する休憩（分）。深夜休憩列があればその値、
+     * 旧データ（NULL）で夜勤のみの行は従来どおり「休憩」を充てる。
+     */
+    private function resolveNightBreakMinutes(?object $raw): int
+    {
+        if (! $raw) {
+            return 0;
+        }
+        if (($raw->midnight_break_time ?? null) !== null) {
+            return max(0, (int) $raw->midnight_break_time);
+        }
+
+        $dayStart = $this->formatTimeShort($raw->start_time ?? '');
+        $nightStart = $this->formatTimeShort($raw->midnight_start_time ?? '');
+        if ($dayStart === '' && $nightStart !== '') {
+            return $this->timeToMinutes($this->formatBreakForDisplay($raw->break_time ?? ''), true) ?? 0;
+        }
+
+        return 0;
+    }
+
+    /**
+     * 深夜時間（22:00〜翌5:00 重なり）から控除する分。フラグONのときのみ深夜休憩を引く。
+     */
+    private function midnightDeductMinutes(?object $raw): int
+    {
+        if (! $raw || (int) ($raw->midnight_break_deduct_flg ?? 0) !== 1) {
+            return 0;
+        }
+
+        return $this->resolveNightBreakMinutes($raw);
     }
 
     /**
@@ -828,6 +881,8 @@ class AttendanceService
                 $row->display_day_is_fallback = false;
                 $row->display_midnight_start = '';
                 $row->display_midnight_end = '';
+                $row->display_midnight_break = '';
+                $row->display_midnight_deduct = false;
                 $row->display_midnight_auto = '';
                 $row->display_midnight_overtime = '';
 
@@ -845,22 +900,30 @@ class AttendanceService
             if ($nightOnly) {
                 $row->display_start = '';
                 $row->display_end = '';
+                // 昼の休憩欄も空欄（夜勤の休憩は深夜休憩欄で扱う）
+                $row->display_break = '';
                 $row->display_day_is_fallback = false;
             } else {
                 $row->display_start = $s !== '' ? $s : $fallbackStart;
                 $row->display_end = $e !== '' ? $e : $fallbackEnd;
+                $row->display_break = $b !== '' ? $b : $fallbackBreak;
                 // 既定値による仮表示か（夜勤入力時に JS が昼欄を自動クリアしてよいかの判定に使う）
                 $row->display_day_is_fallback = ($s === '' && $e === '');
             }
-            $row->display_break = $b !== '' ? $b : $fallbackBreak;
 
             $row->display_midnight_start = $ns;
             $row->display_midnight_end = $ne;
+            // 深夜休憩（旧データの夜勤のみ行は「休憩」を深夜休憩として表示する）
+            $nightBreakMinutes = $this->resolveNightBreakMinutes($row);
+            $row->display_midnight_break = $nightBreakMinutes > 0 ? $this->formatMidnightForDisplay($nightBreakMinutes) : '';
+            $row->display_midnight_deduct = (int) ($row->midnight_break_deduct_flg ?? 0) === 1;
             // 深夜時間は表示専用の自動計算（昼・夜それぞれの 22:00〜翌5:00 重なりの合計）。
-            // 既定値の仮表示時刻は深夜に重ならないため、保存済みの実時刻のみで計算する
-            $row->display_midnight_auto = $this->formatMidnightForDisplay(
+            // 既定値の仮表示時刻は深夜に重ならないため、保存済みの実時刻のみで計算する。控除フラグONなら深夜休憩を引く
+            $row->display_midnight_auto = $this->formatMidnightForDisplay(max(
+                0,
                 $this->calcAutoMidnightMinutes($s, $e) + $this->calcAutoMidnightMinutes($ns, $ne)
-            );
+                    - $this->midnightDeductMinutes($row)
+            ));
             // 時間外（深夜）は手入力のみ（既定値なし・未入力は空欄）
             $row->display_midnight_overtime = $this->formatMidnightForDisplay($row->midnight_overtime_minutes ?? null);
 
@@ -926,8 +989,10 @@ class AttendanceService
      * @param  string|null  $midnightOvertimeTime  時間外（深夜）。null=変更しない / 空文字=クリア(NULL) / 'HH:MM'または分=設定
      * @param  string|null  $midnightStartTime  深夜出勤。null=変更しない / 空文字=クリア(NULL) / 'HH:MM'=設定
      * @param  string|null  $midnightEndTime  深夜退勤。扱いは $midnightStartTime と同じ
+     * @param  string|null  $midnightBreakTime  深夜休憩。扱いは $midnightOvertimeTime と同じ
+     * @param  int|bool|null  $midnightBreakDeduct  深夜休憩を深夜時間から差し引くか。null=変更しない / 0・1=設定
      */
-    public function AttendanceUpdate($staffId, $workplaceId, $workDate, $startTime, $endTime, $breakTime, $absenceFlg = false, $midnightOvertimeTime = null, $midnightStartTime = null, $midnightEndTime = null)
+    public function AttendanceUpdate($staffId, $workplaceId, $workDate, $startTime, $endTime, $breakTime, $absenceFlg = false, $midnightOvertimeTime = null, $midnightStartTime = null, $midnightEndTime = null, $midnightBreakTime = null, $midnightBreakDeduct = null)
     {
         try {
             // 個別編集では休憩未入力や type=time の未送信で null になり得るため、時刻は空文字に正規化して扱う
@@ -947,15 +1012,19 @@ class AttendanceService
             $hasMidnightColumn = false;
             $hasMidnightOvertimeColumn = false;
             $hasMidnightRangeColumns = false;
+            $hasMidnightBreakColumns = false;
             try {
                 $hasMidnightColumn = Schema::hasColumn('t_attendance', 'midnight_minutes');
                 $hasMidnightOvertimeColumn = Schema::hasColumn('t_attendance', 'midnight_overtime_minutes');
                 $hasMidnightRangeColumns = Schema::hasColumn('t_attendance', 'midnight_start_time')
                     && Schema::hasColumn('t_attendance', 'midnight_end_time');
+                $hasMidnightBreakColumns = Schema::hasColumn('t_attendance', 'midnight_break_time')
+                    && Schema::hasColumn('t_attendance', 'midnight_break_deduct_flg');
             } catch (\Throwable) {
                 $hasMidnightColumn = false;
                 $hasMidnightOvertimeColumn = false;
                 $hasMidnightRangeColumns = false;
+                $hasMidnightBreakColumns = false;
             }
 
             // 欠勤時に start_time/end_time へ空文字を書くと MySQL の TIME 型で例外になり、
@@ -979,6 +1048,10 @@ class AttendanceService
                 if ($hasMidnightRangeColumns) {
                     $payload['midnight_start_time'] = null;
                     $payload['midnight_end_time'] = null;
+                }
+                if ($hasMidnightBreakColumns) {
+                    $payload['midnight_break_time'] = null;
+                    $payload['midnight_break_deduct_flg'] = 0;
                 }
             } else {
                 $startTime = (string) ($startTime ?? '');
@@ -1014,6 +1087,14 @@ class AttendanceService
                         $payload['midnight_end_time'] = $this->clockValueOrNull($midnightEndTime);
                     }
                 }
+                if ($hasMidnightBreakColumns) {
+                    if ($midnightBreakTime !== null) {
+                        $payload['midnight_break_time'] = $this->midnightInputToMinutes($midnightBreakTime);
+                    }
+                    if ($midnightBreakDeduct !== null) {
+                        $payload['midnight_break_deduct_flg'] = (int) ((bool) $midnightBreakDeduct);
+                    }
+                }
             }
 
             DB::beginTransaction();
@@ -1045,6 +1126,10 @@ class AttendanceService
                     if ($hasMidnightRangeColumns) {
                         $absentUpdate['midnight_start_time'] = null;
                         $absentUpdate['midnight_end_time'] = null;
+                    }
+                    if ($hasMidnightBreakColumns) {
+                        $absentUpdate['midnight_break_time'] = null;
+                        $absentUpdate['midnight_break_deduct_flg'] = 0;
                     }
                     DB::table('t_attendance')
                         ->whereIn('id', $ids)
@@ -1180,7 +1265,9 @@ class AttendanceService
                     (int) $absenceFlg,
                     $midnightOvertimeTime,
                     $midnightStartTime,
-                    $midnightEndTime
+                    $midnightEndTime,
+                    $midnightBreakTime,
+                    $midnightBreakDeduct
                 );
 
                 return true;
@@ -1735,6 +1822,8 @@ class AttendanceService
                 'break_time' => (string) ($att['break_time'] ?? ''),
                 'midnight_start_time' => $att['midnight_start_time'] ?? null,
                 'midnight_end_time' => $att['midnight_end_time'] ?? null,
+                'midnight_break_time' => $att['midnight_break_time'] ?? null,
+                'midnight_break_deduct_flg' => (int) ($att['midnight_break_deduct_flg'] ?? 0),
                 'midnight_overtime_minutes' => $att['midnight_overtime_minutes'] ?? null,
             ];
         }
@@ -1770,6 +1859,8 @@ class AttendanceService
                     'absence_flg' => intval($row['absence_flg'] ?? 0),
                     'midnight_start_time' => $row['midnight_start_time'] ?? null,
                     'midnight_end_time' => $row['midnight_end_time'] ?? null,
+                    'midnight_break_time' => $row['midnight_break_time'] ?? null,
+                    'midnight_break_deduct_flg' => (int) ($row['midnight_break_deduct_flg'] ?? 0),
                     'midnight_overtime_minutes' => $row['midnight_overtime_minutes'] ?? null,
                 ];
             }
@@ -1816,7 +1907,9 @@ class AttendanceService
         int $absenceFlg,
         $midnightOvertimeTime = null,
         $midnightStartTime = null,
-        $midnightEndTime = null
+        $midnightEndTime = null,
+        $midnightBreakTime = null,
+        $midnightBreakDeduct = null
     ): void {
         $rows = $this->readLocalJson(self::LOCAL_ATTENDANCE_FILE);
 
@@ -1833,6 +1926,8 @@ class AttendanceService
                     $row['midnight_overtime_minutes'] = null;
                     $row['midnight_start_time'] = null;
                     $row['midnight_end_time'] = null;
+                    $row['midnight_break_time'] = null;
+                    $row['midnight_break_deduct_flg'] = 0;
                 } else {
                     if ($midnightOvertimeTime !== null) {
                         $row['midnight_overtime_minutes'] = $this->midnightInputToMinutes($midnightOvertimeTime);
@@ -1842,6 +1937,12 @@ class AttendanceService
                     }
                     if ($midnightEndTime !== null) {
                         $row['midnight_end_time'] = $this->clockValueOrNull($midnightEndTime);
+                    }
+                    if ($midnightBreakTime !== null) {
+                        $row['midnight_break_time'] = $this->midnightInputToMinutes($midnightBreakTime);
+                    }
+                    if ($midnightBreakDeduct !== null) {
+                        $row['midnight_break_deduct_flg'] = (int) ((bool) $midnightBreakDeduct);
                     }
                 }
                 $row['updated_at'] = now()->toDateTimeString();
@@ -1868,6 +1969,8 @@ class AttendanceService
                 'midnight_overtime_minutes' => $absenceFlg === 1 ? null : $this->midnightInputToMinutes($midnightOvertimeTime),
                 'midnight_start_time' => $absenceFlg === 1 ? null : $this->clockValueOrNull($midnightStartTime),
                 'midnight_end_time' => $absenceFlg === 1 ? null : $this->clockValueOrNull($midnightEndTime),
+                'midnight_break_time' => $absenceFlg === 1 ? null : $this->midnightInputToMinutes($midnightBreakTime),
+                'midnight_break_deduct_flg' => $absenceFlg === 1 ? 0 : (int) ((bool) $midnightBreakDeduct),
                 'created_at' => now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString(),
             ];
@@ -2122,10 +2225,17 @@ class AttendanceService
                             $attendanceDataList[$fullDate]['midnight_overtime'] = '';
                         } else {
                             if ($nsR !== '' || $neR !== '') {
-                                // 跨がない夜勤: 実働は両ブロック合計から休憩を引き、当日に表示する
-                                $twoBlockMinutes = $this->calcWorkedMinutesTwoBlocks($dayStR, $dayEnR, $nsR, $neR, $breakTime);
+                                // 跨がない夜勤: 実働は昼（−休憩）＋夜（−深夜休憩）で当日に表示する
+                                $nightBreakR = $this->resolveNightBreakMinutes($attendanceRaw);
+                                $twoBlockMinutes = $this->calcWorkedMinutesTwoBlocks($dayStR, $dayEnR, $nsR, $neR, $breakTime, $nightBreakR);
                                 $attendanceDataList[$fullDate]['worked_time'] = $twoBlockMinutes > 0
                                     ? sprintf('%02d:%02d', intdiv($twoBlockMinutes, 60), $twoBlockMinutes % 60)
+                                    : '';
+                                // 休憩セルは昼＋深夜休憩の合計を表示する
+                                $dayBreakR = $dayStR !== '' ? ($this->timeToMinutes($breakTime, true) ?? 0) : 0;
+                                $totalBreakR = $dayBreakR + $nightBreakR;
+                                $attendanceDataList[$fullDate]['break_time'] = $totalBreakR > 0
+                                    ? sprintf('%02d:%02d', intdiv($totalBreakR, 60), $totalBreakR % 60)
                                     : '';
                             } else {
                                 $attendanceDataList[$fullDate]['worked_time'] = $this->workedTimeDisplay($startTime, $endTime, $breakTime);
@@ -2133,9 +2243,12 @@ class AttendanceService
                             // 深夜行（深夜出勤/深夜退勤/深夜時間/時間外(深夜)）: 深夜作業がある社員のみ月次表に表示する
                             $attendanceDataList[$fullDate]['midnight_start'] = $nsR;
                             $attendanceDataList[$fullDate]['midnight_end'] = $neR;
-                            $attendanceDataList[$fullDate]['midnight_time'] = $this->formatMidnightForDisplay(
+                            // 控除フラグONなら深夜休憩を深夜時間から引く
+                            $attendanceDataList[$fullDate]['midnight_time'] = $this->formatMidnightForDisplay(max(
+                                0,
                                 $this->calcAutoMidnightMinutes($dayStR, $dayEnR) + $this->calcAutoMidnightMinutes($nsR, $neR)
-                            );
+                                    - $this->midnightDeductMinutes($attendanceRaw)
+                            ));
                             $attendanceDataList[$fullDate]['midnight_overtime'] = $this->formatMidnightForDisplay(
                                 $attendanceRaw->midnight_overtime_minutes ?? null
                             );
@@ -2190,8 +2303,14 @@ class AttendanceService
                                 $attendanceDataList[$fullDate]['workplace_name'] = $carryMidnight['workplace_name'];
                                 $attendanceDataList[$fullDate]['workplace_id'] = $carryMidnight['workplace_id'];
                             }
-                            if ($carryMidnight['break'] !== '' && ($attendanceDataList[$fullDate]['break_time'] ?? '') === '') {
-                                $attendanceDataList[$fullDate]['break_time'] = $carryMidnight['break'];
+                            if ($carryMidnight['break'] !== '' && empty($attendanceDataList[$fullDate]['is_reference'])) {
+                                // 持ち越した深夜休憩は、この日の休憩セルへ合算して表示する
+                                $ownBreakMinutes = $this->timeToMinutes((string) ($attendanceDataList[$fullDate]['break_time'] ?? ''), true) ?? 0;
+                                $carryBreakMinutes = $this->timeToMinutes((string) $carryMidnight['break'], true) ?? 0;
+                                $totalBreakMinutes = $ownBreakMinutes + $carryBreakMinutes;
+                                $attendanceDataList[$fullDate]['break_time'] = $totalBreakMinutes > 0
+                                    ? sprintf('%02d:%02d', intdiv($totalBreakMinutes, 60), $totalBreakMinutes % 60)
+                                    : '';
                             }
                             // 実働へ持ち越し分を加算（未保存の参考表示セルはそのまま）
                             if (empty($attendanceDataList[$fullDate]['is_reference'])) {
@@ -2634,25 +2753,43 @@ class AttendanceService
                             $midnightStartDisplay = $nightStart;
                             $midnightEndDisplay = $nightEnd;
                             $breakDisplay = $this->formatBreakForDisplay($row->break_time ?? '');
+                            $dayBreakMinutes = $this->timeToMinutes($breakDisplay, true) ?? 0;
+                            $nightBreakMinutes = $this->resolveNightBreakMinutes($row);
                             if ($carryMidnight !== null && ($carryMidnight['night_only'] ?? false)) {
                                 // 夜勤のみで跨ぐ日: 休憩・実働とも翌日側で計上する
                                 $breakMinutes = 0;
                                 $workedMinutes = 0;
+                            } elseif ($carryMidnight !== null) {
+                                // 昼＋夜の二部制で跨ぐ日: 当日は昼のみ（深夜休憩は翌日側で計上）
+                                $breakMinutes = $dayBreakMinutes;
+                                $workedMinutes = $this->calcWorkedMinutesTwoBlocks(
+                                    $dayStart,
+                                    $dayEnd,
+                                    '',
+                                    '',
+                                    $breakDisplay,
+                                    0
+                                );
                             } else {
-                                $breakMinutes = $this->timeToMinutes($breakDisplay, true) ?? 0;
-                                // 実働は昼＋夜（当日分）の2ブロック合計から休憩を引く
+                                // 実働は昼（−休憩）＋夜（−深夜休憩）
+                                $breakMinutes = ($dayStart !== '' ? $dayBreakMinutes : 0) + $nightBreakMinutes;
                                 $workedMinutes = $this->calcWorkedMinutesTwoBlocks(
                                     $dayStart,
                                     $dayEnd,
                                     $nightStart,
                                     $nightEnd,
-                                    $breakDisplay
+                                    $breakDisplay,
+                                    $nightBreakMinutes
                                 );
                             }
 
-                            // 深夜: 昼・夜それぞれの 22:00〜翌5:00 重なりの合計を常に自動計算（手入力なし）
+                            // 深夜: 昼・夜それぞれの 22:00〜翌5:00 重なりの合計を常に自動計算（手入力なし）。
+                            // 控除フラグONなら深夜休憩を引く（跨ぐ日は翌日側＝持ち越しデータで控除済み）
                             $midnightMinutes = $this->calcAutoMidnightMinutes($dayStart, $dayEnd)
                                 + $this->calcAutoMidnightMinutes($nightStart, $nightEnd);
+                            if ($carryMidnight === null) {
+                                $midnightMinutes = max(0, $midnightMinutes - $this->midnightDeductMinutes($row));
+                            }
                             // 時間外（深夜）は手入力値のみ（跨ぐ場合は夜勤ブロックと一緒に翌日へ）
                             $midnightOvertimeMinutes = $carryMidnight !== null
                                 ? 0
