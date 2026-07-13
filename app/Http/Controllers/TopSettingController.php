@@ -17,12 +17,14 @@ class TopSettingController extends Controller
         $canEditAttendanceDefaults = false;
         $canManageUsersAndAccounts = false;
         $canAccessAssignmentSettings = false;
+        $canEditNews = false;
         $uid = (int) $request->session()->get('login_user_id');
         if ($uid > 0) {
             $user = $userService->GetUser($uid);
             $canEditAttendanceDefaults = $user && UserPermission::isMaster($user->permission ?? null);
             $canManageUsersAndAccounts = $user && UserPermission::isMaster($user->permission ?? null);
             $canAccessAssignmentSettings = $user && UserPermission::isManager($user->permission ?? null);
+            $canEditNews = $user && UserPermission::isManager($user->permission ?? null);
         }
 
         return view('top.setting')->with([
@@ -30,6 +32,7 @@ class TopSettingController extends Controller
             'can_edit_attendance_defaults' => $canEditAttendanceDefaults,
             'can_manage_users_and_accounts' => $canManageUsersAndAccounts,
             'can_access_assignment_settings' => $canAccessAssignmentSettings,
+            'can_edit_news' => $canEditNews,
         ]);
     }
 }

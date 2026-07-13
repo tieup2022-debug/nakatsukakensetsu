@@ -246,7 +246,9 @@
                             @endif
                         </div>
                         <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                            <a href="{{ route('setting.news.update') }}" class="btn btn-outline-secondary btn-sm">編集</a>
+                            @if (!empty($canAccessAssignmentSettings))
+                                <a href="{{ route('setting.news.update') }}" class="btn btn-outline-secondary btn-sm">編集</a>
+                            @endif
                             <span class="badge bg-primary-subtle text-primary">最新</span>
                         </div>
                     </div>

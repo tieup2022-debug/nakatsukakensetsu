@@ -28,7 +28,7 @@ class NakatsukaManager
             $permissionLabel = UserPermission::label($user->permission ?? null);
 
             return redirect()->route('top.setting')
-                ->with('status', '配置入力は管理者・担当者（権限1・2）のみ利用できます。'
+                ->with('status', 'この操作は管理者・担当者（権限1・2）のみ利用できます。'
                     ." 現在の権限: {$permissionLabel}。"
                     .' 担当者として利用する場合は、管理者にユーザー管理で権限を「担当者（2）」へ変更してもらってください。');
         }

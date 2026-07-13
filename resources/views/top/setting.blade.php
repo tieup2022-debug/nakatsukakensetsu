@@ -102,15 +102,17 @@
             </div>
         @endif
 
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <h2 class="h6 fw-semibold mb-2">お知らせ</h2>
-                    <p class="text-muted small mb-3">お知らせの編集と履歴を管理します。</p>
-                    <a href="{{ route('setting.news.update') }}" class="btn btn-primary w-100">開く</a>
+        @if (!empty($can_edit_news))
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h2 class="h6 fw-semibold mb-2">お知らせ</h2>
+                        <p class="text-muted small mb-3">お知らせの編集と履歴を管理します。</p>
+                        <a href="{{ route('setting.news.update') }}" class="btn btn-primary w-100">開く</a>
+                    </div>
                 </div>
             </div>
-        </div>
+        @endif
 
         @if (!empty($can_manage_users_and_accounts))
             <div class="col-md-6 col-lg-4">

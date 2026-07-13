@@ -137,10 +137,10 @@ Route::get('/setting/user/password-reset', [SettingUserController::class, 'reset
 Route::post('/setting/user/password-reset', [SettingUserController::class, 'resetPasswordSubmit'])->middleware('nakatsuka.auth')->name('setting.user.password.reset');
 Route::post('/setting/user/delete', [SettingUserController::class, 'delete'])->middleware('nakatsuka.auth')->name('setting.user.delete');
 
-// news
-Route::get('/setting/news/update', [SettingNewsController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.news.update');
-Route::post('/setting/news/update', [SettingNewsController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.news.update.submit');
-Route::get('/setting/news/history', [SettingNewsController::class, 'history'])->middleware(['nakatsuka.auth', 'nakatsuka.admin'])->name('setting.news.history');
+// news（権限1・2: マスター・担当者）
+Route::get('/setting/news/update', [SettingNewsController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.manager'])->name('setting.news.update');
+Route::post('/setting/news/update', [SettingNewsController::class, 'update'])->middleware(['nakatsuka.auth', 'nakatsuka.manager'])->name('setting.news.update.submit');
+Route::get('/setting/news/history', [SettingNewsController::class, 'history'])->middleware(['nakatsuka.auth', 'nakatsuka.manager'])->name('setting.news.history');
 
 // account (link user / password)
 Route::get('/setting/account/linkuser/update', [SettingAccountController::class, 'linkUserUpdate'])->middleware('nakatsuka.auth')->name('setting.account.linkuser.update');
