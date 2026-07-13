@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Services\AssignmentService;
 use App\Services\NewsService;
+use App\Services\UserService;
 use App\Services\WorkplaceService;
+use App\Support\UserPermission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -22,10 +24,17 @@ class TopAssignmentController extends Controller
         $this->newsService = $newsService;
     }
 
-    public function index(Request $request)
+    public function index(Request $request, UserService $userService)
     {
         if (!session()->has('login_user_id')) {
             return redirect()->route('login');
+        }
+
+        $canAccessAssignmentSettings = false;
+        $uid = (int) $request->session()->get('login_user_id');
+        if ($uid > 0) {
+            $user = $userService->GetUser($uid);
+            $canAccessAssignmentSettings = $user && UserPermission::isManager($user->permission ?? null);
         }
 
         $workplaceId = $request->input('workplace_id');
@@ -194,6 +203,7 @@ class TopAssignmentController extends Controller
             'previous_date' => $previousDate,
             'news' => $news,
             'news_body_html' => $newsBodyHtml,
+            'canAccessAssignmentSettings' => (bool) $canAccessAssignmentSettings,
             'result' => null,
         ]);
     }
