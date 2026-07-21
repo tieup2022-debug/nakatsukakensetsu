@@ -7,7 +7,9 @@ use App\Services\PaidLeaveService;
 use App\Services\StaffService;
 use App\Services\UserService;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class PaidLeaveController extends Controller
 {
@@ -121,6 +123,7 @@ class PaidLeaveController extends Controller
         $validated = $request->validate([
             'applicant_staff_id' => ['required', 'integer', 'min:1'],
             'leave_date' => ['required', 'date_format:Y-m-d'],
+            'leave_days' => ['required', 'numeric', Rule::in(['0.5', '1'])],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
             'reason' => ['nullable', 'string', 'max:2000'],
@@ -153,7 +156,8 @@ class PaidLeaveController extends Controller
             $uid,
             $startsAt,
             $endsAt,
-            $validated['reason'] ?? null
+            $validated['reason'] ?? null,
+            (float) $validated['leave_days']
         );
 
         if (! $result) {
@@ -161,6 +165,54 @@ class PaidLeaveController extends Controller
         }
 
         return back()->with('status', '有給申請を送信しました。承認者に通知しました。');
+    }
+
+    /**
+     * 運用開始前などの取得実績を、管理者が承認済みとして直接登録する。
+     */
+    public function storeHistorical(Request $request)
+    {
+        if (! $this->isMasterUser($request)) {
+            return redirect()->route('paid-leave.index')->with('error', '過去取得分の登録は管理者（権限1）のみ利用できます。');
+        }
+
+        $validated = $request->validate([
+            'historical_staff_id' => ['required', 'integer', 'min:1'],
+            'historical_leave_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'historical_leave_days' => ['required', 'numeric', Rule::in(['0.5', '1'])],
+            'historical_reason' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $staffId = (int) $validated['historical_staff_id'];
+        if (! $this->staffService->GetStaff($staffId)) {
+            return back()->withInput()->with('error', '有給対象者を選択してください。');
+        }
+
+        if ($this->paidLeaveService->isExcludedStaffId($staffId)) {
+            return back()->withInput()->with('error', '選択された社員は有給登録の対象外です。');
+        }
+
+        try {
+            $tz = (string) config('app.display_timezone', config('app.timezone'));
+            $leaveDate = Carbon::parse($validated['historical_leave_date'], $tz)->startOfDay();
+        } catch (\Throwable) {
+            return back()->withInput()->with('error', '取得日の形式が正しくありません。');
+        }
+
+        $uid = (int) $request->session()->get('login_user_id');
+        $linkedStaff = $this->linkUserService->GetLinkedStaff($uid);
+        $result = $this->paidLeaveService->createHistoricalRecord(
+            $staffId,
+            $uid,
+            (int) ($linkedStaff->id ?? 0),
+            $leaveDate,
+            (float) $validated['historical_leave_days'],
+            $validated['historical_reason'] ?? null
+        );
+
+        return $result
+            ? redirect()->route('paid-leave.index')->with('status', '過去の有給取得実績を登録しました。')
+            : back()->withInput()->with('error', '過去取得分を登録できませんでした。');
     }
 
     public function update(Request $request, int $id)
@@ -172,6 +224,7 @@ class PaidLeaveController extends Controller
         $validated = $request->validate([
             'applicant_staff_id' => ['required', 'integer', 'min:1'],
             'leave_date' => ['required', 'date_format:Y-m-d'],
+            'leave_days' => ['required', 'numeric', Rule::in(['0.5', '1'])],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
             'reason' => ['nullable', 'string', 'max:2000'],
@@ -207,7 +260,8 @@ class PaidLeaveController extends Controller
             (int) $validated['applicant_staff_id'],
             $startsAt,
             $endsAt,
-            $validated['reason'] ?? null
+            $validated['reason'] ?? null,
+            (float) $validated['leave_days']
         );
 
         if (! $ok) {
@@ -247,7 +301,7 @@ class PaidLeaveController extends Controller
         return $user && (int) $user->permission === 1;
     }
 
-    private function redirectUnlessMaster(Request $request): ?\Illuminate\Http\RedirectResponse
+    private function redirectUnlessMaster(Request $request): ?RedirectResponse
     {
         if (! $this->isMasterUser($request)) {
             return redirect()->route('paid-leave.index')->with('error', '有給申請の編集・削除は管理者（権限1）のみ利用できます。');

@@ -3,7 +3,7 @@
 @section('content')
     @php
         $showActions = !empty($can_approve_paid_leave) || !empty($can_manage_paid_leave);
-        $actionColspan = $showActions ? 7 : 6;
+        $actionColspan = $showActions ? 8 : 7;
         $sort = $sort ?? 'id';
         $direction = $direction ?? 'desc';
         $sortLink = function (string $key) use ($sort, $direction) {
@@ -22,7 +22,7 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <div>
             <h1 class="h4 mb-1 fw-semibold">有給申請</h1>
-            <div class="text-muted small">有給対象者を選び、<strong>休む日</strong>とその日の<strong>開始・終了時刻</strong>を入力します（1日単位）。下部で全員の申請状況を確認できます。</div>
+            <div class="text-muted small">有給対象者、休む日、取得日数（0.5日／1日）と開始・終了時刻を入力します。下部で全員の申請状況を確認できます。</div>
         </div>
         <div>
             <a class="btn btn-outline-primary btn-sm" href="{{ route('paid-leave.summary') }}">取得状況（社員別集計）</a>
@@ -58,6 +58,16 @@
                         placeholder="日付を選択"
                     >
                     @error('leave_date')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <label class="form-label small text-muted">取得日数</label>
+                    <select name="leave_days" class="form-select @error('leave_days') is-invalid @enderror" required>
+                        <option value="1" @selected((string) old('leave_days', '1') === '1')>1日</option>
+                        <option value="0.5" @selected((string) old('leave_days') === '0.5')>0.5日</option>
+                    </select>
+                    @error('leave_days')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -107,6 +117,57 @@
         </div>
     </div>
 
+    @if (!empty($can_manage_paid_leave))
+        <div class="card shadow-sm border-primary-subtle mb-3">
+            <div class="card-header bg-primary-subtle fw-semibold">管理者用：過去取得分の登録</div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">運用開始前などに取得した有給を、承認済みの実績として直接登録します。承認依頼や通知メールは送信されません。</p>
+                <form method="POST" action="{{ route('paid-leave.historical.store') }}" class="row g-2 align-items-end">
+                    @csrf
+                    <div class="col-lg-3 col-md-6">
+                        <label class="form-label small text-muted">有給対象者</label>
+                        <select name="historical_staff_id" class="form-select @error('historical_staff_id') is-invalid @enderror" required>
+                            <option value="">選択してください</option>
+                            @foreach ($staff_list as $s)
+                                <option value="{{ $s->id }}" @selected((string) old('historical_staff_id') === (string) $s->id)>{{ $s->staff_name }}</option>
+                            @endforeach
+                        </select>
+                        @error('historical_staff_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label small text-muted">取得日</label>
+                        <input type="text" name="historical_leave_date" class="form-control js-datepicker @error('historical_leave_date') is-invalid @enderror" value="{{ old('historical_leave_date') }}" data-max-date="today" readonly required autocomplete="off" placeholder="日付を選択">
+                        @error('historical_leave_date')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label small text-muted">取得日数</label>
+                        <select name="historical_leave_days" class="form-select @error('historical_leave_days') is-invalid @enderror" required>
+                            <option value="1" @selected((string) old('historical_leave_days', '1') === '1')>1日</option>
+                            <option value="0.5" @selected((string) old('historical_leave_days') === '0.5')>0.5日</option>
+                        </select>
+                        @error('historical_leave_days')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <label class="form-label small text-muted">備考（任意）</label>
+                        <input type="text" name="historical_reason" class="form-control @error('historical_reason') is-invalid @enderror" value="{{ old('historical_reason') }}" maxlength="2000" placeholder="例）運用開始前の取得分">
+                        @error('historical_reason')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-lg-2 col-md-12">
+                        <button type="submit" class="btn btn-primary w-100" onclick="return confirm('承認済みの取得実績として登録しますか？');">取得済みで登録</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -123,9 +184,10 @@
                                     休む日（開始〜終了）{{ $sortMark('starts_at') }}
                                 </a>
                             </th>
+                            <th class="text-nowrap">取得日数</th>
                             <th>
                                 <a href="{{ $sortLink('created_at') }}" class="text-decoration-none text-dark">
-                                    申請日時{{ $sortMark('created_at') }}
+                                    申請・登録日時{{ $sortMark('created_at') }}
                                 </a>
                             </th>
                             <th>
@@ -150,19 +212,28 @@
                             $leaveDate = \Carbon\Carbon::parse($r->starts_at)->format('Y-m-d');
                             $startTime = \Carbon\Carbon::parse($r->starts_at)->format('H:i');
                             $endTime = \Carbon\Carbon::parse($r->ends_at)->format('H:i');
+                            $leaveDays = (float) ($r->leave_days ?? 1);
+                            $leaveDaysText = rtrim(rtrim(number_format($leaveDays, 1, '.', ''), '0'), '.');
+                            $isHistorical = ($r->entry_type ?? 'application') === 'historical';
                         @endphp
                         <tr>
                             <td class="fw-medium">{{ $r->target_staff_name }}</td>
                             <td class="small">
-                                {{ \App\Support\DatetimeDisplay::formatWallClock($r->starts_at) }}
-                                〜
-                                {{ \App\Support\DatetimeDisplay::formatWallClock($r->ends_at) }}
+                                @if ($isHistorical)
+                                    {{ \Carbon\Carbon::parse($r->starts_at)->format('Y/m/d') }}
+                                    <div><span class="badge text-bg-secondary mt-1">過去取得</span></div>
+                                @else
+                                    {{ \App\Support\DatetimeDisplay::formatWallClock($r->starts_at) }}
+                                    〜
+                                    {{ \App\Support\DatetimeDisplay::formatWallClock($r->ends_at) }}
+                                @endif
                             </td>
+                            <td class="text-center fw-medium text-nowrap">{{ $leaveDaysText }}日</td>
                             <td class="small">{{ \App\Support\DatetimeDisplay::formatStoredAt($r->created_at) }}</td>
                             <td class="small">{{ $r->requester_user_name }}</td>
                             <td>
                                 @if($r->status === 'approved')
-                                    <span class="badge text-bg-success">承認済</span>
+                                    <span class="badge text-bg-success">{{ $isHistorical ? '登録済' : '承認済' }}</span>
                                     @if(!empty($r->approver_display_name))
                                         <div class="small text-muted mt-1">承認: {{ $r->approver_display_name }}</div>
                                     @endif
@@ -182,6 +253,7 @@
                                             data-leave-date="{{ $leaveDate }}"
                                             data-start-time="{{ $startTime }}"
                                             data-end-time="{{ $endTime }}"
+                                            data-leave-days="{{ $leaveDaysText }}"
                                             data-reason="{{ $r->reason ?? '' }}"
                                             data-target-name="{{ $r->target_staff_name }}"
                                         >編集</button>
@@ -244,7 +316,14 @@
                                     <label class="form-label small text-muted">終了時刻</label>
                                     <input type="text" name="end_time" id="paidLeaveEditEnd" class="form-control js-timepicker-modal" required autocomplete="off" inputmode="numeric" placeholder="例）17:00">
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-3">
+                                    <label class="form-label small text-muted">取得日数</label>
+                                    <select name="leave_days" id="paidLeaveEditDays" class="form-select" required>
+                                        <option value="1">1日</option>
+                                        <option value="0.5">0.5日</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
                                     <label class="form-label small text-muted">備考（任意）</label>
                                     <input type="text" name="reason" id="paidLeaveEditReason" class="form-control" maxlength="2000">
                                 </div>
@@ -272,6 +351,7 @@
                 var dateEl = document.getElementById('paidLeaveEditDate');
                 var startEl = document.getElementById('paidLeaveEditStart');
                 var endEl = document.getElementById('paidLeaveEditEnd');
+                var daysEl = document.getElementById('paidLeaveEditDays');
                 var reasonEl = document.getElementById('paidLeaveEditReason');
                 var datePicker = null;
                 var startPicker = null;
@@ -319,6 +399,7 @@
                         var id = btn.getAttribute('data-id');
                         formEl.action = @json(route('paid-leave.update', ['id' => '__ID__'])).replace('__ID__', id);
                         staffEl.value = btn.getAttribute('data-applicant-staff-id') || '';
+                        daysEl.value = btn.getAttribute('data-leave-days') || '1';
                         reasonEl.value = btn.getAttribute('data-reason') || '';
                         initModalPickers();
                         if (datePicker) datePicker.setDate(btn.getAttribute('data-leave-date') || '', false);

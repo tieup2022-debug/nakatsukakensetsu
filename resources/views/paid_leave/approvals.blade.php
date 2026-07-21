@@ -20,6 +20,7 @@
                         <tr>
                             <th>申請者</th>
                             <th>休む日（開始〜終了）</th>
+                            <th class="text-nowrap text-center">取得日数</th>
                             <th>申請日時</th>
                             <th>事由</th>
                             <th style="width: 120px;"></th>
@@ -38,6 +39,13 @@
                                 〜
                                 {{ \App\Support\DatetimeDisplay::formatWallClock($r->ends_at) }}
                             </td>
+                            <td class="text-center fw-medium text-nowrap">
+                                @php
+                                    $leaveDays = (float) ($r->leave_days ?? 1);
+                                    $leaveDaysText = rtrim(rtrim(number_format($leaveDays, 1, '.', ''), '0'), '.');
+                                @endphp
+                                {{ $leaveDaysText }}日
+                            </td>
                             <td class="small">{{ \App\Support\DatetimeDisplay::formatStoredAt($r->created_at) }}</td>
                             <td class="small text-muted">{{ \Illuminate\Support\Str::limit($r->reason ?? '—', 48) }}</td>
                             <td class="text-end">
@@ -49,7 +57,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">承認待ちの申請はありません。</td>
+                            <td colspan="6" class="text-center text-muted py-4">承認待ちの申請はありません。</td>
                         </tr>
                     @endforelse
                     </tbody>

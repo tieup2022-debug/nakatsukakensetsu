@@ -4,8 +4,8 @@
     @php
         // 年度内の月順（4月〜翌3月）
         $fiscalMonths = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3];
-        $totalApproved = 0;
-        $totalPending = 0;
+        $totalApproved = 0.0;
+        $totalPending = 0.0;
         foreach ($summary as $row) {
             $totalApproved += $row['approved'];
             $totalPending += $row['pending'];
@@ -18,7 +18,7 @@
         <div>
             <h1 class="h4 mb-1 fw-semibold">有給取得状況</h1>
             <div class="text-muted small">
-                {{ $fiscal_year }}年度（{{ $fiscal_year }}年4月〜{{ $fiscal_year + 1 }}年3月）に休む日がある申請を社員別に集計しています。1申請 = 1日として数えます。<br>
+                {{ $fiscal_year }}年度（{{ $fiscal_year }}年4月〜{{ $fiscal_year + 1 }}年3月）の有給取得・申請を、0.5日単位で社員別に集計しています。<br>
                 残数 = 繰越 + 当年度付与 − 取得済み。
                 @if (!empty($can_edit_grants))
                     繰越・当年度付与を入力して「保存」を押してください。
@@ -41,7 +41,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body py-2 px-3">
                     <span class="text-muted small">年度合計 取得済み</span>
-                    <span class="fs-5 fw-semibold ms-2">{{ $totalApproved }}日</span>
+                    <span class="fs-5 fw-semibold ms-2">{{ $fmtDays($totalApproved) }}日</span>
                 </div>
             </div>
         </div>
@@ -49,7 +49,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body py-2 px-3">
                     <span class="text-muted small">申請中</span>
-                    <span class="fs-5 fw-semibold ms-2">{{ $totalPending }}日</span>
+                    <span class="fs-5 fw-semibold ms-2">{{ $fmtDays($totalPending) }}日</span>
                 </div>
             </div>
         </div>
@@ -116,14 +116,14 @@
                             <td class="text-center fw-medium">{{ $hasGrant ? $fmtDays($total).'日' : '—' }}</td>
                             <td class="text-center">
                                 @if ($approved > 0)
-                                    <span class="badge text-bg-success">{{ $approved }}日</span>
+                                    <span class="badge text-bg-success">{{ $fmtDays($approved) }}日</span>
                                 @else
                                     <span class="text-muted">0日</span>
                                 @endif
                             </td>
                             <td class="text-center">
                                 @if ($pending > 0)
-                                    <span class="badge text-bg-warning text-dark">{{ $pending }}日</span>
+                                    <span class="badge text-bg-warning text-dark">{{ $fmtDays($pending) }}日</span>
                                 @else
                                     <span class="text-muted">—</span>
                                 @endif
@@ -137,7 +137,7 @@
                             </td>
                             @foreach ($fiscalMonths as $m)
                                 @php $count = $row['monthly'][$m] ?? 0; @endphp
-                                <td class="text-center {{ $count > 0 ? '' : 'text-muted' }}">{{ $count > 0 ? $count : '' }}</td>
+                                <td class="text-center {{ $count > 0 ? '' : 'text-muted' }}">{{ $count > 0 ? $fmtDays($count) : '' }}</td>
                             @endforeach
                             <td class="text-center small text-nowrap">{{ $row['last_approved'] ?? '—' }}</td>
                         </tr>

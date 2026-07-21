@@ -8,10 +8,17 @@
             <form method="POST" action="{{ route('paid-leave.store') }}">
                 @csrf
                 <div class="modal-body">
-                    <p class="text-muted small">休む日とその日の開始・終了時刻を入力してください（1日単位）。承認は指定された承認者のうちいずれか1名が行います。</p>
+                    <p class="text-muted small">休む日、取得日数とその日の開始・終了時刻を入力してください。承認は指定された承認者のうちいずれか1名が行います。</p>
                     <div class="mb-3">
                         <label class="form-label small text-muted">休む日</label>
                         <input type="date" name="leave_date" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">取得日数</label>
+                        <select name="leave_days" class="form-select" required>
+                            <option value="1">1日</option>
+                            <option value="0.5">0.5日</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small text-muted">開始時刻</label>

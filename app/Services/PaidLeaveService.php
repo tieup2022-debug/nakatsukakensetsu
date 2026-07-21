@@ -80,8 +80,8 @@ class PaidLeaveService
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, object>|array<int, object>|false|null  $staffList
-     * @return \Illuminate\Support\Collection<int, object>
+     * @param  Collection<int, object>|array<int, object>|false|null  $staffList
+     * @return Collection<int, object>
      */
     public function filterStaffListForApplicant($staffList)
     {
@@ -132,9 +132,9 @@ class PaidLeaveService
     /**
      * @return object|false inserted row shape
      */
-    public function createRequest(int $applicantStaffId, int $applicantUserId, Carbon $startsAt, Carbon $endsAt, ?string $reason)
+    public function createRequest(int $applicantStaffId, int $applicantUserId, Carbon $startsAt, Carbon $endsAt, ?string $reason, float $leaveDays = 1.0)
     {
-        if ($endsAt->lt($startsAt)) {
+        if ($endsAt->lt($startsAt) || ! $this->isSupportedLeaveDays($leaveDays)) {
             return false;
         }
 
@@ -146,6 +146,8 @@ class PaidLeaveService
                 'applicant_user_id' => $applicantUserId,
                 'starts_at' => $startsAt->format('Y-m-d H:i:s'),
                 'ends_at' => $endsAt->format('Y-m-d H:i:s'),
+                'leave_days' => $leaveDays,
+                'entry_type' => 'application',
                 'status' => 'pending',
                 'reason' => $reason,
                 'created_at' => now(),
@@ -169,10 +171,58 @@ class PaidLeaveService
         }
     }
 
+    /**
+     * 管理者が過去の取得実績を承認済みとして直接登録する（通知は送信しない）。
+     *
+     * @return object|false inserted row shape
+     */
+    public function createHistoricalRecord(
+        int $applicantStaffId,
+        int $adminUserId,
+        int $adminStaffId,
+        Carbon $leaveDate,
+        float $leaveDays,
+        ?string $reason
+    ) {
+        if ($applicantStaffId <= 0 || $adminUserId <= 0 || ! $this->isSupportedLeaveDays($leaveDays)) {
+            return false;
+        }
+
+        try {
+            $payload = [
+                'applicant_staff_id' => $applicantStaffId,
+                'applicant_user_id' => $adminUserId,
+                'starts_at' => $leaveDate->copy()->startOfDay()->format('Y-m-d H:i:s'),
+                'ends_at' => $leaveDate->copy()->endOfDay()->format('Y-m-d H:i:s'),
+                'leave_days' => $leaveDays,
+                'entry_type' => 'historical',
+                'status' => 'approved',
+                'approved_by_staff_id' => $adminStaffId > 0 ? $adminStaffId : null,
+                'approved_at' => now(),
+                'reason' => $reason,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            if (Schema::hasColumn('t_paid_leave_requests', 'approved_by_user_id')) {
+                $payload['approved_by_user_id'] = $adminUserId;
+            }
+
+            $id = DB::table('t_paid_leave_requests')->insertGetId($payload);
+
+            return DB::table('t_paid_leave_requests')->where('id', $id)->first() ?: false;
+        } catch (\Exception $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+
+            return false;
+        }
+    }
+
     private function dispatchAppliedNotifications(object $request): void
     {
         $applicantName = $this->staffDisplayName((int) $request->applicant_staff_id);
         $range = $this->formatRange($request);
+        $leaveDaysText = $this->formatLeaveDays($request).'日';
         $approverMap = $this->approverUserIdsByStaffId();
         $notifiedUserIds = [];
 
@@ -183,6 +233,7 @@ class PaidLeaveService
                     Mail::to($email)->send(new PaidLeaveAppliedMail(
                         $applicantName,
                         $range,
+                        $leaveDaysText,
                         isset($request->reason) ? (string) $request->reason : null
                     ));
                 } catch (\Throwable $e) {
@@ -195,7 +246,7 @@ class PaidLeaveService
                 $this->notifications->create(
                     $uid,
                     '有給休暇の申請があります',
-                    $applicantName." さんが有給を申請しました。\n".$range.($request->reason ? "\n\n事由: ".$request->reason : ''),
+                    $applicantName." さんが有給を申請しました。\n".$range."\n取得日数: ".$leaveDaysText.($request->reason ? "\n\n事由: ".$request->reason : ''),
                     'paid_leave_applied',
                     (int) $request->id
                 );
@@ -217,7 +268,7 @@ class PaidLeaveService
                 $this->notifications->create(
                     $adminUid,
                     '有給申請がきました',
-                    $applicantName." さんから有給申請が届きました。\n".$range.($request->reason ? "\n\n事由: ".$request->reason : ''),
+                    $applicantName." さんから有給申請が届きました。\n".$range."\n取得日数: ".$leaveDaysText.($request->reason ? "\n\n事由: ".$request->reason : ''),
                     'paid_leave_applied',
                     (int) $request->id
                 );
@@ -287,13 +338,14 @@ class PaidLeaveService
         $applicantStaffId = (int) $request->applicant_staff_id;
         $approverName = $this->resolveApproverDisplayName($approverStaffId, $approverUserId);
         $range = $this->formatRange($request);
+        $leaveDaysText = $this->formatLeaveDays($request).'日';
 
         $applicantUserId = (int) ($request->applicant_user_id ?? 0);
         if ($applicantUserId > 0) {
             $this->notifications->create(
                 $applicantUserId,
                 '有給休暇が承認されました',
-                $approverName." さんが承認しました。\n".$range,
+                $approverName." さんが承認しました。\n".$range."\n取得日数: ".$leaveDaysText,
                 'paid_leave_approved',
                 (int) $request->id
             );
@@ -305,6 +357,7 @@ class PaidLeaveService
                 Mail::to($applicantEmail)->send(new PaidLeaveApprovedMail(
                     $approverName,
                     $range,
+                    $leaveDaysText,
                     isset($request->reason) ? (string) $request->reason : null
                 ));
             } catch (\Throwable $e) {
@@ -319,6 +372,13 @@ class PaidLeaveService
         $e = DatetimeDisplay::formatWallClock($request->ends_at);
 
         return $s.' 〜 '.$e;
+    }
+
+    private function formatLeaveDays(object $request): string
+    {
+        $days = isset($request->leave_days) ? (float) $request->leave_days : 1.0;
+
+        return rtrim(rtrim(number_format($days, 1, '.', ''), '0'), '.');
     }
 
     /**
@@ -378,9 +438,9 @@ class PaidLeaveService
         }
     }
 
-    public function updateRequest(int $id, int $applicantStaffId, Carbon $startsAt, Carbon $endsAt, ?string $reason): bool
+    public function updateRequest(int $id, int $applicantStaffId, Carbon $startsAt, Carbon $endsAt, ?string $reason, float $leaveDays = 1.0): bool
     {
-        if ($endsAt->lte($startsAt)) {
+        if ($endsAt->lte($startsAt) || ! $this->isSupportedLeaveDays($leaveDays)) {
             return false;
         }
 
@@ -391,6 +451,7 @@ class PaidLeaveService
                     'applicant_staff_id' => $applicantStaffId,
                     'starts_at' => $startsAt->format('Y-m-d H:i:s'),
                     'ends_at' => $endsAt->format('Y-m-d H:i:s'),
+                    'leave_days' => $leaveDays,
                     'reason' => $reason,
                     'updated_at' => now(),
                 ]) > 0;
@@ -462,9 +523,9 @@ class PaidLeaveService
 
     /**
      * 指定期間（開始日を含み、終了日を含まない）の有給申請を社員ごとに集計する。
-     * 1申請 = 1日として数える。月別内訳・最終取得日は承認済みのみ対象。
+     * leave_days（0.5日／1日）を合計する。月別内訳・最終取得日は承認済みのみ対象。
      *
-     * @return array<int, array{approved: int, pending: int, monthly: array<int, int>, last_approved: ?string}>
+     * @return array<int, array{approved: float, pending: float, monthly: array<int, float>, last_approved: ?string}>
      */
     public function summarizeByStaff(string $fromDate, string $toDateExclusive): array
     {
@@ -472,7 +533,7 @@ class PaidLeaveService
             $rows = DB::table('t_paid_leave_requests')
                 ->where('starts_at', '>=', $fromDate.' 00:00:00')
                 ->where('starts_at', '<', $toDateExclusive.' 00:00:00')
-                ->get(['applicant_staff_id', 'status', 'starts_at']);
+                ->get(['applicant_staff_id', 'status', 'starts_at', 'leave_days']);
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
 
@@ -483,23 +544,33 @@ class PaidLeaveService
         foreach ($rows as $row) {
             $sid = (int) $row->applicant_staff_id;
             if (! isset($summary[$sid])) {
-                $summary[$sid] = ['approved' => 0, 'pending' => 0, 'monthly' => [], 'last_approved' => null];
+                $summary[$sid] = ['approved' => 0.0, 'pending' => 0.0, 'monthly' => [], 'last_approved' => null];
+            }
+
+            $leaveDays = isset($row->leave_days) ? (float) $row->leave_days : 1.0;
+            if (! $this->isSupportedLeaveDays($leaveDays)) {
+                $leaveDays = 1.0;
             }
 
             if ((string) $row->status === 'approved') {
-                $summary[$sid]['approved']++;
+                $summary[$sid]['approved'] += $leaveDays;
                 $month = (int) substr((string) $row->starts_at, 5, 2);
-                $summary[$sid]['monthly'][$month] = ($summary[$sid]['monthly'][$month] ?? 0) + 1;
+                $summary[$sid]['monthly'][$month] = ($summary[$sid]['monthly'][$month] ?? 0.0) + $leaveDays;
                 $date = substr((string) $row->starts_at, 0, 10);
                 if ($summary[$sid]['last_approved'] === null || $date > $summary[$sid]['last_approved']) {
                     $summary[$sid]['last_approved'] = $date;
                 }
             } else {
-                $summary[$sid]['pending']++;
+                $summary[$sid]['pending'] += $leaveDays;
             }
         }
 
         return $summary;
+    }
+
+    private function isSupportedLeaveDays(float $leaveDays): bool
+    {
+        return abs($leaveDays - 0.5) < 0.001 || abs($leaveDays - 1.0) < 0.001;
     }
 
     /**

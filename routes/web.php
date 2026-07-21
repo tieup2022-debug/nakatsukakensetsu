@@ -1,11 +1,11 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\GratitudePointController;
 use App\Http\Controllers\InAppNotificationController;
 use App\Http\Controllers\MachineScheduleController;
 use App\Http\Controllers\MonthlyAssignmentController;
 use App\Http\Controllers\MonthlyAttendanceController;
-use App\Http\Controllers\GratitudePointController;
 use App\Http\Controllers\PaidLeaveApprovalController;
 use App\Http\Controllers\PaidLeaveController;
 use App\Http\Controllers\SettingAccountController;
@@ -151,6 +151,7 @@ Route::post('/setting/account/password/update', [SettingAccountController::class
 // 有給申請・承認・システム内通知
 Route::get('/paid-leave', [PaidLeaveController::class, 'index'])->middleware('nakatsuka.auth')->name('paid-leave.index');
 Route::post('/paid-leave', [PaidLeaveController::class, 'store'])->middleware('nakatsuka.auth')->name('paid-leave.store');
+Route::post('/paid-leave/historical', [PaidLeaveController::class, 'storeHistorical'])->middleware('nakatsuka.auth')->name('paid-leave.historical.store');
 Route::match(['put', 'patch'], '/paid-leave/{id}', [PaidLeaveController::class, 'update'])->middleware('nakatsuka.auth')->name('paid-leave.update')->where('id', '[0-9]+');
 Route::delete('/paid-leave/{id}', [PaidLeaveController::class, 'destroy'])->middleware('nakatsuka.auth')->name('paid-leave.destroy')->where('id', '[0-9]+');
 Route::get('/paid-leave/summary', [PaidLeaveController::class, 'summary'])->middleware('nakatsuka.auth')->name('paid-leave.summary');

@@ -15,6 +15,7 @@ class PaidLeaveAppliedMail extends Mailable
     public function __construct(
         public string $applicantName,
         public string $rangeText,
+        public string $leaveDaysText,
         public ?string $reason,
     ) {}
 

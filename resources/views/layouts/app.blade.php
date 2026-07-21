@@ -267,6 +267,9 @@
                     disableMobile: true,
                     static: narrow,
                 };
+                if (el.dataset.maxDate) {
+                    opts.maxDate = el.dataset.maxDate;
+                }
                 if (el.hasAttribute('data-datepicker-submit')) {
                     opts.onChange = function () {
                         var form = el.form || el.closest('form');
@@ -296,4 +299,3 @@
     </script>
 </body>
 </html>
-
