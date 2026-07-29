@@ -20,11 +20,19 @@
             flex: 1;
             display: flex;
             min-height: 0;
+            min-width: 0;
         }
         .sidebar {
             width: 240px;
+            min-width: 240px;
+            flex: 0 0 240px;
             background: linear-gradient(180deg, #1d4ed8, #0f172a);
             color: #e5e7eb;
+        }
+        .app-main > main,
+        .app-main > main > .container-fluid {
+            min-width: 0;
+            max-width: 100%;
         }
         .sidebar a {
             color: inherit;
@@ -34,9 +42,11 @@
         .sidebar .nav-link:hover {
             background-color: rgba(59,130,246,0.25);
         }
-        @media (max-width: 992px) {
+        @media (max-width: 991.98px) {
             .sidebar {
                 width: 100%;
+                min-width: 0;
+                flex-basis: auto;
             }
         }
         /* Flatpickr: タップしやすい大きめのカレンダー（デスクトップ） */
