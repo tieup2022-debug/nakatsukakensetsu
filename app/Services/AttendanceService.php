@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -30,8 +31,8 @@ class AttendanceService
     /**
      * work_date 列が DATE / DATETIME どちらでも同日一致させる（= だけだと既存行を拾えない環境がある）。
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @return \Illuminate\Database\Query\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     private function whereWorkDateEquals($query, string $workDateNorm)
     {
@@ -129,8 +130,8 @@ class AttendanceService
     /**
      * work_date 列の型・形式差（DATE / DATETIME / 文字列）でも同日を拾う。
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @return \Illuminate\Database\Query\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     private function applyWorkDateScope($query, string $workDateNorm)
     {
@@ -694,7 +695,7 @@ class AttendanceService
      * 月次表用: 深夜ブロックが日付を跨ぐ場合（深夜退勤＜深夜出勤）、翌日の列へ持ち越す情報を作る。
      * 跨がない深夜・深夜なし・欠勤は null（当日表示のまま）。
      *
-     * @param  \Illuminate\Support\Collection<string, string>|array<int|string, string>  $workplaceMap
+     * @param  Collection<string, string>|array<int|string, string>  $workplaceMap
      * @return array<string, mixed>|null
      */
     private function buildMidnightCarry(?object $raw, $workplaceMap): ?array
@@ -1311,11 +1312,31 @@ class AttendanceService
     /**
      * 勤怠 新規登録（一括）
      */
-    public function AttendanceCreate($workplaceId, $workDate, $startTime, $endTime, $breakTime, $absenceStaffList = null)
-    {
+    public function AttendanceCreate(
+        $workplaceId,
+        $workDate,
+        $startTime,
+        $endTime,
+        $breakTime,
+        $absenceStaffList = null,
+        $midnightOvertimeTime = null,
+        $midnightStartTime = null,
+        $midnightEndTime = null,
+        $midnightBreakTime = null,
+        $midnightBreakDeduct = null
+    ) {
         try {
             DB::beginTransaction();
             $breakTimeForStorage = $this->prepareBreakTimeForStorage($breakTime);
+            $startTimeForStorage = $this->clockValueOrNull($startTime);
+            $endTimeForStorage = $this->clockValueOrNull($endTime);
+
+            $hasMidnightColumn = Schema::hasColumn('t_attendance', 'midnight_minutes');
+            $hasMidnightOvertimeColumn = Schema::hasColumn('t_attendance', 'midnight_overtime_minutes');
+            $hasMidnightRangeColumns = Schema::hasColumn('t_attendance', 'midnight_start_time')
+                && Schema::hasColumn('t_attendance', 'midnight_end_time');
+            $hasMidnightBreakColumns = Schema::hasColumn('t_attendance', 'midnight_break_time')
+                && Schema::hasColumn('t_attendance', 'midnight_break_deduct_flg');
 
             if (isset($workplaceId) && isset($workDate) && isset($startTime) && isset($endTime) && isset($breakTime)) {
                 // 「会社」現場の一括登録時は、総務スタッフを自動配置してから対象に含める。
@@ -1335,6 +1356,41 @@ class AttendanceService
                         $absenceFlg = false;
                     }
 
+                    $rowPayload = [
+                        'staff_id' => $assignedStaff->master_id,
+                        'workplace_id' => $workplaceId,
+                        'work_date' => $workDate,
+                        // 夜勤のみは昼の出退勤をNULLにする。欠勤の新規行は旧DB互換の仮時刻を持たせる。
+                        'start_time' => $startTimeForStorage ?? ($absenceFlg ? '08:00:00' : null),
+                        'end_time' => $endTimeForStorage ?? ($absenceFlg ? '17:00:00' : null),
+                        'break_time' => $absenceFlg ? $this->prepareBreakTimeForStorage('') : $breakTimeForStorage,
+                        'absence_flg' => $absenceFlg,
+                        'deleted_at' => null,
+                        'updated_at' => now(),
+                    ];
+
+                    if ($hasMidnightColumn) {
+                        // 深夜時間は出退勤から常に自動計算するため、旧手入力値を残さない。
+                        $rowPayload['midnight_minutes'] = null;
+                    }
+                    if ($hasMidnightOvertimeColumn) {
+                        $rowPayload['midnight_overtime_minutes'] = $absenceFlg
+                            ? null
+                            : $this->midnightInputToMinutes($midnightOvertimeTime);
+                    }
+                    if ($hasMidnightRangeColumns) {
+                        $rowPayload['midnight_start_time'] = $absenceFlg ? null : $this->clockValueOrNull($midnightStartTime);
+                        $rowPayload['midnight_end_time'] = $absenceFlg ? null : $this->clockValueOrNull($midnightEndTime);
+                    }
+                    if ($hasMidnightBreakColumns) {
+                        $rowPayload['midnight_break_time'] = $absenceFlg
+                            ? null
+                            : $this->midnightInputToMinutes($midnightBreakTime);
+                        $rowPayload['midnight_break_deduct_flg'] = $absenceFlg
+                            ? 0
+                            : (int) ((bool) $midnightBreakDeduct);
+                    }
+
                     $existsCheck = DB::table('t_attendance')
                         ->where('staff_id', '=', $assignedStaff->master_id)
                         ->where('work_date', '=', $workDate)
@@ -1344,32 +1400,17 @@ class AttendanceService
                     if ($existsCheck) {
                         DB::table('t_attendance')
                             ->where('id', '=', $existsCheck->id)
-                            ->update([
-                                'staff_id' => $assignedStaff->master_id,
-                                'workplace_id' => $workplaceId,
-                                'work_date' => $workDate,
-                                'start_time' => $startTime,
-                                'end_time' => $endTime,
-                                'break_time' => $breakTimeForStorage,
-                                'absence_flg' => $absenceFlg,
-                                'updated_at' => now(),
-                            ]);
+                            ->update($rowPayload);
                     } else {
+                        $insertPayload = array_merge($rowPayload, ['created_at' => now()]);
+                        $updateColumns = array_values(array_diff(
+                            array_keys($rowPayload),
+                            ['staff_id', 'work_date']
+                        ));
                         DB::table('t_attendance')->upsert(
-                            [[
-                                'staff_id' => $assignedStaff->master_id,
-                                'workplace_id' => $workplaceId,
-                                'work_date' => $workDate,
-                                'start_time' => $startTime,
-                                'end_time' => $endTime,
-                                'break_time' => $breakTimeForStorage,
-                                'absence_flg' => $absenceFlg,
-                                'deleted_at' => null,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]],
+                            [$insertPayload],
                             ['staff_id', 'work_date'],
-                            ['workplace_id', 'start_time', 'end_time', 'break_time', 'absence_flg', 'deleted_at', 'updated_at']
+                            $updateColumns
                         );
                     }
                 }
@@ -1402,7 +1443,12 @@ class AttendanceService
                             (string) $startTime,
                             (string) $endTime,
                             (string) $breakTime,
-                            (int) $absenceFlg
+                            (int) $absenceFlg,
+                            $midnightOvertimeTime,
+                            $midnightStartTime,
+                            $midnightEndTime,
+                            $midnightBreakTime,
+                            $midnightBreakDeduct
                         );
                     }
                 }

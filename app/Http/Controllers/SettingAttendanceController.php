@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Services\AttendanceService;
 use App\Services\UserService;
 use App\Services\WorkplaceService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -43,7 +43,7 @@ class SettingAttendanceController extends Controller
     /**
      * マスター以外は勤怠管理へリダイレクト
      */
-    private function redirectUnlessMaster(Request $request): ?\Illuminate\Http\RedirectResponse
+    private function redirectUnlessMaster(Request $request): ?RedirectResponse
     {
         if (! $this->isMasterUser($request)) {
             return redirect()->route('setting.attendance.manage')
@@ -53,7 +53,7 @@ class SettingAttendanceController extends Controller
         return null;
     }
 
-    private function redirectUnlessMasterForAttendanceReport(Request $request): ?\Illuminate\Http\RedirectResponse
+    private function redirectUnlessMasterForAttendanceReport(Request $request): ?RedirectResponse
     {
         if (! $this->isMasterUser($request)) {
             return redirect()->route('setting.attendance.manage')
@@ -79,7 +79,9 @@ class SettingAttendanceController extends Controller
     public function manage(Request $request)
     {
         $workplaceList = $this->workplaceService->getWorkplaceList(true);
-        if ($workplaceList === false || $workplaceList === null) $workplaceList = [];
+        if ($workplaceList === false || $workplaceList === null) {
+            $workplaceList = [];
+        }
 
         return view('setting.attendance.manage')->with([
             'workplace_list' => $workplaceList,
@@ -100,17 +102,21 @@ class SettingAttendanceController extends Controller
         $workplaceId = $request->input('workplace_id');
         $workDate = $request->input('work_date') ?: defaultWorkDate();
 
-        if (!$mode || !$workplaceId) {
+        if (! $mode || ! $workplaceId) {
             return redirect()->route('setting.attendance.manage');
         }
 
         $workplaceList = $this->workplaceService->getWorkplaceList(true);
-        if ($workplaceList === false || $workplaceList === null) $workplaceList = [];
+        if ($workplaceList === false || $workplaceList === null) {
+            $workplaceList = [];
+        }
 
         $assignedStaffList = [];
         if ($mode === 'update') {
             $assignedStaffList = $this->attendanceService->GetAttendanceAllStaff($workplaceId, $workDate);
-            if ($assignedStaffList === false || $assignedStaffList === null) $assignedStaffList = [];
+            if ($assignedStaffList === false || $assignedStaffList === null) {
+                $assignedStaffList = [];
+            }
         }
 
         return view('setting.attendance.edit')->with([
@@ -133,16 +139,20 @@ class SettingAttendanceController extends Controller
         $workDate = $request->input('work_date');
         $staffId = $request->input('staff_id');
 
-        if (!$mode || !$workplaceId || !$workDate) {
+        if (! $mode || ! $workplaceId || ! $workDate) {
             return redirect()->route('setting.attendance.manage');
         }
 
         $defaults = $this->attendanceService->GetDefaults();
-        if ($defaults === false || $defaults === null) $defaults = (object)[];
+        if ($defaults === false || $defaults === null) {
+            $defaults = (object) [];
+        }
 
         if ($mode === 'create') {
             $assignedStaffList = $this->attendanceService->GetAttendanceAllStaff($workplaceId, $workDate);
-            if ($assignedStaffList === false || $assignedStaffList === null) $assignedStaffList = [];
+            if ($assignedStaffList === false || $assignedStaffList === null) {
+                $assignedStaffList = [];
+            }
 
             $startDefault = trim((string) ($defaults->start_time ?? ''));
             $endDefault = trim((string) ($defaults->end_time ?? ''));
@@ -162,9 +172,9 @@ class SettingAttendanceController extends Controller
             $breakTimeStr = $breakDefault;
             if (is_string($breakTimeStr) && $breakTimeStr !== '') {
                 if (preg_match('/^(\\d{1,2}):(\\d{2})/', $breakTimeStr, $m) === 1) {
-                    $breakMinutesDefault = ((int)$m[1]) * 60 + ((int)$m[2]);
+                    $breakMinutesDefault = ((int) $m[1]) * 60 + ((int) $m[2]);
                 } elseif (is_numeric($breakTimeStr)) {
-                    $breakMinutesDefault = (int)$breakTimeStr;
+                    $breakMinutesDefault = (int) $breakTimeStr;
                 }
             }
 
@@ -183,12 +193,14 @@ class SettingAttendanceController extends Controller
         }
 
         if ($mode === 'update') {
-            if (!$staffId) {
+            if (! $staffId) {
                 return redirect()->route('setting.attendance.manage');
             }
 
             $attendance = $this->attendanceService->GetAttendanceStaff($staffId, $workplaceId, $workDate);
-            if ($attendance === false || $attendance === null) $attendance = null;
+            if ($attendance === false || $attendance === null) {
+                $attendance = null;
+            }
 
             $dayStartDisp = $this->attendanceService->formatTimeForDisplay($attendance?->start_time ?? null);
             $dayEndDisp = $this->attendanceService->formatTimeForDisplay($attendance?->end_time ?? null);
@@ -235,32 +247,65 @@ class SettingAttendanceController extends Controller
         $endTime = $request->input('end_time');
         $breakTime = $request->input('break_time'); // 旧UI用
         $breakMinutes = $request->input('break_minutes'); // 新UI用（分）
+        $midnightStartTime = trim((string) $request->input('midnight_start_time', ''));
+        $midnightEndTime = trim((string) $request->input('midnight_end_time', ''));
+        $midnightBreakTime = trim((string) $request->input('midnight_break_time', ''));
+        $midnightBreakDeduct = (int) $this->isTruthyAbsenceInput($request->input('midnight_break_deduct'));
+        $midnightOvertimeTime = trim((string) $request->input('midnight_overtime_time', ''));
 
         $staffId = $request->input('staff_id');
 
         $breakEffectivelyMissing = ($breakMinutes === null || $breakMinutes === '') && ($breakTime === null || $breakTime === '');
-        if (!$mode || !$workplaceId || !$workDate || $startTime === null || $endTime === null) {
+        if (! $mode || ! $workplaceId || ! $workDate) {
             return redirect()->route('setting.attendance.manage')->with('status', false);
         }
-        // 一括登録では休憩が必須。個別編集では未入力可（後段で既定値へ寄せる）
-        if ($mode === 'create' && $breakEffectivelyMissing) {
-            return redirect()->route('setting.attendance.manage')->with('status', false);
+        // Laravelは空欄をnullへ変換するため、夜勤のみで昼欄を空にした入力も扱えるよう文字列へ揃える。
+        $startTime = (string) ($startTime ?? '');
+        $endTime = (string) ($endTime ?? '');
+        if ($mode === 'create') {
+            $dayStartFilled = trim((string) $startTime) !== '';
+            $dayEndFilled = trim((string) $endTime) !== '';
+            $nightStartFilled = $midnightStartTime !== '';
+            $nightEndFilled = $midnightEndTime !== '';
+
+            if ($dayStartFilled !== $dayEndFilled || $nightStartFilled !== $nightEndFilled) {
+                return redirect()->route('setting.attendance.manage')
+                    ->with('status', '出勤・退勤、深夜出勤・深夜退勤は、それぞれ両方を入力してください。');
+            }
+
+            if (! ($dayStartFilled && $dayEndFilled) && ! ($nightStartFilled && $nightEndFilled)) {
+                return redirect()->route('setting.attendance.manage')
+                    ->with('status', '昼勤務または深夜勤務の時刻を入力してください。');
+            }
+
+            // 昼勤務がある場合だけ昼休憩を必須にする。夜勤のみは深夜休憩を使う。
+            if ($dayStartFilled && $dayEndFilled && $breakEffectivelyMissing) {
+                return redirect()->route('setting.attendance.manage')
+                    ->with('status', '昼勤務の休憩時間を入力してください。');
+            }
+
+            if ($nightStartFilled && $nightEndFilled && $midnightBreakTime === '') {
+                $midnightBreakTime = '01:00';
+            }
         }
 
         // 休憩は画面では「分」で受け、DBへは break_time（HH:MM 文字列）として保存する
         $breakTimeFinal = null;
         if ($breakMinutes !== null && $breakMinutes !== '') {
-            $mins = max(0, (int)$breakMinutes);
+            $mins = max(0, (int) $breakMinutes);
             $hours = intdiv($mins, 60);
             $minutesOnly = $mins % 60;
             $breakTimeFinal = sprintf('%02d:%02d', $hours, $minutesOnly);
         } elseif ($breakTime !== null && $breakTime !== '') {
-            $breakTimeFinal = (string)$breakTime;
+            $breakTimeFinal = (string) $breakTime;
+        } elseif ($mode === 'create' && $midnightStartTime !== '' && $midnightEndTime !== '') {
+            // 夜勤のみの日は昼休憩を0分にし、深夜休憩との二重控除を防ぐ。
+            $breakTimeFinal = '00:00';
         } elseif ($mode === 'update') {
             $defaults = $this->attendanceService->GetDefaults();
             $defBreak = is_object($defaults) ? ($defaults->break_time ?? null) : null;
-            $breakTimeFinal = $defBreak !== null && (string)$defBreak !== ''
-                ? (string)$defBreak
+            $breakTimeFinal = $defBreak !== null && (string) $defBreak !== ''
+                ? (string) $defBreak
                 : '01:00';
         }
 
@@ -273,27 +318,27 @@ class SettingAttendanceController extends Controller
                 $startTime,
                 $endTime,
                 $breakTimeFinal,
-                $absenceStaffList
+                $absenceStaffList,
+                $midnightOvertimeTime,
+                $midnightStartTime,
+                $midnightEndTime,
+                $midnightBreakTime,
+                $midnightBreakDeduct
             );
         } elseif ($mode === 'update') {
-            if (!$staffId) {
+            if (! $staffId) {
                 return redirect()->route('setting.attendance.manage')->with('status', false);
             }
 
             $absenceFlg = $this->isTruthyAbsenceInput($request->input('absence_flg'));
             // 深夜出勤・退勤・深夜休憩・時間外（深夜）はフォームに常に存在するため、空欄はクリアとして扱う
-            $midnightStartTime = (string) $request->input('midnight_start_time', '');
-            $midnightEndTime = (string) $request->input('midnight_end_time', '');
-            $midnightBreakTime = (string) $request->input('midnight_break_time', '');
-            $midnightBreakDeduct = (int) $this->isTruthyAbsenceInput($request->input('midnight_break_deduct'));
-            $midnightOvertimeTime = (string) $request->input('midnight_overtime_time', '');
             $result = $this->attendanceService->AttendanceUpdate(
                 $staffId,
                 $workplaceId,
                 $workDate,
-                (string)$startTime,
-                (string)$endTime,
-                (string)($breakTimeFinal ?? '01:00'),
+                (string) $startTime,
+                (string) $endTime,
+                (string) ($breakTimeFinal ?? '01:00'),
                 $absenceFlg,
                 $midnightOvertimeTime,
                 $midnightStartTime,
@@ -313,6 +358,7 @@ class SettingAttendanceController extends Controller
 
         // 成否を result へ
         $workplaceQuery = ['workplace_id' => $workplaceId, 'work_date' => $workDate];
+
         return redirect()->route('setting.attendance.list', $workplaceQuery)->with('status', $result ? '保存しました' : '保存に失敗しました');
     }
 
@@ -355,7 +401,7 @@ class SettingAttendanceController extends Controller
         $workplaceId = $request->input('workplace_id');
         $workDate = $request->input('work_date');
 
-        if (!$workplaceId || !$workDate) {
+        if (! $workplaceId || ! $workDate) {
             return redirect()->route('setting.attendance.manage');
         }
 
@@ -394,7 +440,7 @@ class SettingAttendanceController extends Controller
         $workplaceId = $request->input('workplace_id');
         $workDate = $request->input('work_date');
 
-        if (!$staffId || !$workplaceId || !$workDate) {
+        if (! $staffId || ! $workplaceId || ! $workDate) {
             return redirect()->route('setting.attendance.manage');
         }
 
@@ -432,7 +478,9 @@ class SettingAttendanceController extends Controller
         }
 
         $staffList = $this->attendanceService->GetAbsenceStaffList($workDate);
-        if ($staffList === false || $staffList === null) $staffList = [];
+        if ($staffList === false || $staffList === null) {
+            $staffList = [];
+        }
 
         return view('setting.attendance.absence_staff')->with([
             'work_date' => $workDate,
@@ -603,4 +651,3 @@ class SettingAttendanceController extends Controller
             ->with('status', '保存しました。');
     }
 }
-
