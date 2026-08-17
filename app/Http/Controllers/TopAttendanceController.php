@@ -110,18 +110,28 @@ class TopAttendanceController extends Controller
 
         // 月次表表示（以前のPDF出力をWebページ表示へ変更）
         if ($request->has('output_pdf')) {
-            $monthlyData = $this->attendanceService->GetPdfData($resolvedWorkDate ?: date('Y-m-d'));
+            $monthlyBaseDate = Carbon::parse(
+                $resolvedWorkDate ?: date('Y-m-d'),
+                config('app.timezone')
+            )->startOfMonth();
+            $monthlyWorkDate = $monthlyBaseDate->format('Y-m-d');
+
+            $monthlyData = $this->attendanceService->GetPdfData($monthlyWorkDate);
             if ($monthlyData === false || empty($monthlyData['attendance_table_list'] ?? [])) {
                 return redirect()
                     ->route('top.attendance', [
                         'workplace_id' => $resolvedWorkplaceId,
-                        'work_date' => $resolvedWorkDate,
+                        'work_date' => $monthlyWorkDate,
                     ])
                     ->with('status', '表示できる勤怠データがありません。');
             }
 
             $monthlyData['filter_workplace_id'] = $resolvedWorkplaceId;
-            $monthlyData['filter_work_date'] = $resolvedWorkDate;
+            $monthlyData['filter_work_date'] = $monthlyWorkDate;
+            $monthlyData['display_month'] = $monthlyBaseDate->format('Y年n月');
+            $monthlyData['previous_month_work_date'] = $monthlyBaseDate->copy()->subMonth()->format('Y-m-d');
+            $monthlyData['current_month_work_date'] = Carbon::now(config('app.timezone'))->startOfMonth()->format('Y-m-d');
+            $monthlyData['next_month_work_date'] = $monthlyBaseDate->copy()->addMonth()->format('Y-m-d');
 
             return view('top.attendance_monthly')->with($monthlyData);
         }

@@ -33,11 +33,26 @@
         .cell-edit-link.ref-time { color: #9aa0a6; font-style: italic; }
     </style>
 
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
         <div>
             <h1 class="h4 mb-1 fw-semibold">勤怠（月次表）</h1>
+            <div class="text-muted small">表示月：{{ $display_month ?? '' }}</div>
         </div>
-        <div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="btn-group" role="group" aria-label="表示月の切り替え">
+                <a
+                    class="btn btn-outline-primary btn-sm"
+                    href="{{ route('top.attendance', array_filter(['workplace_id' => $filter_workplace_id ?? null, 'work_date' => $previous_month_work_date ?? null, 'output_pdf' => 1], fn ($v) => $v !== null && $v !== '')) }}"
+                >← 前月</a>
+                <a
+                    class="btn btn-outline-primary btn-sm"
+                    href="{{ route('top.attendance', array_filter(['workplace_id' => $filter_workplace_id ?? null, 'work_date' => $current_month_work_date ?? null, 'output_pdf' => 1], fn ($v) => $v !== null && $v !== '')) }}"
+                >今月</a>
+                <a
+                    class="btn btn-outline-primary btn-sm"
+                    href="{{ route('top.attendance', array_filter(['workplace_id' => $filter_workplace_id ?? null, 'work_date' => $next_month_work_date ?? null, 'output_pdf' => 1], fn ($v) => $v !== null && $v !== '')) }}"
+                >翌月 →</a>
+            </div>
             <a
                 class="btn btn-outline-secondary btn-sm"
                 href="{{ route('top.attendance', array_filter(['workplace_id' => $filter_workplace_id ?? null, 'work_date' => $filter_work_date ?? null], fn ($v) => $v !== null && $v !== '')) }}"
@@ -68,7 +83,7 @@
                     <th class="monthly-title" colspan="{{ count($date_list ?? []) + 2 }}">勤怠</th>
                 </tr>
                 <tr>
-                    <th class="monthly-head" colspan="{{ count($date_list ?? []) + 2 }}">{{ $display_date ?? '' }}　出　面　表</th>
+                    <th class="monthly-head" colspan="{{ count($date_list ?? []) + 2 }}">{{ $display_month ?? $display_date ?? '' }}　出　面　表</th>
                 </tr>
                 <tr>
                     <th class="monthly-head staff-col"></th>
