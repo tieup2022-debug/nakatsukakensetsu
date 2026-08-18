@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\SystemInquiryReceivedMail;
 use App\Services\SystemInquiryService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -47,6 +50,7 @@ class SystemInquiryController extends Controller
         }
 
         $at = SystemInquiryService::formatStoredAt($row->created_at, 'Y年n月j日 G:i');
+        $this->sendReceivedNotification($row, $userName, $at);
 
         return redirect()->route('inquiry.create')->with(
             'status',
@@ -127,5 +131,34 @@ class SystemInquiryController extends Controller
         }
 
         return null;
+    }
+
+    private function sendReceivedNotification(object $inquiry, string $userName, string $submittedAt): void
+    {
+        $email = trim((string) config('system_inquiry.notification_email'));
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Log::warning('お問い合わせ通知メールの送信先が設定されていません。', [
+                'inquiry_id' => (int) $inquiry->id,
+            ]);
+
+            return;
+        }
+
+        try {
+            Mail::to($email)->send(new SystemInquiryReceivedMail(
+                inquiryId: (int) $inquiry->id,
+                submittedBy: $userName,
+                submittedAt: $submittedAt,
+                inquiryBody: (string) $inquiry->body,
+                inquiryListUrl: route('setting.inquiry.index'),
+            ));
+        } catch (\Throwable $e) {
+            // メール障害があっても、利用者のお問い合わせ登録は成功扱いにする。
+            Log::error('お問い合わせ通知メールの送信に失敗しました。', [
+                'inquiry_id' => (int) $inquiry->id,
+                'recipient' => $email,
+                'exception' => $e,
+            ]);
+        }
     }
 }
