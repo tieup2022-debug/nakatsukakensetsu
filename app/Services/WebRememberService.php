@@ -3,10 +3,13 @@
 namespace App\Services;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Cookie as SymfonyCookie;
 
 class WebRememberService
 {
@@ -15,32 +18,50 @@ class WebRememberService
     /**
      * セッションに login_user_id が無いとき、Remember Cookie から復元する。
      */
-    public function attemptRestore(Request $request): void
+    public function attemptRestore(Request $request): bool
     {
         if ($request->session()->has('login_user_id')) {
-            return;
+            return true;
         }
 
         $data = $this->decodeCookie($request);
         if (! is_array($data) || ! isset($data['uid'], $data['tok'])) {
-            return;
+            if ($request->hasCookie(config('remember_web.cookie'))) {
+                $this->logRestoreFailure($request, 'cookie_decode_failed');
+                $this->forgetRememberCookie();
+            }
+
+            return false;
         }
 
         if (! is_numeric($data['uid']) || ! is_string($data['tok']) || $data['tok'] === '') {
-            return;
+            $this->logRestoreFailure($request, 'cookie_payload_invalid');
+            $this->forgetRememberCookie();
+
+            return false;
         }
 
         $userId = (int) $data['uid'];
         $token = $data['tok'];
 
         if (($data['v'] ?? null) === 2 && isset($data['sel']) && is_string($data['sel'])) {
-            $this->restoreFromDeviceToken($request, $userId, $data['sel'], $token);
+            $restored = $this->restoreFromDeviceToken($request, $userId, $data['sel'], $token);
+            if (! $restored) {
+                $this->logRestoreFailure($request, 'device_token_unavailable', $userId);
+                $this->forgetRememberCookie();
+            }
 
-            return;
+            return $restored;
         }
 
         // 旧形式との互換: 移行前に発行済みの Cookie は m_user.access_token_web で復元する。
-        $this->restoreFromLegacyToken($request, $userId, $token);
+        $restored = $this->restoreFromLegacyToken($request, $userId, $token);
+        if (! $restored) {
+            $this->logRestoreFailure($request, 'legacy_token_unavailable', $userId);
+            $this->forgetRememberCookie();
+        }
+
+        return $restored;
     }
 
     /**
@@ -165,10 +186,29 @@ class WebRememberService
         return $request->secure();
     }
 
-    private function restoreFromDeviceToken(Request $request, int $userId, string $selector, string $token): void
+    /** @param array{v:int, uid:int, sel:string, tok:string} $deviceToken */
+    public function makeRememberCookie(Request $request, array $deviceToken): SymfonyCookie
+    {
+        $minutes = (int) config('remember_web.lifetime_minutes', 43200);
+        $payload = Crypt::encryptString(json_encode($deviceToken, JSON_THROW_ON_ERROR));
+
+        return cookie(
+            config('remember_web.cookie'),
+            $payload,
+            $minutes,
+            '/',
+            config('session.domain'),
+            $this->cookieSecure($request),
+            true,
+            false,
+            config('session.same_site', 'lax')
+        );
+    }
+
+    private function restoreFromDeviceToken(Request $request, int $userId, string $selector, string $token): bool
     {
         if ($selector === '' || $token === '' || ! $this->deviceTokenTableExists()) {
-            return;
+            return false;
         }
 
         $row = DB::table(self::TOKEN_TABLE)
@@ -178,7 +218,7 @@ class WebRememberService
             ->first();
 
         if (! $row || ! hash_equals((string) $row->token_hash, hash('sha256', $token))) {
-            return;
+            return false;
         }
 
         $userExists = DB::table('m_user')
@@ -187,20 +227,30 @@ class WebRememberService
             ->exists();
 
         if (! $userExists) {
-            return;
+            return false;
         }
 
+        $expiresAt = now()->addMinutes((int) config('remember_web.lifetime_minutes', 43200));
         DB::table(self::TOKEN_TABLE)
             ->where('id', $row->id)
             ->update([
                 'last_used_at' => now(),
+                'expires_at' => $expiresAt,
                 'updated_at' => now(),
             ]);
 
         $this->restoreSession($request, $userId, $selector);
+        Cookie::queue($this->makeRememberCookie($request, [
+            'v' => 2,
+            'uid' => $userId,
+            'sel' => $selector,
+            'tok' => $token,
+        ]));
+
+        return true;
     }
 
-    private function restoreFromLegacyToken(Request $request, int $userId, string $token): void
+    private function restoreFromLegacyToken(Request $request, int $userId, string $token): bool
     {
         $user = DB::table('m_user')
             ->where('id', $userId)
@@ -208,14 +258,16 @@ class WebRememberService
             ->first();
 
         if (! $user || empty($user->access_token_web)) {
-            return;
+            return false;
         }
 
         if (! hash_equals((string) $user->access_token_web, $token)) {
-            return;
+            return false;
         }
 
         $this->restoreSession($request, $userId, (string) $user->access_token_web);
+
+        return true;
     }
 
     private function restoreSession(Request $request, int $userId, string $sessionToken): void
@@ -274,5 +326,24 @@ class WebRememberService
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    private function logRestoreFailure(Request $request, string $reason, ?int $userId = null): void
+    {
+        Log::warning('Webログイン状態の復元に失敗しました。', [
+            'reason' => $reason,
+            'user_id' => $userId,
+            'request_host' => $request->getHost(),
+            'user_agent' => Str::limit((string) $request->userAgent(), 500, ''),
+        ]);
+    }
+
+    private function forgetRememberCookie(): void
+    {
+        Cookie::queue(cookie()->forget(
+            config('remember_web.cookie'),
+            '/',
+            config('session.domain')
+        ));
     }
 }

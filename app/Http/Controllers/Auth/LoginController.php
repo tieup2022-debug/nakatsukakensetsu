@@ -7,7 +7,6 @@ use App\Services\AuthenticationService;
 use App\Services\WebRememberService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 
 class LoginController extends Controller
@@ -128,19 +127,6 @@ class LoginController extends Controller
             $deviceToken['sel'] !== '' ? $deviceToken['sel'] : $deviceToken['tok']
         );
 
-        $minutes = (int) config('remember_web.lifetime_minutes', 43200);
-        $payload = Crypt::encryptString(json_encode($deviceToken, JSON_THROW_ON_ERROR));
-
-        return $response->withCookie(cookie(
-            config('remember_web.cookie'),
-            $payload,
-            $minutes,
-            '/',
-            config('session.domain'),
-            $remember->cookieSecure($request),
-            true,
-            false,
-            config('session.same_site', 'lax')
-        ));
+        return $response->withCookie($remember->makeRememberCookie($request, $deviceToken));
     }
 }

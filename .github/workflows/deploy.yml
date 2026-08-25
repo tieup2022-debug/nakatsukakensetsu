@@ -134,6 +134,42 @@ jobs:
             echo "::warning::ステージング用ディレクトリを自動検出できませんでした（stage.nakatsuka.online は未更新の可能性があります）"
           fi
 
+      # iPhoneでブラウザを終了しても短時間でログイン切れにならないよう、通常セッションを12時間にする。
+      - name: Configure login session lifetime (primary)
+        run: |
+          ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" bash -s <<REMOTE
+          set -euo pipefail
+          cd '${{ secrets.XSERVER_DEPLOY_PATH }}'
+          if grep -q '^SESSION_LIFETIME=' .env; then
+            sed -i 's/^SESSION_LIFETIME=.*/SESSION_LIFETIME=720/' .env
+          else
+            printf '\n# Webログインの通常セッション（12時間）\nSESSION_LIFETIME=720\n' >> .env
+          fi
+          if grep -q '^SESSION_EXPIRE_ON_CLOSE=' .env; then
+            sed -i 's/^SESSION_EXPIRE_ON_CLOSE=.*/SESSION_EXPIRE_ON_CLOSE=false/' .env
+          else
+            printf 'SESSION_EXPIRE_ON_CLOSE=false\n' >> .env
+          fi
+          REMOTE
+
+      - name: Configure login session lifetime (staging)
+        if: steps.staging.outputs.path != ''
+        run: |
+          ssh -p "${{ secrets.XSERVER_PORT }}" "${{ secrets.XSERVER_USER }}@${{ secrets.XSERVER_HOST }}" bash -s <<REMOTE
+          set -euo pipefail
+          cd '${{ steps.staging.outputs.path }}'
+          if grep -q '^SESSION_LIFETIME=' .env; then
+            sed -i 's/^SESSION_LIFETIME=.*/SESSION_LIFETIME=720/' .env
+          else
+            printf '\n# Webログインの通常セッション（12時間）\nSESSION_LIFETIME=720\n' >> .env
+          fi
+          if grep -q '^SESSION_EXPIRE_ON_CLOSE=' .env; then
+            sed -i 's/^SESSION_EXPIRE_ON_CLOSE=.*/SESSION_EXPIRE_ON_CLOSE=false/' .env
+          else
+            printf 'SESSION_EXPIRE_ON_CLOSE=false\n' >> .env
+          fi
+          REMOTE
+
       - name: Sync files to Xserver (staging)
         if: steps.staging.outputs.path != ''
         run: |

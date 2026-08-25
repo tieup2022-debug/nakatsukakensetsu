@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Services\PasswordService;
 use App\Services\WebRememberService;
+use Carbon\Carbon;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Session\ArraySessionHandler;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Cookie as SymfonyCookie;
 use Tests\TestCase;
 
 class WebRememberMultiDeviceTest extends TestCase
@@ -117,6 +119,34 @@ class WebRememberMultiDeviceTest extends TestCase
             DB::table('t_web_remember_tokens')->where('user_id', 1)->orderBy('user_agent')->pluck('user_agent')->all()
         );
         $this->assertSame($legacyToken, DB::table('m_user')->where('id', 1)->value('access_token_web'));
+    }
+
+    public function test_protected_page_restores_login_after_session_is_lost(): void
+    {
+        $loginResponse = $this->withHeader('User-Agent', 'iPhone Home Screen Web App')->post('/login', [
+            'login_id' => 'multi-device-user',
+            'password' => 'password123',
+            'remember' => '1',
+        ]);
+
+        $rememberCookie = collect($loginResponse->headers->getCookies())
+            ->first(fn (SymfonyCookie $cookie): bool => $cookie->getName() === config('remember_web.cookie'));
+        $this->assertNotNull($rememberCookie);
+
+        $this->flushSession();
+
+        $response = $this->withUnencryptedCookie(
+            config('remember_web.cookie'),
+            $rememberCookie->getValue()
+        )->get('/dashboard');
+
+        $response->assertRedirect(route('top.assignment'));
+        $response->assertCookie(config('remember_web.cookie'));
+        $this->assertSame(1, session('login_user_id'));
+        $this->assertTrue(
+            Carbon::parse(DB::table('t_web_remember_tokens')->where('user_id', 1)->value('expires_at'))
+                ->greaterThan(now()->addDays(29))
+        );
     }
 
     public function test_expired_device_token_cannot_restore_session(): void
