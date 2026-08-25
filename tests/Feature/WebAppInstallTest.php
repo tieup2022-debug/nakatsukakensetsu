@@ -29,10 +29,10 @@ class WebAppInstallTest extends TestCase
         $this->assertSame('Nakatsuka DX', $manifest['name']);
         $this->assertSame('/index.php/dashboard', $manifest['start_url']);
         $this->assertSame('standalone', $manifest['display']);
-        $this->assertSame('/icons/icon-192.png', $manifest['icons'][0]['src']);
-        $this->assertSame('/icons/icon-512.png', $manifest['icons'][1]['src']);
+        $this->assertSame('/icon-192.png', $manifest['icons'][0]['src']);
+        $this->assertSame('/icon-512.png', $manifest['icons'][1]['src']);
         $this->assertFileExists(public_path('apple-touch-icon.png'));
-        $this->assertFileExists(public_path('icons/icon-192.png'));
-        $this->assertFileExists(public_path('icons/icon-512.png'));
+        $this->assertFileExists(public_path('icon-192.png'));
+        $this->assertFileExists(public_path('icon-512.png'));
     }
 }
