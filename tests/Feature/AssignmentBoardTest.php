@@ -18,6 +18,8 @@ class AssignmentBoardTest extends TestCase
             'database.default' => 'sqlite',
             'database.connections.sqlite.database' => ':memory:',
             'assignments.master_type.staff' => '1',
+            'assignments.master_type.vehicle' => '2',
+            'assignments.master_type.equipment' => '3',
             'assignments.company.workplace_name' => '会社',
             'assignments.company.soumu_staff_type' => 4,
         ]);
@@ -36,6 +38,14 @@ class AssignmentBoardTest extends TestCase
             $table->id();
             $table->string('workplace_name');
             $table->boolean('active_flg')->default(true);
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('m_vehicle', function (Blueprint $table): void {
+            $table->id();
+            $table->string('vehicle_name');
+            $table->unsignedTinyInteger('vehicle_type');
+            $table->unsignedInteger('sort_number')->default(0);
             $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
         });
@@ -78,6 +88,10 @@ class AssignmentBoardTest extends TestCase
             ['id' => 30, 'workplace_name' => '会社', 'active_flg' => true, 'deleted_at' => null, 'created_at' => $now, 'updated_at' => $now],
             ['id' => 40, 'workplace_name' => '終了現場', 'active_flg' => false, 'deleted_at' => null, 'created_at' => $now, 'updated_at' => $now],
         ]);
+        DB::table('m_vehicle')->insert([
+            ['id' => 101, 'vehicle_name' => '4tダンプ', 'vehicle_type' => 1, 'sort_number' => 1, 'deleted_at' => null, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 102, 'vehicle_name' => 'バックホウ0.25', 'vehicle_type' => 2, 'sort_number' => 2, 'deleted_at' => null, 'created_at' => $now, 'updated_at' => $now],
+        ]);
     }
 
     public function test_board_data_uses_live_masters_assignments_and_absences(): void
@@ -90,6 +104,26 @@ class AssignmentBoardTest extends TestCase
             'deleted_at' => null,
             'created_at' => now(),
             'updated_at' => now(),
+        ]);
+        DB::table('t_assignment')->insert([
+            [
+                'workplace_id' => 10,
+                'work_date' => '2026-08-31',
+                'master_id' => 101,
+                'master_type' => '2',
+                'deleted_at' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'workplace_id' => 10,
+                'work_date' => '2026-08-31',
+                'master_id' => 102,
+                'master_type' => '3',
+                'deleted_at' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
         DB::table('t_absence')->insert([
             'staff_id' => 2,
@@ -106,6 +140,8 @@ class AssignmentBoardTest extends TestCase
         $this->assertSame(['村田 亮介', '住吉 正己'], array_column($board['staff'], 'name'));
         $this->assertSame([['workplace_id' => 10, 'work_date' => '2026-08-31', 'staff_id' => 1]], $board['assignments']);
         $this->assertSame([['staff_id' => 2, 'work_date' => '2026-09-01']], $board['absences']);
+        $this->assertSame(['4tダンプ', 'バックホウ0.25'], array_column($board['machines'], 'name'));
+        $this->assertSame(['車両', '重機'], array_column($board['machines'], 'type_label'));
     }
 
     public function test_assignment_page_keeps_legacy_view_as_default(): void
@@ -131,6 +167,7 @@ class AssignmentBoardTest extends TestCase
             ->assertOk()
             ->assertViewIs('top.assignment_board')
             ->assertSee('従来表示に戻す')
+            ->assertSee('車両・重機予定表')
             ->assertSee('view=board', false);
     }
 

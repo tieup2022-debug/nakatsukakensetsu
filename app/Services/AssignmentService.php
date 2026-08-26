@@ -553,7 +553,7 @@ class AssignmentService
     }
 
     /**
-     * 2週間配置ボード用の人員・現場・配置・欠勤を一括取得する。
+     * 2週間配置ボード用の人員・現場・配置・欠勤・機械予定を一括取得する。
      *
      * @return array<string, mixed>|false
      */
@@ -567,6 +567,8 @@ class AssignmentService
             $companyName = (string) config('assignments.company.workplace_name', '会社');
             $soumuStaffType = (int) config('assignments.company.soumu_staff_type', 4);
             $staffMasterType = (string) config('assignments.master_type.staff');
+            $vehicleMasterType = (string) config('assignments.master_type.vehicle');
+            $equipmentMasterType = (string) config('assignments.master_type.equipment');
 
             $workplaces = DB::table('m_workplace')
                 ->select('id', 'workplace_name')
@@ -611,6 +613,33 @@ class AssignmentService
                     ->get();
             }
 
+            // 機械予定表と同じ t_assignment / m_vehicle を参照する。
+            // このボードでは表示だけを行い、機械の編集は専用の機械予定表に集約する。
+            $machines = collect();
+            if ($workplaceIds !== []) {
+                $machines = DB::table('t_assignment as ta')
+                    ->join('m_vehicle as mv', 'mv.id', '=', 'ta.master_id')
+                    ->select(
+                        'ta.workplace_id',
+                        'ta.work_date',
+                        'ta.master_id as machine_id',
+                        'ta.master_type',
+                        'mv.vehicle_name',
+                        'mv.vehicle_type'
+                    )
+                    ->whereIn('ta.master_type', [$vehicleMasterType, $equipmentMasterType])
+                    ->whereBetween('ta.work_date', [$start->toDateString(), $end->toDateString()])
+                    ->whereIn('ta.workplace_id', $workplaceIds)
+                    ->whereNull('ta.deleted_at')
+                    ->whereNull('mv.deleted_at')
+                    ->orderBy('ta.work_date')
+                    ->orderBy('ta.workplace_id')
+                    ->orderBy('mv.vehicle_type')
+                    ->orderBy('mv.sort_number')
+                    ->orderBy('mv.id')
+                    ->get();
+            }
+
             $assignmentRows = $assignments->map(fn ($row) => [
                 'workplace_id' => (int) $row->workplace_id,
                 'work_date' => (string) $row->work_date,
@@ -631,6 +660,15 @@ class AssignmentService
                 'staff_id' => (int) $row->staff_id,
                 'work_date' => (string) $row->work_date,
             ])->values()->all();
+            $machineRows = $machines->map(fn ($row) => [
+                'workplace_id' => (int) $row->workplace_id,
+                'work_date' => (string) $row->work_date,
+                'machine_id' => (int) $row->machine_id,
+                'name' => (string) $row->vehicle_name,
+                'type' => (int) $row->vehicle_type,
+                'type_label' => (int) $row->vehicle_type === 2 ? '重機' : '車両',
+                'master_type' => (int) $row->master_type,
+            ])->values()->all();
 
             return [
                 'start_date' => $start->toDateString(),
@@ -640,7 +678,8 @@ class AssignmentService
                 'staff' => $staffRows,
                 'assignments' => $assignmentRows,
                 'absences' => $absenceRows,
-                'revision' => sha1(json_encode([$workplaceRows, $staffRows, $assignmentRows, $absenceRows], JSON_UNESCAPED_UNICODE)),
+                'machines' => $machineRows,
+                'revision' => sha1(json_encode([$workplaceRows, $staffRows, $assignmentRows, $absenceRows, $machineRows], JSON_UNESCAPED_UNICODE)),
                 'refreshed_at' => now()->toIso8601String(),
             ];
         } catch (\Throwable $e) {
@@ -1165,6 +1204,8 @@ class AssignmentService
         $companyName = (string) config('assignments.company.workplace_name', '会社');
         $soumuStaffType = (int) config('assignments.company.soumu_staff_type', 4);
         $staffMasterType = (string) config('assignments.master_type.staff');
+        $vehicleMasterType = (string) config('assignments.master_type.vehicle');
+        $equipmentMasterType = (string) config('assignments.master_type.equipment');
 
         $workplaces = array_values(array_filter(
             $this->readLocalJson('app/local_workplaces.json'),
@@ -1181,7 +1222,8 @@ class AssignmentService
         $workplaceIds = array_map(fn ($row) => (int) ($row['id'] ?? 0), $workplaces);
         $staffIds = array_map(fn ($row) => (int) ($row['id'] ?? 0), $staff);
         $assignments = [];
-        foreach ($this->readLocalAssignments() as $row) {
+        $localAssignments = $this->readLocalAssignments();
+        foreach ($localAssignments as $row) {
             $date = (string) ($row['work_date'] ?? '');
             if ($date < $start->toDateString() || $date > $end->toDateString()) {
                 continue;
@@ -1197,6 +1239,51 @@ class AssignmentService
                 'workplace_id' => (int) $row['workplace_id'],
                 'work_date' => $date,
                 'staff_id' => (int) $row['master_id'],
+            ];
+        }
+
+        $machineMasters = [];
+        foreach ($this->readLocalJson('app/local_vehicles.json') as $row) {
+            if (! empty($row['deleted_at'])) {
+                continue;
+            }
+            $machineMasters[$vehicleMasterType.'|'.(int) ($row['id'] ?? 0)] = [
+                'name' => (string) ($row['vehicle_name'] ?? ''),
+                'type' => 1,
+                'type_label' => '車両',
+            ];
+        }
+        foreach ($this->readLocalJson('app/local_equipments.json') as $row) {
+            if (! empty($row['deleted_at'])) {
+                continue;
+            }
+            $machineMasters[$equipmentMasterType.'|'.(int) ($row['id'] ?? 0)] = [
+                'name' => (string) ($row['vehicle_name'] ?? ''),
+                'type' => 2,
+                'type_label' => '重機',
+            ];
+        }
+
+        $machines = [];
+        foreach ($localAssignments as $row) {
+            $date = (string) ($row['work_date'] ?? '');
+            $masterType = (string) ($row['master_type'] ?? '');
+            $machineId = (int) ($row['master_id'] ?? 0);
+            $machine = $machineMasters[$masterType.'|'.$machineId] ?? null;
+            if ($machine === null || $date < $start->toDateString() || $date > $end->toDateString()) {
+                continue;
+            }
+            if (! in_array((int) ($row['workplace_id'] ?? 0), $workplaceIds, true)) {
+                continue;
+            }
+            $machines[] = [
+                'workplace_id' => (int) $row['workplace_id'],
+                'work_date' => $date,
+                'machine_id' => $machineId,
+                'name' => $machine['name'],
+                'type' => $machine['type'],
+                'type_label' => $machine['type_label'],
+                'master_type' => (int) $masterType,
             ];
         }
 
@@ -1216,7 +1303,8 @@ class AssignmentService
             ], $staff),
             'assignments' => $assignments,
             'absences' => [],
-            'revision' => sha1(json_encode([$workplaces, $staff, $assignments], JSON_UNESCAPED_UNICODE)),
+            'machines' => $machines,
+            'revision' => sha1(json_encode([$workplaces, $staff, $assignments, $machines], JSON_UNESCAPED_UNICODE)),
             'refreshed_at' => now()->toIso8601String(),
         ];
     }

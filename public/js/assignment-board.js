@@ -43,7 +43,8 @@
         place: app.dataset.placeUrl,
         remove: app.dataset.removeUrl,
         copyDay: app.dataset.copyDayUrl,
-        base: app.dataset.baseUrl
+        base: app.dataset.baseUrl,
+        machineSchedule: app.dataset.machineScheduleUrl
     };
 
     function escapeHtml(value) {
@@ -73,6 +74,16 @@
             var key = assignmentKey(row.work_date, row.workplace_id);
             if (!map.has(key)) map.set(key, []);
             map.get(key).push(Number(row.staff_id));
+        });
+        return map;
+    }
+
+    function machinesByCell() {
+        var map = new Map();
+        (boardData.machines || []).forEach(function (machine) {
+            var key = assignmentKey(machine.work_date, machine.workplace_id);
+            if (!map.has(key)) map.set(key, []);
+            map.get(key).push(machine);
         });
         return map;
     }
@@ -143,6 +154,7 @@
     function renderBoard() {
         var dates = datesInBoard();
         var byCell = assignmentsByCell();
+        var machines = machinesByCell();
         var staffMap = new Map((boardData.staff || []).map(function (person) { return [Number(person.id), person]; }));
         var absent = absenceSet();
         var workplaces = boardData.workplaces || [];
@@ -175,12 +187,18 @@
             dates.forEach(function (date, dayIndex) {
                 var dateString = iso(date);
                 var ids = byCell.get(assignmentKey(dateString, site.id)) || [];
+                var cellMachines = machines.get(assignmentKey(dateString, site.id)) || [];
                 var weekend = date.getDay() === 0 || date.getDay() === 6;
-                html += '<div class="ab-drop-cell' + (weekend ? ' weekend' : '') + '" data-day-index="' + dayIndex + '" data-workplace-id="' + Number(site.id) + '" data-work-date="' + dateString + '">' + ids.map(function (staffId) {
+                var staffHtml = ids.map(function (staffId) {
                     var person = staffMap.get(Number(staffId));
                     if (!person) return '';
                     return '<div class="ab-assignment-chip type-' + Number(person.type) + '" draggable="true" data-staff-id="' + Number(person.id) + '" data-workplace-id="' + Number(site.id) + '" data-work-date="' + dateString + '" title="' + escapeHtml(person.name + ' / ' + person.type_label) + '"><span>' + escapeHtml(person.name) + '</span><button class="ab-remove-chip" type="button" aria-label="' + escapeHtml(person.name) + 'の配置を解除">×</button></div>';
-                }).join('') + '</div>';
+                }).join('');
+                var machineHtml = cellMachines.length ? '<div class="ab-machine-list"><div class="ab-machine-heading">車両・重機</div>' + cellMachines.map(function (machine) {
+                    var type = Number(machine.type) === 2 ? 2 : 1;
+                    return '<a class="ab-machine-chip type-' + type + '" href="' + escapeHtml(urls.machineSchedule) + '" title="機械予定表で確認：' + escapeHtml(machine.name) + '"><span class="ab-machine-mark">' + (type === 2 ? '重' : '車') + '</span><span>' + escapeHtml(machine.name) + '</span></a>';
+                }).join('') + '</div>' : '';
+                html += '<div class="ab-drop-cell' + (weekend ? ' weekend' : '') + (cellMachines.length ? ' has-machines' : '') + '" data-day-index="' + dayIndex + '" data-workplace-id="' + Number(site.id) + '" data-work-date="' + dateString + '">' + staffHtml + machineHtml + '</div>';
             });
         });
         els.board.innerHTML = html;
@@ -198,7 +216,7 @@
                 if (dragPayload) placeStaff(dragPayload.staffId, Number(cell.dataset.workplaceId), cell.dataset.workDate);
             });
             cell.addEventListener('click', function (event) {
-                if (selectedStaffId && !event.target.closest('.ab-assignment-chip')) {
+                if (selectedStaffId && !event.target.closest('.ab-assignment-chip, .ab-machine-chip')) {
                     placeStaff(selectedStaffId, Number(cell.dataset.workplaceId), cell.dataset.workDate);
                 }
             });

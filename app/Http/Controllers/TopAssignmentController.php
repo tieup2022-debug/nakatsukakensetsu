@@ -57,6 +57,7 @@ class TopAssignmentController extends Controller
                     'staff' => [],
                     'assignments' => [],
                     'absences' => [],
+                    'machines' => [],
                     'revision' => '',
                     'refreshed_at' => now()->toIso8601String(),
                 ],
@@ -67,6 +68,10 @@ class TopAssignmentController extends Controller
                 'boardCopyDayUrl' => route('top.assignment.board.copy-day'),
                 'boardBaseUrl' => route('top.assignment', ['view' => 'board']),
                 'legacyAssignmentUrl' => route('top.assignment', ['work_date' => $startDate]),
+                'machineScheduleUrl' => route('top.machine.schedule', [
+                    'start_date' => $startDate,
+                    'range' => '2w',
+                ]),
             ]);
         }
 

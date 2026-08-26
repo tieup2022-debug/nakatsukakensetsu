@@ -13,12 +13,13 @@
         data-remove-url="{{ $boardRemoveUrl }}"
         data-copy-day-url="{{ $boardCopyDayUrl }}"
         data-base-url="{{ $boardBaseUrl }}"
+        data-machine-schedule-url="{{ $machineScheduleUrl }}"
     >
         <section class="ab-heading" aria-labelledby="assignmentBoardTitle">
             <div>
                 <div class="ab-eyebrow">NAKATSUKA DX / ASSIGNMENT</div>
                 <h1 id="assignmentBoardTitle">人員配置システム</h1>
-                <p>人員を選び、現場と日付のマスをタップしてください。変更はその場で保存されます。</p>
+                <p>人員を選び、現場と日付のマスをタップしてください。機械予定表の配置も自動で表示されます。</p>
             </div>
             <div class="ab-summary" aria-label="配置状況">
                 <div class="ab-summary-item"><i class="ab-summary-bar is-blue"></i><span><strong id="abAssignedCount">0</strong><small>配置済み</small></span></div>
@@ -37,6 +38,7 @@
             <div class="ab-toolbar-actions">
                 <span class="ab-sync-status" id="abSyncStatus"><i></i><span>自動保存</span></span>
                 <a class="ab-button is-legacy" href="{{ $legacyAssignmentUrl }}">従来表示に戻す</a>
+                <a class="ab-button is-machine" href="{{ $machineScheduleUrl }}">車両・重機予定表</a>
                 @if (!empty($canAccessAssignmentSettings))
                     <a class="ab-button is-soft" href="{{ route('setting.assignment.manage') }}">詳細入力</a>
                 @endif
@@ -45,7 +47,7 @@
             </div>
         </section>
 
-        <div class="ab-mobile-note"><span aria-hidden="true">☝</span> 人員をタップ → 配置先をタップ。表は横にスワイプできます。</div>
+        <div class="ab-mobile-note"><span aria-hidden="true">☝</span> 人員をタップ → 配置先をタップ。車両・重機の予定も同じマスに表示します。</div>
 
         <section class="ab-layout">
             <aside class="ab-people-panel" aria-labelledby="abStaffHeading">
@@ -80,6 +82,8 @@
                     <span><i class="ab-legend-color is-type-1"></i>技術者</span>
                     <span><i class="ab-legend-color is-type-2"></i>OP</span>
                     <span><i class="ab-legend-color is-type-3"></i>作業員</span>
+                    <span><i class="ab-legend-color is-vehicle"></i>車両</span>
+                    <span><i class="ab-legend-color is-equipment"></i>重機</span>
                     <span><i class="ab-legend-color is-weekend"></i>土日</span>
                     <span class="ab-legend-tip">30秒ごと・画面復帰時に自動同期</span>
                 </div>

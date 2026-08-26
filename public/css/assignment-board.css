@@ -8,6 +8,8 @@
     --ab-type-1: #1768e5;
     --ab-type-2: #e78324;
     --ab-type-3: #15a067;
+    --ab-vehicle: #0e7490;
+    --ab-equipment: #7c3aed;
     --ab-red: #dc4c4c;
     color: var(--ab-ink);
     min-width: 0;
@@ -37,6 +39,7 @@
 .ab-button { min-height: 38px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .ab-button.is-soft { color: #38516f; background: #f5f8fc; border: 1px solid var(--ab-line); }
 .ab-button.is-legacy { color: #35516f; background: #fff; border: 1px solid #aebed2; }
+.ab-button.is-machine { color: #fff; background: #5b4bc4; }
 .ab-button.is-week { color: #fff; background: #16a4df; }
 .ab-button.is-two-weeks { color: #fff; background: #10b981; }
 .ab-week-label { min-width: 235px; display: grid; padding: 0 8px; line-height: 1.2; }
@@ -126,12 +129,23 @@
 .ab-assignment-chip:hover .ab-remove-chip { opacity: 1; }
 .ab-remove-chip { position: absolute; right: 3px; top: 50%; width: 18px; height: 18px; padding: 0; transform: translateY(-50%); border: 0; border-radius: 5px; color: #8390a2; background: transparent; cursor: pointer; opacity: 0; }
 .ab-remove-chip:hover { color: var(--ab-red); background: #ffe8e8; }
+.ab-machine-list { margin-top: 6px; padding-top: 5px; border-top: 1px dashed #cfd8e5; }
+.ab-machine-heading { margin: 0 0 4px 2px; color: #737f91; font-size: 8px; font-weight: 800; letter-spacing: .04em; }
+.ab-machine-chip { min-height: 24px; display: flex; align-items: center; gap: 5px; margin-bottom: 3px; padding: 3px 5px; overflow: hidden; color: #315d6b; background: #eefbfe; border: 1px solid #cde9ef; border-radius: 6px; font-size: 9px; font-weight: 800; text-decoration: none; }
+.ab-machine-chip.type-2 { color: #5d439b; background: #f6f1ff; border-color: #e1d4fb; }
+.ab-machine-chip:hover { color: #174b5a; background: #e1f7fb; }
+.ab-machine-chip.type-2:hover { color: #49307e; background: #eee5ff; }
+.ab-machine-chip > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ab-machine-mark { flex: 0 0 auto; width: 18px; height: 18px; display: grid; place-items: center; color: #fff; background: var(--ab-vehicle); border-radius: 5px; font-size: 8px; }
+.ab-machine-chip.type-2 .ab-machine-mark { background: var(--ab-equipment); }
 .ab-legend { min-height: 49px; display: flex; align-items: center; gap: 17px; padding: 0 14px; color: var(--ab-muted); border-top: 1px solid var(--ab-line); font-size: 9px; }
 .ab-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .ab-legend-color { width: 9px; height: 9px; border-radius: 3px; }
 .ab-legend-color.is-type-1 { background: var(--ab-type-1); }
 .ab-legend-color.is-type-2 { background: var(--ab-type-2); }
 .ab-legend-color.is-type-3 { background: var(--ab-type-3); }
+.ab-legend-color.is-vehicle { background: var(--ab-vehicle); }
+.ab-legend-color.is-equipment { background: var(--ab-equipment); }
 .ab-legend-color.is-weekend { background: #dbe9fb; }
 .ab-legend-tip { margin-left: auto; }
 .ab-toast-region { position: fixed; right: 22px; bottom: 22px; z-index: 1050; display: grid; gap: 8px; }
@@ -199,6 +213,7 @@
     .ab-site-meta { font-size: 7px; }
     .ab-drop-cell { padding: 5px; }
     .ab-assignment-chip { min-height: 28px; padding: 4px 21px 4px 6px; font-size: 9px; }
+    .ab-machine-chip { min-height: 26px; font-size: 8px; }
     .ab-remove-chip { opacity: 1; }
     .ab-legend { min-height: 43px; gap: 9px; padding: 6px 8px; overflow-x: auto; white-space: nowrap; }
     .ab-legend-tip { display: none !important; }
