@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\BoardController;
 use App\Http\Controllers\GratitudePointController;
 use App\Http\Controllers\InAppNotificationController;
 use App\Http\Controllers\MachineScheduleController;
@@ -45,6 +46,19 @@ Route::get('/top/assignment/board-data', [TopAssignmentController::class, 'board
 Route::post('/top/assignment/board-place', [TopAssignmentController::class, 'boardPlace'])->name('top.assignment.board.place');
 Route::post('/top/assignment/board-remove', [TopAssignmentController::class, 'boardRemove'])->name('top.assignment.board.remove');
 Route::post('/top/assignment/board-copy-day', [TopAssignmentController::class, 'boardCopyDay'])->name('top.assignment.board.copy-day');
+
+// 社内掲示板
+Route::middleware('nakatsuka.auth')->group(function (): void {
+    Route::get('/board', [BoardController::class, 'index'])->name('board.index');
+    Route::get('/board/create', [BoardController::class, 'create'])->name('board.create');
+    Route::post('/board', [BoardController::class, 'store'])->name('board.store');
+    Route::get('/board/attachments/{attachment}', [BoardController::class, 'attachment'])->name('board.attachments.show')->where('attachment', '[0-9]+');
+    Route::get('/board/{thread}', [BoardController::class, 'show'])->name('board.show')->where('thread', '[0-9]+');
+    Route::post('/board/{thread}/replies', [BoardController::class, 'reply'])->name('board.replies.store')->where('thread', '[0-9]+');
+    Route::post('/board/{thread}/like', [BoardController::class, 'like'])->name('board.like')->where('thread', '[0-9]+');
+    Route::delete('/board/{thread}', [BoardController::class, 'destroy'])->name('board.destroy')->where('thread', '[0-9]+');
+    Route::delete('/board/{thread}/replies/{reply}', [BoardController::class, 'destroyReply'])->name('board.replies.destroy')->whereNumber(['thread', 'reply']);
+});
 
 // 機械（車両・重機）配置予定表（ガント形式）
 Route::get('/top/machine-schedule', [MachineScheduleController::class, 'index'])->name('top.machine.schedule');
