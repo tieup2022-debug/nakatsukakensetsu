@@ -171,6 +171,37 @@ class AssignmentBoardTest extends TestCase
             ->assertSee('view=board', false);
     }
 
+    public function test_assignment_pdf_preview_keeps_all_technicians_when_more_than_three_are_assigned(): void
+    {
+        $technicians = collect(range(1, 4))
+            ->map(fn (int $number): object => (object) [
+                'staff_name' => '技術者'.$number,
+                'staff_type' => 1,
+            ])
+            ->all();
+
+        $service = \Mockery::mock(AssignmentService::class)->makePartial();
+        $service->shouldReceive('GetAssignedWorkplace')->once()->andReturn(collect([
+            (object) ['workplace_id' => 10, 'workplace_name' => '滝ノ下'],
+        ]));
+        $service->shouldReceive('GetStaffList')->andReturnUsing(
+            fn (int $staffType): array => $staffType === 1 ? $technicians : []
+        );
+        $service->shouldReceive('GetVehicleList')->andReturn([]);
+        $service->shouldReceive('GetEquipmentList')->andReturn([]);
+
+        $viewData = $service->getPdf('2026-08-31');
+
+        $this->assertIsArray($viewData);
+        $this->assertSame(
+            ['技術者1', '技術者2', '技術者3', '技術者4'],
+            $viewData['pdf_data_list'][0]['workplace1']['technitian_list']
+        );
+
+        $html = view('pdf.assignment_all', $viewData)->render();
+        $this->assertStringContainsString('技術者 技術者4', $html);
+    }
+
     public function test_place_endpoint_moves_staff_and_removes_old_attendance(): void
     {
         DB::table('t_assignment')->insert([

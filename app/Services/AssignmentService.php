@@ -13,7 +13,8 @@ class AssignmentService
     /** PDF: 1ページあたりの現場列数（旧システムと同じ） */
     private const PDF_WORKPLACES_PER_PAGE = 8;
 
-    private const PDF_MAX_TECHNITIANS = 3;
+    /** PDF/プレビューで確保する技術者の最低行数（人数が多い場合は全員分に拡張） */
+    private const PDF_MIN_TECHNITIAN_ROWS = 3;
 
     private const PDF_MAX_WORKERS = 20;
 
@@ -1014,7 +1015,11 @@ class AssignmentService
                 $vehicleList = $this->GetVehicleList($workplaceId, $workDate, true);
                 $equipmentList = $this->GetEquipmentList($workplaceId, $workDate, true);
 
-                $pdfData[$key]['technitian_list'] = $this->formatStaffArray($technitianList ?: [], self::PDF_MAX_TECHNITIANS);
+                $technitianArray = is_array($technitianList) ? $technitianList : [];
+                $pdfData[$key]['technitian_list'] = $this->formatStaffArray(
+                    $technitianArray,
+                    max(self::PDF_MIN_TECHNITIAN_ROWS, count($technitianArray))
+                );
                 $pdfData[$key]['worker_list'] = $this->formatWorkerArray($workerList);
                 $pdfData[$key]['vehicle_list'] = $this->formatVehicleEquipmentArray($vehicleList ?: [], 'vehicle_name');
                 $pdfData[$key]['equipment_list'] = $this->formatVehicleEquipmentArray($equipmentList ?: [], 'vehicle_name');
@@ -1159,7 +1164,7 @@ class AssignmentService
     private function fillEmptyWorkplaceData(array &$pdfDataEntry): void
     {
         $pdfDataEntry['technitian_list'] = [];
-        for ($i = 0; $i < self::PDF_MAX_TECHNITIANS; $i++) {
+        for ($i = 0; $i < self::PDF_MIN_TECHNITIAN_ROWS; $i++) {
             $pdfDataEntry['technitian_list'][$i] = '';
         }
         $pdfDataEntry['worker_list'] = [];

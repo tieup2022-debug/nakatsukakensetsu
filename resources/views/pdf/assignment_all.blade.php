@@ -1021,8 +1021,19 @@
                 </th>
             </tr>
         </thead>
+        @php
+            // 技術者は従来3行固定だったため4人目以降が欠けていた。
+            // ページ内で最も多い現場に合わせ、最低3行を維持しつつ全員を表示する。
+            $technitianRowCount = 3;
+            for ($i = 1; $i <= 8; $i++) {
+                $technitianRowCount = max(
+                    $technitianRowCount,
+                    count($page['workplace'.$i]['technitian_list'] ?? [])
+                );
+            }
+        @endphp
         <tbody>
-            @for($r = 0; $r < 3; $r++)
+            @for($r = 0; $r < $technitianRowCount; $r++)
                 <tr>
                     @for($i = 1; $i <= 8; $i++)
                         @php
@@ -1050,7 +1061,7 @@
                     @endfor
                     @if($r === 0)
                         @if($isWeb)
-                            <td rowspan="8" class="cell absence-cell stack" style="white-space: pre-wrap;">
+                            <td rowspan="{{ $technitianRowCount + 5 }}" class="cell absence-cell stack" style="white-space: pre-wrap;">
                                 @if(count($absenceNames) > 0)
                                     <div class="absence-list">
                                         @foreach($absenceNames as $absName)
@@ -1062,7 +1073,7 @@
                                 @endif
                             </td>
                         @else
-                            <td rowspan="3" class="cell absence-cell stack" style="white-space: pre-wrap;">{{ $absenceText }}</td>
+                            <td rowspan="{{ $technitianRowCount }}" class="cell absence-cell stack" style="white-space: pre-wrap;">{{ $absenceText }}</td>
                         @endif
                     @endif
                 </tr>
