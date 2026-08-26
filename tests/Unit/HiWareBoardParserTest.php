@@ -10,7 +10,7 @@ class HiWareBoardParserTest extends TestCase
     public function test_it_parses_shift_jis_list_rows_and_total_pages(): void
     {
         $html = <<<'HTML'
-        <html><body>
+        <html><head><meta http-equiv="Content-Type" content="text/html; charset=shift_jis"></head><body>
         <ul><li>[ Page: 1/1232 ]</li></ul>
         <table>
           <tr>

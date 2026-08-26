@@ -232,6 +232,13 @@ class HiWareBoardParser
     private function document(string $rawHtml): array
     {
         $html = $this->decode($rawHtml);
+        // The response is converted to UTF-8 above, so the legacy Shift_JIS
+        // declaration must also be updated before libxml reads the document.
+        $html = preg_replace(
+            '/(<meta\b[^>]*charset\s*=\s*["\']?)shift[-_]?jis(?:-win)?/i',
+            '$1UTF-8',
+            $html,
+        ) ?? $html;
         $dom = new DOMDocument('1.0', 'UTF-8');
         $previous = libxml_use_internal_errors(true);
         $dom->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_NONET);
