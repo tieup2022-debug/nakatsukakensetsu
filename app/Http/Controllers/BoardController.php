@@ -105,7 +105,9 @@ class BoardController extends Controller
         $file = $this->board->findAttachment($attachment);
         abort_unless($file && Storage::disk($file->disk)->exists($file->path), 404);
 
-        if ($request->boolean('inline') && str_starts_with((string) $file->mime_type, 'image/')) {
+        if ($request->boolean('inline') && in_array((string) $file->mime_type, [
+            'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        ], true)) {
             return Storage::disk($file->disk)->response(
                 $file->path,
                 $file->original_name,

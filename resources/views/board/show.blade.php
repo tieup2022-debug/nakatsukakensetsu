@@ -9,7 +9,9 @@
             $escaped
         ) ?? $escaped;
     };
-    $isImage = static fn (object $attachment): bool => str_starts_with((string) $attachment->mime_type, 'image/');
+    $isImage = static fn (object $attachment): bool => in_array((string) $attachment->mime_type, [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    ], true);
 @endphp
 
 @push('styles')
@@ -83,6 +85,9 @@
                             <div class="small text-muted">
                                 <strong class="text-body">{{ $reply->author_name }}</strong>
                                 <span class="ms-2">{{ \App\Support\DatetimeDisplay::formatStoredAt($reply->created_at) }}</span>
+                                @if ((int) ($reply->legacy_like_count ?? 0) > 0)
+                                    <span class="ms-2">👍 {{ number_format($reply->legacy_like_count) }}</span>
+                                @endif
                             </div>
                             @if ((int) ($currentUser->permission ?? 0) === 1 || (int) $reply->author_user_id === (int) $currentUser->id)
                                 <form method="post" action="{{ route('board.replies.destroy', ['thread' => $thread->id, 'reply' => $reply->id]) }}" onsubmit="return confirm('この返信を削除します。よろしいですか？')">

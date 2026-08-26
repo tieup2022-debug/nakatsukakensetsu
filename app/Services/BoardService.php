@@ -44,7 +44,14 @@ class BoardService
             });
         }
 
-        return $query->paginate($perPage)->withQueryString();
+        $paginator = $query->paginate($perPage)->withQueryString();
+        $paginator->getCollection()->transform(function (object $thread): object {
+            $thread->like_count = (int) $thread->like_count + (int) ($thread->legacy_like_count ?? 0);
+
+            return $thread;
+        });
+
+        return $paginator;
     }
 
     public function findThread(int $threadId, int $viewerUserId = 0, bool $incrementViews = false): ?object
@@ -67,6 +74,8 @@ class BoardService
         if (! $thread) {
             return null;
         }
+
+        $thread->like_count = (int) $thread->like_count + (int) ($thread->legacy_like_count ?? 0);
 
         $thread->liked_by_viewer = $viewerUserId > 0 && DB::table('t_board_likes')
             ->where('thread_id', $threadId)
@@ -200,7 +209,8 @@ class BoardService
 
         return [
             'liked' => $liked,
-            'count' => DB::table('t_board_likes')->where('thread_id', $threadId)->count(),
+            'count' => DB::table('t_board_likes')->where('thread_id', $threadId)->count()
+                + (int) DB::table('t_board_threads')->where('id', $threadId)->value('legacy_like_count'),
         ];
     }
 
@@ -308,7 +318,11 @@ class BoardService
                 'reply_id' => $replyId,
                 'disk' => 'local',
                 'path' => $path,
-                'original_name' => $file->getClientOriginalName(),
+                'original_name' => mb_substr(
+                    preg_replace('/[\x00-\x1F\x7F]+/u', '_', $file->getClientOriginalName()) ?: 'attachment',
+                    0,
+                    255,
+                ),
                 'mime_type' => $file->getMimeType(),
                 'size' => $file->getSize() ?: 0,
                 'created_at' => now(),

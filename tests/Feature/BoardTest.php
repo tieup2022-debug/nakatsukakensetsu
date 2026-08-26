@@ -31,6 +31,8 @@ class BoardTest extends TestCase
 
         $migration = require database_path('migrations/2026_08_26_000001_create_board_tables.php');
         $migration->up();
+        $legacyMigration = require database_path('migrations/2026_08_26_000002_add_legacy_fields_to_board_tables.php');
+        $legacyMigration->up();
 
         DB::table('m_user')->insert([
             [
