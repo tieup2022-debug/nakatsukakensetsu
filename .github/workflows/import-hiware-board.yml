@@ -1,0 +1,176 @@
+name: Import legacy Hi-WARE board
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: Crawl phase
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - lists
+          - details
+      start_page:
+        description: First legacy list page
+        required: true
+        default: '1'
+        type: string
+      end_page:
+        description: Last legacy list page
+        required: true
+        default: '1'
+        type: string
+      limit:
+        description: Maximum thread details/imports (0 means unlimited)
+        required: true
+        default: '3'
+        type: string
+      delay_ms:
+        description: Delay between legacy requests in milliseconds
+        required: true
+        default: '750'
+        type: string
+      import_to_production:
+        description: Back up the production DB and import the crawled data
+        required: true
+        default: false
+        type: boolean
+      fresh:
+        description: Re-fetch already completed files
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hiware-board-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.XSERVER_SSH_KEY }}
+
+      - name: Add Xserver host key
+        env:
+          XSERVER_HOST: ${{ secrets.XSERVER_HOST }}
+          XSERVER_PORT: ${{ secrets.XSERVER_PORT }}
+        run: |
+          set -euo pipefail
+          test -n "$XSERVER_HOST"
+          test -n "$XSERVER_PORT"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -p "$XSERVER_PORT" "$XSERVER_HOST" >> ~/.ssh/known_hosts
+
+      - name: Crawl and optionally import on Xserver
+        env:
+          XSERVER_HOST: ${{ secrets.XSERVER_HOST }}
+          XSERVER_PORT: ${{ secrets.XSERVER_PORT }}
+          XSERVER_USER: ${{ secrets.XSERVER_USER }}
+          HIWARE_USER: ${{ secrets.HIWARE_USER }}
+          HIWARE_PASSWORD: ${{ secrets.HIWARE_PASSWORD }}
+          START_PAGE: ${{ inputs.start_page }}
+          END_PAGE: ${{ inputs.end_page }}
+          CRAWL_LIMIT: ${{ inputs.limit }}
+          DELAY_MS: ${{ inputs.delay_ms }}
+          CRAWL_PHASE: ${{ inputs.phase }}
+          IMPORT_TO_PRODUCTION: ${{ inputs.import_to_production }}
+          FRESH: ${{ inputs.fresh }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$HIWARE_USER" ] || [ -z "$HIWARE_PASSWORD" ]; then
+            echo "::error::Repository Secrets HIWARE_USER and HIWARE_PASSWORD are required."
+            exit 1
+          fi
+          if ! [[ "$START_PAGE" =~ ^[0-9]+$ && "$END_PAGE" =~ ^[0-9]+$ && "$CRAWL_LIMIT" =~ ^[0-9]+$ && "$DELAY_MS" =~ ^[0-9]+$ ]]; then
+            echo "::error::Page, limit, and delay inputs must be non-negative integers."
+            exit 1
+          fi
+          if [ "$START_PAGE" -lt 1 ] || [ "$END_PAGE" -lt "$START_PAGE" ] || [ "$DELAY_MS" -lt 250 ]; then
+            echo "::error::Invalid page range or delay (minimum 250ms)."
+            exit 1
+          fi
+
+          echo "::add-mask::$HIWARE_USER"
+          REMOTE="${XSERVER_USER}@${XSERVER_HOST}"
+          REMOTE_PASSWORD_FILE=$(ssh -p "$XSERVER_PORT" "$REMOTE" 'umask 077; mktemp "${TMPDIR:-/tmp}/hiware-board-password.XXXXXX"')
+          cleanup() {
+            ssh -p "$XSERVER_PORT" "$REMOTE" "rm -f '$REMOTE_PASSWORD_FILE'" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          printf '%s\n' "$HIWARE_PASSWORD" | ssh -p "$XSERVER_PORT" "$REMOTE" "umask 077; cat > '$REMOTE_PASSWORD_FILE'; chmod 600 '$REMOTE_PASSWORD_FILE'"
+
+          USER_B64=$(printf '%s' "$HIWARE_USER" | base64 | tr -d '\n')
+          ssh -p "$XSERVER_PORT" "$REMOTE" bash -s -- \
+            "$REMOTE_PASSWORD_FILE" \
+            "$USER_B64" \
+            "$START_PAGE" \
+            "$END_PAGE" \
+            "$CRAWL_LIMIT" \
+            "$DELAY_MS" \
+            "$CRAWL_PHASE" \
+            "$IMPORT_TO_PRODUCTION" \
+            "$FRESH" <<'REMOTE_SCRIPT'
+          set -euo pipefail
+          PASSWORD_FILE="$1"
+          USER_B64="$2"
+          START_PAGE="$3"
+          END_PAGE="$4"
+          CRAWL_LIMIT="$5"
+          DELAY_MS="$6"
+          CRAWL_PHASE="$7"
+          IMPORT_TO_PRODUCTION="$8"
+          FRESH="$9"
+          HIWARE_USER=$(printf '%s' "$USER_B64" | base64 -d)
+
+          cd '${{ secrets.XSERVER_DEPLOY_PATH }}'
+          CRAWL_ARGS=(
+            board:crawl-hiware
+            "--user=$HIWARE_USER"
+            "--password-file=$PASSWORD_FILE"
+            "--phase=$CRAWL_PHASE"
+            "--start-page=$START_PAGE"
+            "--end-page=$END_PAGE"
+            "--limit=$CRAWL_LIMIT"
+            "--delay-ms=$DELAY_MS"
+          )
+          if [ "$FRESH" = 'true' ]; then
+            CRAWL_ARGS+=(--fresh)
+          fi
+
+          /opt/php-8.3/bin/php artisan "${CRAWL_ARGS[@]}"
+
+          if [ "$IMPORT_TO_PRODUCTION" = 'true' ]; then
+            /opt/php-8.3/bin/php artisan backup:database
+            IMPORT_ARGS=(
+              board:import-hiware
+              storage/app/private/legacy-board-export
+              --commit
+            )
+            if [ "$CRAWL_LIMIT" -gt 0 ]; then
+              IMPORT_ARGS+=("--limit=$CRAWL_LIMIT")
+            fi
+            /opt/php-8.3/bin/php artisan "${IMPORT_ARGS[@]}"
+            /opt/php-8.3/bin/php artisan optimize:clear
+          else
+            IMPORT_ARGS=(
+              board:import-hiware
+              storage/app/private/legacy-board-export
+            )
+            if [ "$CRAWL_LIMIT" -gt 0 ]; then
+              IMPORT_ARGS+=("--limit=$CRAWL_LIMIT")
+            fi
+            /opt/php-8.3/bin/php artisan "${IMPORT_ARGS[@]}"
+          fi
+          REMOTE_SCRIPT
