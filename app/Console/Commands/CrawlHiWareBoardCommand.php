@@ -90,6 +90,10 @@ class CrawlHiWareBoardCommand extends Command
             $this->error($e->getMessage().' 同じコマンドを再実行すれば続きから再開できます。');
 
             return self::FAILURE;
+        } catch (\Throwable $e) {
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
         }
 
         $this->info('完了: '.$output);
@@ -102,11 +106,19 @@ class CrawlHiWareBoardCommand extends Command
         $this->info(sprintf('一覧ページ %d〜%d を取得します。', $startPage, $endPage));
         for ($page = $startPage; $page <= $endPage; $page++) {
             $path = sprintf('%s/lists/page-%04d.json', $output, $page);
-            if (! $fresh && is_file($path)) {
+            if (! $fresh && $this->hasCachedThreads($path)) {
                 continue;
             }
             try {
-                $data = $crawler->listPage($page);
+                $diagnosticPath = sprintf('%s/diagnostics/list-page-%04d.html', $output, $page);
+                $data = $crawler->listPage($page, $diagnosticPath);
+                if ($data['threads'] === []) {
+                    throw new RuntimeException(sprintf(
+                        '一覧ページ%dの投稿リンクを認識できません。診断HTML: %s',
+                        $page,
+                        $diagnosticPath,
+                    ));
+                }
                 $data['crawled_at'] = now()->toIso8601String();
                 $this->writeJson($path, $data);
                 $this->line(sprintf('[一覧 %d/%d] %d件', $page, $endPage, count($data['threads'])));
@@ -120,6 +132,20 @@ class CrawlHiWareBoardCommand extends Command
                 $this->appendFailure($output, 'list', (string) $page, $e);
                 $this->warn(sprintf('[一覧 %d] 失敗: %s', $page, $e->getMessage()));
             }
+        }
+    }
+
+    private function hasCachedThreads(string $path): bool
+    {
+        if (! is_file($path)) {
+            return false;
+        }
+        try {
+            $data = json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
+
+            return ! empty($data['threads']);
+        } catch (\Throwable) {
+            return false;
         }
     }
 

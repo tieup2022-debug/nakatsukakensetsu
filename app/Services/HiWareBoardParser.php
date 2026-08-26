@@ -24,21 +24,21 @@ class HiWareBoardParser
         }
 
         $threads = [];
-        $anchors = $xpath->query('//a[contains(translate(@href,"WB_THREADCONT","wb_threadcont"),"wb_threadcont.exe")]');
-        foreach ($anchors ?: [] as $anchor) {
-            if (! $anchor instanceof DOMElement) {
+        $linkElements = $xpath->query('//a[@href] | //*[@onclick]');
+        foreach ($linkElements ?: [] as $linkElement) {
+            if (! $linkElement instanceof DOMElement) {
                 continue;
             }
-            $href = html_entity_decode((string) $anchor->getAttribute('href'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            $legacyId = $this->legacyIdFromUrl($href, 'wb_Threadcont.exe');
+            $href = $this->threadUrlFromElement($linkElement);
+            $legacyId = $href !== null ? $this->threadLegacyIdFromUrl($href) : null;
             if ($legacyId === null || isset($threads[$legacyId])) {
                 continue;
             }
 
-            $row = $this->closest($anchor, 'tr');
+            $row = $this->closest($linkElement, 'tr');
             $cells = $row ? $this->directCells($row) : [];
             $rowText = $row ? $this->flatText($row) : '';
-            $title = $this->flatText($anchor);
+            $title = $this->flatText($linkElement);
             $viewCount = 0;
             $likeCount = 0;
             if (preg_match('/\((\d+)\)/u', $rowText, $match)) {
@@ -72,7 +72,7 @@ class HiWareBoardParser
     public function parseThreadDetail(string $rawHtml, string $sourceUrl): array
     {
         [, $xpath] = $this->document($rawHtml);
-        $rootLegacyId = $this->legacyIdFromUrl($sourceUrl, 'wb_Threadcont.exe');
+        $rootLegacyId = $this->threadLegacyIdFromUrl($sourceUrl);
         if ($rootLegacyId === null) {
             throw new RuntimeException('詳細URLから旧投稿IDを取得できません。');
         }
@@ -246,6 +246,45 @@ class HiWareBoardParser
         $pattern = '~'.preg_quote($program, '~').'\?[^#]*?\+g\+(\d{1,15})\+~i';
 
         return preg_match($pattern, $url, $match) ? str_pad($match[1], 15, '0', STR_PAD_LEFT) : null;
+    }
+
+    private function threadLegacyIdFromUrl(string $url): ?string
+    {
+        $url = rawurldecode(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $programPattern = 'wb_(?:Threadcont|ThreadContent|Threadlist)\.exe';
+        $patterns = [
+            '~'.$programPattern.'\?[^#]*?\+g\+(\d{1,15})\+~i',
+            '~'.$programPattern.'\?[^#]*?\+g\+THREAD\+(\d{1,15})\+~i',
+        ];
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $url, $match)) {
+                return str_pad($match[1], 15, '0', STR_PAD_LEFT);
+            }
+        }
+
+        return null;
+    }
+
+    private function threadUrlFromElement(DOMElement $element): ?string
+    {
+        foreach (['href', 'onclick'] as $attribute) {
+            if (! $element->hasAttribute($attribute)) {
+                continue;
+            }
+            $value = html_entity_decode((string) $element->getAttribute($attribute), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if (! preg_match('~((?:https?://[^\s\'"<>]+)?(?:/?cgi-bin/(?:board/)?)?(?:\./)?wb_(?:Threadcont|ThreadContent|Threadlist)\.exe\?[^\s\'"<>)]+)~i', $value, $match)) {
+                continue;
+            }
+
+            $url = $match[1];
+            if (preg_match('~^(?:\./)?wb_~i', $url)) {
+                $url = '/cgi-bin/Board/'.preg_replace('~^\./~', '', $url);
+            }
+
+            return $this->absoluteUrl($url);
+        }
+
+        return null;
     }
 
     private function absoluteUrl(string $url): string

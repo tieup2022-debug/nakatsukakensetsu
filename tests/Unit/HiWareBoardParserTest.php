@@ -34,6 +34,25 @@ class HiWareBoardParserTest extends TestCase
         $this->assertSame('2026-08-25 18:02:00', $result['threads'][0]['last_activity_at']);
     }
 
+    public function test_it_parses_javascript_thread_links_with_alternate_argument_order(): void
+    {
+        $html = <<<'HTML'
+        <html><body><table><tr>
+          <td><a href="#" onclick="location.href='wb_Threadlist.exe?board/gyomu.ini+g+THREAD+65203+ALL'">工事日報</a></td>
+          <td>中塚 隆太朗</td><td>'26年 8月25日 18:02</td>
+        </tr></table></body></html>
+        HTML;
+
+        $result = (new HiWareBoardParser)->parseListPage($html);
+
+        $this->assertCount(1, $result['threads']);
+        $this->assertSame('000000000065203', $result['threads'][0]['legacy_id']);
+        $this->assertSame(
+            'http://intra.e-nakatsuka.com/cgi-bin/Board/wb_Threadlist.exe?board/gyomu.ini+g+THREAD+65203+ALL',
+            $result['threads'][0]['detail_url'],
+        );
+    }
+
     public function test_it_parses_parent_reply_body_and_attachment(): void
     {
         $html = <<<'HTML'

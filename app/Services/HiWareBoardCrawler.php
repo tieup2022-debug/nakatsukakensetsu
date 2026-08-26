@@ -51,7 +51,7 @@ class HiWareBoardCrawler
     /**
      * @return array{page:int,total_pages:int,threads:array<int, array<string, mixed>>}
      */
-    public function listPage(int $page): array
+    public function listPage(int $page, ?string $diagnosticPath = null): array
     {
         $path = $page <= 1
             ? self::FIRST_LIST_PATH
@@ -60,7 +60,18 @@ class HiWareBoardCrawler
         $raw = (string) $response->getBody();
         $this->assertAuthenticated($this->parser->decode($raw));
 
-        return $this->parser->parseListPage($raw, $page);
+        $parsed = $this->parser->parseListPage($raw, $page);
+        if ($parsed['threads'] === [] && $diagnosticPath !== null) {
+            $directory = dirname($diagnosticPath);
+            if (! is_dir($directory) && ! mkdir($directory, 0775, true) && ! is_dir($directory)) {
+                throw new RuntimeException('診断ファイル保存先を作成できません: '.$directory);
+            }
+            if (file_put_contents($diagnosticPath, $this->parser->decode($raw)) === false) {
+                throw new RuntimeException('診断ファイルを保存できません: '.$diagnosticPath);
+            }
+        }
+
+        return $parsed;
     }
 
     /** @return array<string, mixed> */
