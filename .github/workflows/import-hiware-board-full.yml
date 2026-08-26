@@ -1,0 +1,84 @@
+name: Import all legacy Hi-WARE board data
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_full_import:
+        description: Run the complete production import (about 61,000 threads)
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  confirm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm full import
+        env:
+          CONFIRMED: ${{ inputs.confirm_full_import }}
+        run: |
+          if [ "$CONFIRMED" != 'true' ]; then
+            echo "::error::confirm_full_import must be enabled."
+            exit 1
+          fi
+
+  chunks:
+    needs: confirm
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - start: '1'
+            end: '100'
+            key: pages-0001-0100
+          - start: '101'
+            end: '200'
+            key: pages-0101-0200
+          - start: '201'
+            end: '300'
+            key: pages-0201-0300
+          - start: '301'
+            end: '400'
+            key: pages-0301-0400
+          - start: '401'
+            end: '500'
+            key: pages-0401-0500
+          - start: '501'
+            end: '600'
+            key: pages-0501-0600
+          - start: '601'
+            end: '700'
+            key: pages-0601-0700
+          - start: '701'
+            end: '800'
+            key: pages-0701-0800
+          - start: '801'
+            end: '900'
+            key: pages-0801-0900
+          - start: '901'
+            end: '1000'
+            key: pages-0901-1000
+          - start: '1001'
+            end: '1100'
+            key: pages-1001-1100
+          - start: '1101'
+            end: '1200'
+            key: pages-1101-1200
+          - start: '1201'
+            end: '1232'
+            key: pages-1201-1232
+    uses: ./.github/workflows/import-hiware-board.yml
+    with:
+      phase: all
+      start_page: ${{ matrix.start }}
+      end_page: ${{ matrix.end }}
+      limit: '0'
+      delay_ms: '500'
+      import_to_production: true
+      fresh: false
+      output_key: ${{ matrix.key }}
+    secrets: inherit

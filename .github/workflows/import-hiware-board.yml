@@ -42,6 +42,52 @@ on:
         required: true
         default: false
         type: boolean
+      output_key:
+        description: Isolated server-side export key
+        required: true
+        default: shared
+        type: string
+  workflow_call:
+    inputs:
+      phase:
+        required: true
+        type: string
+      start_page:
+        required: true
+        type: string
+      end_page:
+        required: true
+        type: string
+      limit:
+        required: true
+        type: string
+      delay_ms:
+        required: true
+        type: string
+      import_to_production:
+        required: true
+        type: boolean
+      fresh:
+        required: true
+        type: boolean
+      output_key:
+        required: true
+        type: string
+    secrets:
+      XSERVER_SSH_KEY:
+        required: true
+      XSERVER_HOST:
+        required: true
+      XSERVER_PORT:
+        required: true
+      XSERVER_USER:
+        required: true
+      XSERVER_DEPLOY_PATH:
+        required: true
+      HIWARE_USER:
+        required: true
+      HIWARE_PASSWORD:
+        required: true
 
 permissions:
   contents: read
@@ -86,6 +132,7 @@ jobs:
           CRAWL_PHASE: ${{ inputs.phase }}
           IMPORT_TO_PRODUCTION: ${{ inputs.import_to_production }}
           FRESH: ${{ inputs.fresh }}
+          OUTPUT_KEY: ${{ inputs.output_key }}
         run: |
           set -euo pipefail
 
@@ -100,6 +147,16 @@ jobs:
           if [ "$START_PAGE" -lt 1 ] || [ "$END_PAGE" -lt "$START_PAGE" ] || [ "$DELAY_MS" -lt 250 ]; then
             echo "::error::Invalid page range or delay (minimum 250ms)."
             exit 1
+          fi
+          if ! [[ "$OUTPUT_KEY" =~ ^[A-Za-z0-9_-]+$ ]]; then
+            echo "::error::Output key may contain only letters, numbers, underscores, and hyphens."
+            exit 1
+          fi
+
+          if [ "$OUTPUT_KEY" = 'shared' ]; then
+            OUTPUT_PATH='storage/app/private/legacy-board-export'
+          else
+            OUTPUT_PATH="storage/app/private/legacy-board-export-${OUTPUT_KEY}"
           fi
 
           echo "::add-mask::$HIWARE_USER"
@@ -121,7 +178,8 @@ jobs:
             "$DELAY_MS" \
             "$CRAWL_PHASE" \
             "$IMPORT_TO_PRODUCTION" \
-            "$FRESH" <<'REMOTE_SCRIPT'
+            "$FRESH" \
+            "$OUTPUT_PATH" <<'REMOTE_SCRIPT'
           set -euo pipefail
           PASSWORD_FILE="$1"
           USER_B64="$2"
@@ -132,6 +190,7 @@ jobs:
           CRAWL_PHASE="$7"
           IMPORT_TO_PRODUCTION="$8"
           FRESH="$9"
+          OUTPUT_PATH="${10}"
           HIWARE_USER=$(printf '%s' "$USER_B64" | base64 -d)
 
           cd '${{ secrets.XSERVER_DEPLOY_PATH }}'
@@ -144,6 +203,7 @@ jobs:
             "--end-page=$END_PAGE"
             "--limit=$CRAWL_LIMIT"
             "--delay-ms=$DELAY_MS"
+            "--output=$OUTPUT_PATH"
           )
           if [ "$FRESH" = 'true' ]; then
             CRAWL_ARGS+=(--fresh)
@@ -155,7 +215,7 @@ jobs:
             /opt/php-8.3/bin/php artisan backup:database
             IMPORT_ARGS=(
               board:import-hiware
-              storage/app/private/legacy-board-export
+              "$OUTPUT_PATH"
               --commit
             )
             if [ "$CRAWL_LIMIT" -gt 0 ]; then
@@ -166,7 +226,7 @@ jobs:
           else
             IMPORT_ARGS=(
               board:import-hiware
-              storage/app/private/legacy-board-export
+              "$OUTPUT_PATH"
             )
             if [ "$CRAWL_LIMIT" -gt 0 ]; then
               IMPORT_ARGS+=("--limit=$CRAWL_LIMIT")
