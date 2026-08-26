@@ -65,6 +65,29 @@ class PaidLeaveService
     }
 
     /**
+     * 承認者とは別に、有給申請メールだけを受け取る通知先。
+     *
+     * @return list<string>
+     */
+    public function notificationEmails(): array
+    {
+        $raw = config('paid_leave.notification_emails', []);
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $emails = [];
+        foreach ($raw as $email) {
+            $email = strtolower(trim((string) $email));
+            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $emails[$email] = $email;
+            }
+        }
+
+        return array_values($emails);
+    }
+
+    /**
      * @return list<int>
      */
     public function excludedStaffIds(): array
@@ -225,17 +248,20 @@ class PaidLeaveService
         $leaveDaysText = $this->formatLeaveDays($request).'日';
         $approverMap = $this->approverUserIdsByStaffId();
         $notifiedUserIds = [];
+        $notifiedEmails = [];
 
         foreach ($this->approverStaffIds() as $approverStaffId) {
             $email = $this->resolveEmailForStaff($approverStaffId);
-            if ($email) {
+            $emailKey = is_string($email) ? strtolower(trim($email)) : '';
+            if ($emailKey !== '' && ! isset($notifiedEmails[$emailKey])) {
                 try {
-                    Mail::to($email)->send(new PaidLeaveAppliedMail(
+                    Mail::to($emailKey)->send(new PaidLeaveAppliedMail(
                         $applicantName,
                         $range,
                         $leaveDaysText,
                         isset($request->reason) ? (string) $request->reason : null
                     ));
+                    $notifiedEmails[$emailKey] = true;
                 } catch (\Throwable $e) {
                     error($e, __FILE__, __METHOD__, __LINE__);
                 }
@@ -251,6 +277,24 @@ class PaidLeaveService
                     (int) $request->id
                 );
                 $notifiedUserIds[$uid] = true;
+            }
+        }
+
+        foreach ($this->notificationEmails() as $email) {
+            if (isset($notifiedEmails[$email])) {
+                continue;
+            }
+
+            try {
+                Mail::to($email)->send(new PaidLeaveAppliedMail(
+                    $applicantName,
+                    $range,
+                    $leaveDaysText,
+                    isset($request->reason) ? (string) $request->reason : null
+                ));
+                $notifiedEmails[$email] = true;
+            } catch (\Throwable $e) {
+                error($e, __FILE__, __METHOD__, __LINE__);
             }
         }
 

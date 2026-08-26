@@ -7,6 +7,9 @@
 return [
     'approver_staff_ids' => array_map('intval', array_filter(array_map('trim', explode(',', env('PAID_LEAVE_APPROVER_STAFF_IDS', '6,7,13,9,25,40'))))),
 
+    /** @var list<string> 承認権限とは別に、有給申請メールだけを受け取る通知先 */
+    'notification_emails' => array_values(array_unique(array_filter(array_map('trim', explode(',', env('PAID_LEAVE_NOTIFICATION_EMAILS', 'ogawara@e-nakatsuka.com')))))),
+
     /** @var list<int> 有給対象者の選択肢から除外する社員ID（m_staff.id） */
     'excluded_staff_ids' => array_map('intval', array_filter(array_map('trim', explode(',', env('PAID_LEAVE_EXCLUDED_STAFF_IDS', '58'))))),
 
