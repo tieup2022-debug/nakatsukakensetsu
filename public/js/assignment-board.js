@@ -373,7 +373,14 @@
 
     function navigateWeek(offset) {
         var target = addDays(parseDate(boardData.start_date), offset);
-        window.location.href = urls.base + '?start_date=' + encodeURIComponent(iso(target));
+        navigateBoardTo(target);
+    }
+
+    function navigateBoardTo(target) {
+        var url = new URL(urls.base, window.location.origin);
+        url.searchParams.set('view', 'board');
+        url.searchParams.set('start_date', iso(target));
+        window.location.href = url.toString();
     }
 
     function currentMonday() {
@@ -418,7 +425,7 @@
     document.getElementById('abMobileCancelSelection').addEventListener('click', function () { selectedStaffId = null; render(); });
     document.getElementById('abPreviousWeek').addEventListener('click', function () { navigateWeek(-7); });
     document.getElementById('abNextWeek').addEventListener('click', function () { navigateWeek(7); });
-    document.getElementById('abCurrentWeek').addEventListener('click', function () { window.location.href = urls.base + '?start_date=' + encodeURIComponent(iso(currentMonday())); });
+    document.getElementById('abCurrentWeek').addEventListener('click', function () { navigateBoardTo(currentMonday()); });
     document.getElementById('abPrintWeek').addEventListener('click', function () { printBoard(7); });
     document.getElementById('abPrintTwoWeeks').addEventListener('click', function () { printBoard(14); });
 

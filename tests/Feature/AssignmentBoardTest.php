@@ -108,6 +108,32 @@ class AssignmentBoardTest extends TestCase
         $this->assertSame([['staff_id' => 2, 'work_date' => '2026-09-01']], $board['absences']);
     }
 
+    public function test_assignment_page_keeps_legacy_view_as_default(): void
+    {
+        $response = $this->withSession(['login_user_id' => 1])->get(route('top.assignment', [
+            'work_date' => '2026-08-31',
+        ]));
+
+        $response
+            ->assertOk()
+            ->assertViewIs('top.assignment')
+            ->assertSee('新しい2週間ボード');
+    }
+
+    public function test_assignment_page_can_switch_to_two_week_board(): void
+    {
+        $response = $this->withSession(['login_user_id' => 1])->get(route('top.assignment', [
+            'view' => 'board',
+            'start_date' => '2026-08-31',
+        ]));
+
+        $response
+            ->assertOk()
+            ->assertViewIs('top.assignment_board')
+            ->assertSee('従来表示に戻す')
+            ->assertSee('view=board', false);
+    }
+
     public function test_place_endpoint_moves_staff_and_removes_old_attendance(): void
     {
         DB::table('t_assignment')->insert([

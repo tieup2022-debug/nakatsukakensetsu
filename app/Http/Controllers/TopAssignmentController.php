@@ -40,15 +40,15 @@ class TopAssignmentController extends Controller
             $canAccessAssignmentSettings = $user && UserPermission::isManager($user->permission ?? null);
         }
 
-        // 通常表示は、実DBと常時同期する2週間配置ボード。
+        // 従来表示を初期表示として残し、view=board の場合だけ2週間ボードを表示する。
         // PDF/ブラウザ出力は従来の1日単位処理をそのまま利用する。
-        if (! $request->has('output_preview') && ! $request->has('output_pdf')) {
+        if ($request->input('view') === 'board' && ! $request->has('output_preview') && ! $request->has('output_pdf')) {
             $startDate = $this->resolveBoardStartDate(
                 (string) ($request->input('start_date') ?: $request->input('work_date') ?: defaultWorkDate())
             );
             $boardData = $this->assignmentService->getBoardData($startDate, 14);
 
-            return view('top.assignment', [
+            return view('top.assignment_board', [
                 'boardData' => $boardData ?: [
                     'start_date' => $startDate,
                     'end_date' => Carbon::parse($startDate)->addDays(13)->toDateString(),
@@ -65,6 +65,8 @@ class TopAssignmentController extends Controller
                 'boardPlaceUrl' => route('top.assignment.board.place'),
                 'boardRemoveUrl' => route('top.assignment.board.remove'),
                 'boardCopyDayUrl' => route('top.assignment.board.copy-day'),
+                'boardBaseUrl' => route('top.assignment', ['view' => 'board']),
+                'legacyAssignmentUrl' => route('top.assignment', ['work_date' => $startDate]),
             ]);
         }
 

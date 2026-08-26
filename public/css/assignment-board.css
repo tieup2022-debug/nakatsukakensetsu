@@ -36,6 +36,7 @@
 .ab-icon-button { width: 38px; height: 38px; color: #35465d; background: #f5f8fc; border: 1px solid var(--ab-line); font-size: 17px; }
 .ab-button { min-height: 38px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .ab-button.is-soft { color: #38516f; background: #f5f8fc; border: 1px solid var(--ab-line); }
+.ab-button.is-legacy { color: #35516f; background: #fff; border: 1px solid #aebed2; }
 .ab-button.is-week { color: #fff; background: #16a4df; }
 .ab-button.is-two-weeks { color: #fff; background: #10b981; }
 .ab-week-label { min-width: 235px; display: grid; padding: 0 8px; line-height: 1.2; }
@@ -164,8 +165,8 @@
     .ab-week-label strong { font-size: 11px; white-space: normal; line-height: 1.3; }
     .ab-week-label small { font-size: 8px; }
     .ab-week-nav .ab-button { min-height: 42px; padding: 0 9px; font-size: 10px; }
-    .ab-toolbar-actions { width: 100%; margin-top: 6px; gap: 5px; }
-    .ab-toolbar-actions .ab-button { flex: 1; min-height: 39px; padding: 0 5px; font-size: 10px; }
+    .ab-toolbar-actions { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 6px; gap: 5px; }
+    .ab-toolbar-actions .ab-button { width: 100%; min-height: 39px; padding: 0 5px; font-size: 10px; }
     .ab-sync-status { display: none; }
     .ab-mobile-note { display: block; margin: 0 1px 8px; color: #46688f; font-size: 9px; font-weight: 700; }
     .ab-mobile-note span { color: var(--ab-primary); }
