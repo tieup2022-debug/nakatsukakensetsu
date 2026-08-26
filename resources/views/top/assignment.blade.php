@@ -1,283 +1,101 @@
 @extends('layouts.app')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/assignment-board.css') }}?v={{ @filemtime(public_path('css/assignment-board.css')) ?: '1' }}">
+@endpush
+
 @section('content')
-    <style>
-        .news-body-diff .news-diff-added { color: #e8590c; font-weight: 600; }
-    </style>
-    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
-        <div>
-            <h1 class="h4 mb-1 fw-semibold">配置一覧</h1>
-            <div class="text-muted small">
-                {{ $display_date ?: '—' }}
+    <div
+        class="assignment-board-page"
+        id="assignmentBoardApp"
+        data-data-url="{{ $boardDataUrl }}"
+        data-place-url="{{ $boardPlaceUrl }}"
+        data-remove-url="{{ $boardRemoveUrl }}"
+        data-copy-day-url="{{ $boardCopyDayUrl }}"
+        data-base-url="{{ route('top.assignment') }}"
+    >
+        <section class="ab-heading" aria-labelledby="assignmentBoardTitle">
+            <div>
+                <div class="ab-eyebrow">NAKATSUKA DX / ASSIGNMENT</div>
+                <h1 id="assignmentBoardTitle">人員配置システム</h1>
+                <p>人員を選び、現場と日付のマスをタップしてください。変更はその場で保存されます。</p>
             </div>
-        </div>
-        @if (!empty($canAccessAssignmentSettings))
-            <a
-                class="btn btn-outline-dark btn-sm align-self-center"
-                href="{{ route('setting.assignment.manage', ['workplace_id' => $workplace_id, 'work_date' => $work_date]) }}"
-            >
-                配置入力
-            </a>
-        @endif
-    </div>
+            <div class="ab-summary" aria-label="配置状況">
+                <div class="ab-summary-item"><i class="ab-summary-bar is-blue"></i><span><strong id="abAssignedCount">0</strong><small>配置済み</small></span></div>
+                <div class="ab-summary-item"><i class="ab-summary-bar is-amber"></i><span><strong id="abUnassignedCount">0</strong><small>未配置</small></span></div>
+                <div class="ab-summary-item"><i class="ab-summary-bar is-red"></i><span><strong id="abConflictCount">0</strong><small>重複</small></span></div>
+            </div>
+        </section>
 
-    <div class="card shadow-sm border-0 mb-3">
-        <div class="card-body">
-            {{-- フォームのネストは無効 HTML のためモバイルで所属が崩れ、現場 select の GET が正しく送られないことがある --}}
-            <div class="d-flex flex-column flex-lg-row flex-lg-wrap align-items-stretch align-items-lg-end gap-2 gap-lg-3">
-                <form id="assignment-filter-form" method="GET" action="{{ route('top.assignment') }}" class="row g-2 align-items-end flex-grow-1" style="min-width:0">
-                    <div class="col-md-4">
-                        <label class="form-label small text-muted">現場</label>
-                        <select
-                            class="form-select"
-                            name="workplace_id"
-                            form="assignment-filter-form"
-                            data-assignment-filter-submit
-                        >
-                            @foreach($workplace_list as $w)
-                                <option value="{{ $w->id }}" {{ (string)$w->id === (string)$workplace_id ? 'selected' : '' }}>
-                                    {{ $w->workplace_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label small text-muted">作業日</label>
-                        <input
-                            type="text"
-                            class="form-control js-datepicker"
-                            name="work_date"
-                            form="assignment-filter-form"
-                            value="{{ $work_date }}"
-                            data-datepicker-submit
-                            readonly
-                            autocomplete="off"
-                        >
-                    </div>
-                    <div class="col-md-4 text-md-end">
-                        <button class="btn btn-outline-primary btn-sm" type="submit" form="assignment-filter-form">更新</button>
-                        <a
-                            class="btn btn-outline-secondary btn-sm ms-2"
-                            href="{{ route('top.assignment', ['workplace_id'=>$workplace_id,'work_date'=>$work_date,'output_preview'=>1]) }}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            ブラウザ表示
-                        </a>
-                        <a
-                            class="btn btn-outline-secondary btn-sm ms-2"
-                            href="{{ route('top.assignment', ['workplace_id'=>$workplace_id,'work_date'=>$work_date,'output_pdf'=>1]) }}"
-                        >
-                            PDF出力
-                        </a>
-                    </div>
-                </form>
-                @if(!empty($previous_date))
-                    <div class="d-flex justify-content-lg-end flex-shrink-0">
-                        <form method="POST" action="{{ route('top.assignment.copy') }}" class="d-inline" onsubmit="return confirm('前日の配置をコピーしますか？（現在の配置は上書きされます）');">
-                            @csrf
-                            <input type="hidden" name="workplace_id" value="{{ $workplace_id }}">
-                            <input type="hidden" name="work_date" value="{{ $work_date }}">
-                            <button type="submit" class="btn btn-outline-success btn-sm">
-                                前日コピー
-                            </button>
-                        </form>
-                    </div>
+        <section class="ab-toolbar" aria-label="表示期間と出力">
+            <div class="ab-week-nav">
+                <button class="ab-icon-button" id="abPreviousWeek" type="button" aria-label="前の週">←</button>
+                <div class="ab-week-label"><strong id="abWeekRange">—</strong><small>2週間表示</small></div>
+                <button class="ab-icon-button" id="abNextWeek" type="button" aria-label="次の週">→</button>
+                <button class="ab-button is-soft" id="abCurrentWeek" type="button">今週</button>
+            </div>
+            <div class="ab-toolbar-actions">
+                <span class="ab-sync-status" id="abSyncStatus"><i></i><span>自動保存</span></span>
+                @if (!empty($canAccessAssignmentSettings))
+                    <a class="ab-button is-soft" href="{{ route('setting.assignment.manage') }}">詳細入力</a>
                 @endif
+                <button class="ab-button is-week" id="abPrintWeek" type="button">▣ 1週間出力</button>
+                <button class="ab-button is-two-weeks" id="abPrintTwoWeeks" type="button">▣ 2週間出力</button>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div class="row g-3">
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <form method="POST" action="{{ route('top.assignment.update') }}">
-                        @csrf
-                        <input type="hidden" name="workplace_id" value="{{ $workplace_id }}">
-                        <input type="hidden" name="work_date" value="{{ $work_date }}">
+        <div class="ab-mobile-note"><span aria-hidden="true">☝</span> 人員をタップ → 配置先をタップ。表は横にスワイプできます。</div>
 
-                        <div class="d-flex gap-2 flex-wrap mb-3">
-                            <div class="badge bg-primary-subtle text-primary p-2">技術者/OP/作業員・車両/重機</div>
-                        </div>
+        <section class="ab-layout">
+            <aside class="ab-people-panel" aria-labelledby="abStaffHeading">
+                <div class="ab-panel-heading">
+                    <div><h2 id="abStaffHeading">スタッフ一覧</h2><span id="abStaffResultCount">0名</span></div>
+                    <button class="ab-mini-button" id="abClearSelection" type="button">選択解除</button>
+                </div>
+                <label class="ab-search-field">
+                    <span aria-hidden="true">⌕</span>
+                    <input id="abStaffSearch" type="search" placeholder="名前を検索" autocomplete="off">
+                </label>
+                <div class="ab-segmented" role="group" aria-label="人員区分の絞り込み">
+                    <button class="active" type="button" data-staff-filter="all">全員</button>
+                    <button type="button" data-staff-filter="1">技術者</button>
+                    <button type="button" data-staff-filter="2">OP</button>
+                    <button type="button" data-staff-filter="3">作業員</button>
+                </div>
+                <div class="ab-drag-hint"><span aria-hidden="true">↗</span> ドラッグ、または選択して配置</div>
+                <div id="abStaffList" class="ab-staff-list" aria-live="polite"></div>
+                <div class="ab-unassign-zone" id="abUnassignZone" tabindex="0">
+                    <span class="ab-trash-icon" aria-hidden="true">⌫</span>
+                    <span><strong>配置を解除</strong><small>配置済みの人員をここへ移動</small></span>
+                </div>
+            </aside>
 
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="small text-muted mb-2">技術者</div>
-                                <div class="table-responsive">
-                                    <table class="table table-sm align-middle mb-0">
-                                        <tbody>
-                                        @foreach($staff_list_first as $s)
-                                            @php
-                                                $checked = isset($s->assignment_flg) && intval($s->assignment_flg) === 1;
-                                            @endphp
-                                            <tr>
-                                                <td style="width:48px;">
-                                                    <input type="hidden" name="staff_list_first[{{ $s->staff_id }}]" value="0">
-                                                    <input type="checkbox" class="form-check-input" name="staff_list_first[{{ $s->staff_id }}]" value="1" {{ $checked ? 'checked' : '' }}>
-                                                </td>
-                                                <td>{{ $s->staff_name }}</td>
-                                            </tr>
-                                        @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="small text-muted mb-2">OP（オペレーター）</div>
-                                <div class="table-responsive">
-                                    <table class="table table-sm align-middle mb-0">
-                                        <tbody>
-                                        @foreach($staff_list_second as $s)
-                                            @php
-                                                $checked = isset($s->assignment_flg) && intval($s->assignment_flg) === 1;
-                                            @endphp
-                                            <tr>
-                                                <td style="width:48px;">
-                                                    <input type="hidden" name="staff_list_second[{{ $s->staff_id }}]" value="0">
-                                                    <input type="checkbox" class="form-check-input" name="staff_list_second[{{ $s->staff_id }}]" value="1" {{ $checked ? 'checked' : '' }}>
-                                                </td>
-                                                <td>{{ $s->staff_name }}</td>
-                                            </tr>
-                                        @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-3">
-                            <div class="small text-muted mb-2">作業員（社員）</div>
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-0">
-                                    <tbody>
-                                    @foreach($staff_list_third as $s)
-                                        @php
-                                            $checked = isset($s->assignment_flg) && intval($s->assignment_flg) === 1;
-                                        @endphp
-                                        <tr>
-                                            <td style="width:48px;">
-                                                <input type="hidden" name="staff_list_third[{{ $s->staff_id }}]" value="0">
-                                                <input type="checkbox" class="form-check-input" name="staff_list_third[{{ $s->staff_id }}]" value="1" {{ $checked ? 'checked' : '' }}>
-                                            </td>
-                                            <td>{{ $s->staff_name }}</td>
-                                        </tr>
-                                    @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-3">
-                            <div class="col-md-6">
-                                <div class="small text-muted mb-2">車両</div>
-                                <div class="table-responsive">
-                                    <table class="table table-sm align-middle mb-0">
-                                        <tbody>
-                                        @foreach($vehicle_list as $v)
-                                            @php $checked = isset($v->assignment_flg) && intval($v->assignment_flg) === 1; @endphp
-                                            <tr>
-                                                <td style="width:48px;">
-                                                    <input type="hidden" name="vehicle_list[{{ $v->vehicle_id }}]" value="0">
-                                                    <input type="checkbox" class="form-check-input" name="vehicle_list[{{ $v->vehicle_id }}]" value="1" {{ $checked ? 'checked' : '' }}>
-                                                </td>
-                                                <td>{{ $v->vehicle_name }}</td>
-                                            </tr>
-                                        @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="small text-muted mb-2">重機</div>
-                                <div class="table-responsive">
-                                    <table class="table table-sm align-middle mb-0">
-                                        <tbody>
-                                        @foreach($equipment_list as $e)
-                                            @php $checked = isset($e->assignment_flg) && intval($e->assignment_flg) === 1; @endphp
-                                            <tr>
-                                                <td style="width:48px;">
-                                                    <input type="hidden" name="equipment_list[{{ $e->vehicle_id }}]" value="0">
-                                                    <input type="checkbox" class="form-check-input" name="equipment_list[{{ $e->vehicle_id }}]" value="1" {{ $checked ? 'checked' : '' }}>
-                                                </td>
-                                                <td>{{ $e->vehicle_name }}</td>
-                                            </tr>
-                                        @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2 mt-3">
-                            <button class="btn btn-primary" type="submit">保存</button>
-                        </div>
-                    </form>
+            <div class="ab-board-card">
+                <div class="ab-loading" id="abLoading" hidden><span></span>最新の配置を読み込んでいます…</div>
+                <div class="ab-board-scroll" id="abBoardScroll">
+                    <div id="abScheduleBoard" class="ab-schedule-board" aria-label="2週間人員配置表"></div>
+                </div>
+                <div class="ab-legend">
+                    <span><i class="ab-legend-color is-type-1"></i>技術者</span>
+                    <span><i class="ab-legend-color is-type-2"></i>OP</span>
+                    <span><i class="ab-legend-color is-type-3"></i>作業員</span>
+                    <span><i class="ab-legend-color is-weekend"></i>土日</span>
+                    <span class="ab-legend-tip">30秒ごと・画面復帰時に自動同期</span>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                        <div class="min-w-0">
-                            <h2 class="h6 mb-0 fw-semibold">お知らせ</h2>
-                            @if($news && (($news->updated_at ?? null) || ($news->last_editor_name ?? null)))
-                                <div class="small text-muted text-break mt-1">
-                                    @if(!empty($news->last_editor_name))
-                                        <span>最終更新者：{{ $news->last_editor_name }}</span>
-                                    @endif
-                                    @if(!empty($news->updated_at))
-                                        @if(!empty($news->last_editor_name))
-                                            <span class="mx-1">/</span>
-                                        @endif
-                                        <span>
-                                            更新日時：{{
-                                                \Illuminate\Support\Carbon::parse((string) $news->updated_at, 'UTC')
-                                                    ->setTimezone('Asia/Tokyo')
-                                                    ->format('Y/m/d H:i')
-                                            }}
-                                        </span>
-                                    @endif
-                                </div>
-                            @endif
-                        </div>
-                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                            @if (!empty($canAccessAssignmentSettings))
-                                <a href="{{ route('setting.news.update') }}" class="btn btn-outline-secondary btn-sm">編集</a>
-                            @endif
-                            <span class="badge bg-primary-subtle text-primary">最新</span>
-                        </div>
-                    </div>
-                    @if($news && isset($news->news))
-                        <div class="small text-muted news-body-diff" style="white-space: pre-wrap;">
-                            {!! $news_body_html !!}
-                        </div>
-                    @else
-                        <div class="text-muted small">
-                            お知らせはありません。
-                        </div>
-                    @endif
-                </div>
-            </div>
+        <div class="ab-mobile-selection" id="abMobileSelection" aria-live="polite">
+            <span><small>選択中</small><strong id="abMobileSelectedName">—</strong></span>
+            <span class="ab-mobile-selection-guide">配置先をタップ</span>
+            <button id="abMobileCancelSelection" type="button">解除</button>
         </div>
+        <div class="ab-toast-region" id="abToastRegion" aria-live="polite"></div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('[data-assignment-filter-submit]').forEach(function (sel) {
-                sel.addEventListener('change', function () {
-                    var f = sel.form || document.getElementById('assignment-filter-form');
-                    if (!f) return;
-                    window.setTimeout(function () {
-                        f.submit();
-                    }, 0);
-                });
-            });
-        });
-    </script>
+    <script type="application/json" id="assignmentBoardInitial">@json($boardData)</script>
 @endsection
 
+@push('scripts')
+    <script src="{{ asset('js/assignment-board.js') }}?v={{ @filemtime(public_path('js/assignment-board.js')) ?: '1' }}"></script>
+@endpush

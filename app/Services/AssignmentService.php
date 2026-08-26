@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AssignmentService
@@ -70,6 +72,7 @@ class AssignmentService
             ];
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
+
             return false;
         }
     }
@@ -146,6 +149,7 @@ class AssignmentService
             if (app()->environment('local')) {
                 return $this->getLocalStaffList((int) $staffType, (int) $workplaceId, (string) $workDate, (bool) $assigned);
             }
+
             return false;
         }
     }
@@ -219,6 +223,7 @@ class AssignmentService
             if (app()->environment('local')) {
                 return $this->getLocalVehicleList((int) $workplaceId, (string) $workDate, (bool) $assigned, 1);
             }
+
             return false;
         }
     }
@@ -292,6 +297,7 @@ class AssignmentService
             if (app()->environment('local')) {
                 return $this->getLocalVehicleList((int) $workplaceId, (string) $workDate, (bool) $assigned, 2);
             }
+
             return false;
         }
     }
@@ -348,7 +354,7 @@ class AssignmentService
                             ->where('work_date', '=', $workDate)
                             ->where('workplace_id', '=', $workplaceId)
                             ->delete();
-                    } elseif (!$exsitsStaffCheck && $assignFlg == 1) {
+                    } elseif (! $exsitsStaffCheck && $assignFlg == 1) {
                         DB::table('t_assignment')
                             ->insert([
                                 'workplace_id' => $workplaceId,
@@ -378,7 +384,7 @@ class AssignmentService
                         DB::table('t_assignment')
                             ->where('id', '=', $exsitsVehicleCheck->id)
                             ->delete();
-                    } elseif (!$exsitsVehicleCheck && $assignFlg == 1) {
+                    } elseif (! $exsitsVehicleCheck && $assignFlg == 1) {
                         DB::table('t_assignment')
                             ->insert([
                                 'workplace_id' => $workplaceId,
@@ -408,7 +414,7 @@ class AssignmentService
                         DB::table('t_assignment')
                             ->where('id', '=', $exsitsEquipmentCheck->id)
                             ->delete();
-                    } elseif (!$exsitsEquipmentCheck && $assignFlg == 1) {
+                    } elseif (! $exsitsEquipmentCheck && $assignFlg == 1) {
                         DB::table('t_assignment')
                             ->insert([
                                 'workplace_id' => $workplaceId,
@@ -433,6 +439,7 @@ class AssignmentService
             if (app()->environment('local')) {
                 return $this->updateLocalAssignment((int) $workplaceId, (string) $workDate, $staffList, $vehicleList, $equipmentList);
             }
+
             return false;
         }
     }
@@ -468,6 +475,7 @@ class AssignmentService
             return false;
         } catch (\Exception $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
+
             return false;
         }
     }
@@ -504,6 +512,7 @@ class AssignmentService
 
                     if ($existsCheck) {
                         DB::rollback();
+
                         return false;
                     }
 
@@ -530,6 +539,7 @@ class AssignmentService
                 }
 
                 DB::commit();
+
                 return true;
             }
 
@@ -537,7 +547,321 @@ class AssignmentService
         } catch (\Exception $e) {
             DB::rollback();
             error($e, __FILE__, __METHOD__, __LINE__);
+
             return false;
+        }
+    }
+
+    /**
+     * 2週間配置ボード用の人員・現場・配置・欠勤を一括取得する。
+     *
+     * @return array<string, mixed>|false
+     */
+    public function getBoardData(string $startDate, int $days = 14)
+    {
+        $days = max(1, min(31, $days));
+
+        try {
+            $start = Carbon::createFromFormat('Y-m-d', $startDate)->startOfDay();
+            $end = $start->copy()->addDays($days - 1);
+            $companyName = (string) config('assignments.company.workplace_name', '会社');
+            $soumuStaffType = (int) config('assignments.company.soumu_staff_type', 4);
+            $staffMasterType = (string) config('assignments.master_type.staff');
+
+            $workplaces = DB::table('m_workplace')
+                ->select('id', 'workplace_name')
+                ->where('active_flg', true)
+                ->where('workplace_name', '!=', $companyName)
+                ->whereNull('deleted_at')
+                ->orderBy('id')
+                ->get();
+
+            $staff = DB::table('m_staff')
+                ->select('id', 'staff_name', 'staff_type', 'sort_number')
+                ->where('staff_type', '!=', $soumuStaffType)
+                ->whereNull('deleted_at')
+                ->orderBy('sort_number')
+                ->orderBy('id')
+                ->get();
+
+            $workplaceIds = $workplaces->pluck('id')->all();
+            $staffIds = $staff->pluck('id')->all();
+
+            $assignments = collect();
+            if ($workplaceIds !== [] && $staffIds !== []) {
+                $assignments = DB::table('t_assignment')
+                    ->select('workplace_id', 'work_date', 'master_id as staff_id', 'updated_at')
+                    ->where('master_type', $staffMasterType)
+                    ->whereBetween('work_date', [$start->toDateString(), $end->toDateString()])
+                    ->whereIn('workplace_id', $workplaceIds)
+                    ->whereIn('master_id', $staffIds)
+                    ->whereNull('deleted_at')
+                    ->orderBy('work_date')
+                    ->orderBy('workplace_id')
+                    ->get();
+            }
+
+            $absences = collect();
+            if ($staffIds !== []) {
+                $absences = DB::table('t_absence')
+                    ->select('staff_id', 'work_date')
+                    ->whereBetween('work_date', [$start->toDateString(), $end->toDateString()])
+                    ->whereIn('staff_id', $staffIds)
+                    ->whereNull('deleted_at')
+                    ->get();
+            }
+
+            $assignmentRows = $assignments->map(fn ($row) => [
+                'workplace_id' => (int) $row->workplace_id,
+                'work_date' => (string) $row->work_date,
+                'staff_id' => (int) $row->staff_id,
+            ])->values()->all();
+
+            $workplaceRows = $workplaces->map(fn ($row) => [
+                'id' => (int) $row->id,
+                'name' => (string) $row->workplace_name,
+            ])->values()->all();
+            $staffRows = $staff->map(fn ($row) => [
+                'id' => (int) $row->id,
+                'name' => (string) $row->staff_name,
+                'type' => (int) $row->staff_type,
+                'type_label' => $this->boardStaffTypeLabel((int) $row->staff_type),
+            ])->values()->all();
+            $absenceRows = $absences->map(fn ($row) => [
+                'staff_id' => (int) $row->staff_id,
+                'work_date' => (string) $row->work_date,
+            ])->values()->all();
+
+            return [
+                'start_date' => $start->toDateString(),
+                'end_date' => $end->toDateString(),
+                'days' => $days,
+                'workplaces' => $workplaceRows,
+                'staff' => $staffRows,
+                'assignments' => $assignmentRows,
+                'absences' => $absenceRows,
+                'revision' => sha1(json_encode([$workplaceRows, $staffRows, $assignmentRows, $absenceRows], JSON_UNESCAPED_UNICODE)),
+                'refreshed_at' => now()->toIso8601String(),
+            ];
+        } catch (\Throwable $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+            if (app()->environment('local')) {
+                return $this->getLocalBoardData($startDate, $days);
+            }
+
+            return false;
+        }
+    }
+
+    /**
+     * 人員を指定日の指定現場へ配置する。同日他現場の配置は移動扱いにする。
+     *
+     * @return array{ok: bool, message: string}
+     */
+    public function placeStaffOnBoard(int $staffId, int $workplaceId, string $workDate): array
+    {
+        try {
+            $staffMasterType = (string) config('assignments.master_type.staff');
+
+            $staffExists = DB::table('m_staff')
+                ->where('id', $staffId)
+                ->whereNull('deleted_at')
+                ->exists();
+            $workplaceExists = DB::table('m_workplace')
+                ->where('id', $workplaceId)
+                ->where('active_flg', true)
+                ->whereNull('deleted_at')
+                ->exists();
+
+            if (! $staffExists || ! $workplaceExists) {
+                return ['ok' => false, 'message' => '人員または現場が見つかりません。'];
+            }
+
+            $absence = DB::table('t_absence')
+                ->where('staff_id', $staffId)
+                ->where('work_date', $workDate)
+                ->whereNull('deleted_at')
+                ->exists();
+            if ($absence) {
+                return ['ok' => false, 'message' => '欠勤予定のため配置できません。'];
+            }
+
+            DB::transaction(function () use ($staffId, $workplaceId, $workDate, $staffMasterType): void {
+                $currentWorkplaceIds = DB::table('t_assignment')
+                    ->where('master_id', $staffId)
+                    ->where('master_type', $staffMasterType)
+                    ->where('work_date', $workDate)
+                    ->whereNull('deleted_at')
+                    ->pluck('workplace_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                if ($currentWorkplaceIds === [$workplaceId]) {
+                    DB::table('t_assignment')
+                        ->where('master_id', $staffId)
+                        ->where('master_type', $staffMasterType)
+                        ->where('workplace_id', $workplaceId)
+                        ->where('work_date', $workDate)
+                        ->whereNull('deleted_at')
+                        ->update(['updated_at' => now()]);
+
+                    return;
+                }
+
+                DB::table('t_assignment')
+                    ->where('master_id', $staffId)
+                    ->where('master_type', $staffMasterType)
+                    ->where('work_date', $workDate)
+                    ->whereNull('deleted_at')
+                    ->delete();
+
+                if ($currentWorkplaceIds !== []) {
+                    DB::table('t_attendance')
+                        ->where('staff_id', $staffId)
+                        ->where('work_date', $workDate)
+                        ->whereIn('workplace_id', $currentWorkplaceIds)
+                        ->delete();
+                }
+
+                DB::table('t_assignment')->insert([
+                    'workplace_id' => $workplaceId,
+                    'work_date' => $workDate,
+                    'master_id' => $staffId,
+                    'master_type' => $staffMasterType,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            });
+
+            return ['ok' => true, 'message' => '配置を保存しました。'];
+        } catch (\Throwable $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+            if (app()->environment('local')) {
+                return $this->placeLocalBoardStaff($staffId, $workplaceId, $workDate);
+            }
+
+            return ['ok' => false, 'message' => '配置の保存に失敗しました。'];
+        }
+    }
+
+    /**
+     * 指定の配置を解除する。
+     *
+     * @return array{ok: bool, message: string}
+     */
+    public function removeStaffFromBoard(int $staffId, int $workplaceId, string $workDate): array
+    {
+        try {
+            $staffMasterType = (string) config('assignments.master_type.staff');
+
+            DB::transaction(function () use ($staffId, $workplaceId, $workDate, $staffMasterType): void {
+                DB::table('t_assignment')
+                    ->where('master_id', $staffId)
+                    ->where('master_type', $staffMasterType)
+                    ->where('workplace_id', $workplaceId)
+                    ->where('work_date', $workDate)
+                    ->whereNull('deleted_at')
+                    ->delete();
+
+                DB::table('t_attendance')
+                    ->where('staff_id', $staffId)
+                    ->where('workplace_id', $workplaceId)
+                    ->where('work_date', $workDate)
+                    ->delete();
+            });
+
+            return ['ok' => true, 'message' => '配置を解除しました。'];
+        } catch (\Throwable $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+            if (app()->environment('local')) {
+                return $this->removeLocalBoardStaff($staffId, $workplaceId, $workDate);
+            }
+
+            return ['ok' => false, 'message' => '配置の解除に失敗しました。'];
+        }
+    }
+
+    /**
+     * 前稼働日の全現場の人員配置を指定日へコピーする。
+     *
+     * @return array{ok: bool, message: string, source_date?: string}
+     */
+    public function copyPreviousBoardDay(string $workDate): array
+    {
+        $previousDate = $this->previousBoardDate($workDate);
+
+        try {
+            $staffMasterType = (string) config('assignments.master_type.staff');
+            $companyName = (string) config('assignments.company.workplace_name', '会社');
+            $workplaceIds = DB::table('m_workplace')
+                ->where('active_flg', true)
+                ->where('workplace_name', '!=', $companyName)
+                ->whereNull('deleted_at')
+                ->pluck('id')
+                ->all();
+
+            $sourceRows = DB::table('t_assignment')
+                ->where('master_type', $staffMasterType)
+                ->where('work_date', $previousDate)
+                ->whereIn('workplace_id', $workplaceIds)
+                ->whereNull('deleted_at')
+                ->get(['workplace_id', 'master_id'])
+                ->unique('master_id')
+                ->values();
+
+            if ($sourceRows->isEmpty()) {
+                return ['ok' => false, 'message' => 'コピー元となる前稼働日の配置がありません。'];
+            }
+
+            $absentStaffIds = DB::table('t_absence')
+                ->where('work_date', $workDate)
+                ->whereNull('deleted_at')
+                ->pluck('staff_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            DB::transaction(function () use ($sourceRows, $workDate, $workplaceIds, $staffMasterType, $absentStaffIds): void {
+                DB::table('t_assignment')
+                    ->where('master_type', $staffMasterType)
+                    ->where('work_date', $workDate)
+                    ->whereIn('workplace_id', $workplaceIds)
+                    ->whereNull('deleted_at')
+                    ->delete();
+
+                $now = now();
+                $inserts = [];
+                foreach ($sourceRows as $row) {
+                    if (in_array((int) $row->master_id, $absentStaffIds, true)) {
+                        continue;
+                    }
+                    $inserts[] = [
+                        'workplace_id' => (int) $row->workplace_id,
+                        'work_date' => $workDate,
+                        'master_id' => (int) $row->master_id,
+                        'master_type' => $staffMasterType,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+                if ($inserts !== []) {
+                    DB::table('t_assignment')->insert($inserts);
+                }
+            });
+
+            return [
+                'ok' => true,
+                'message' => Carbon::parse($previousDate)->format('n/j').'の配置をコピーしました。',
+                'source_date' => $previousDate,
+            ];
+        } catch (\Throwable $e) {
+            error($e, __FILE__, __METHOD__, __LINE__);
+            if (app()->environment('local')) {
+                return $this->copyLocalBoardDay($workDate, $previousDate);
+            }
+
+            return ['ok' => false, 'message' => '前日コピーに失敗しました。'];
         }
     }
 
@@ -712,7 +1036,7 @@ class AssignmentService
             foreach ($merged as $row) {
                 $staffId = $row->staff_id ?? null;
                 $key = $staffId !== null ? 'id:'.$staffId : 'name:'.($row->staff_name ?? '');
-                if (!isset($uniqueStaffList[$key])) {
+                if (! isset($uniqueStaffList[$key])) {
                     $uniqueStaffList[$key] = $row;
                 }
             }
@@ -812,6 +1136,169 @@ class AssignmentService
         }
     }
 
+    private function boardStaffTypeLabel(int $staffType): string
+    {
+        return match ($staffType) {
+            1 => '技術者',
+            2 => 'OP',
+            3 => '作業員',
+            4 => '総務部',
+            default => 'その他',
+        };
+    }
+
+    private function previousBoardDate(string $workDate): string
+    {
+        $date = Carbon::createFromFormat('Y-m-d', $workDate)->startOfDay();
+        if (in_array($date->dayOfWeek, [Carbon::MONDAY, Carbon::SATURDAY, Carbon::SUNDAY], true)) {
+            return $date->previous(Carbon::FRIDAY)->toDateString();
+        }
+
+        return $date->subDay()->toDateString();
+    }
+
+    /** @return array<string, mixed> */
+    private function getLocalBoardData(string $startDate, int $days): array
+    {
+        $start = Carbon::createFromFormat('Y-m-d', $startDate)->startOfDay();
+        $end = $start->copy()->addDays($days - 1);
+        $companyName = (string) config('assignments.company.workplace_name', '会社');
+        $soumuStaffType = (int) config('assignments.company.soumu_staff_type', 4);
+        $staffMasterType = (string) config('assignments.master_type.staff');
+
+        $workplaces = array_values(array_filter(
+            $this->readLocalJson('app/local_workplaces.json'),
+            fn ($row) => (bool) ($row['active_flg'] ?? false)
+                && empty($row['deleted_at'])
+                && (string) ($row['workplace_name'] ?? '') !== $companyName
+        ));
+        $staff = array_values(array_filter(
+            $this->readLocalJson('app/local_staff.json'),
+            fn ($row) => empty($row['deleted_at']) && (int) ($row['staff_type'] ?? 0) !== $soumuStaffType
+        ));
+        usort($staff, fn ($a, $b) => ((int) ($a['sort_number'] ?? 0)) <=> ((int) ($b['sort_number'] ?? 0)));
+
+        $workplaceIds = array_map(fn ($row) => (int) ($row['id'] ?? 0), $workplaces);
+        $staffIds = array_map(fn ($row) => (int) ($row['id'] ?? 0), $staff);
+        $assignments = [];
+        foreach ($this->readLocalAssignments() as $row) {
+            $date = (string) ($row['work_date'] ?? '');
+            if ($date < $start->toDateString() || $date > $end->toDateString()) {
+                continue;
+            }
+            if ((string) ($row['master_type'] ?? '') !== $staffMasterType) {
+                continue;
+            }
+            if (! in_array((int) ($row['workplace_id'] ?? 0), $workplaceIds, true)
+                || ! in_array((int) ($row['master_id'] ?? 0), $staffIds, true)) {
+                continue;
+            }
+            $assignments[] = [
+                'workplace_id' => (int) $row['workplace_id'],
+                'work_date' => $date,
+                'staff_id' => (int) $row['master_id'],
+            ];
+        }
+
+        return [
+            'start_date' => $start->toDateString(),
+            'end_date' => $end->toDateString(),
+            'days' => $days,
+            'workplaces' => array_map(fn ($row) => [
+                'id' => (int) ($row['id'] ?? 0),
+                'name' => (string) ($row['workplace_name'] ?? ''),
+            ], $workplaces),
+            'staff' => array_map(fn ($row) => [
+                'id' => (int) ($row['id'] ?? 0),
+                'name' => (string) ($row['staff_name'] ?? ''),
+                'type' => (int) ($row['staff_type'] ?? 0),
+                'type_label' => $this->boardStaffTypeLabel((int) ($row['staff_type'] ?? 0)),
+            ], $staff),
+            'assignments' => $assignments,
+            'absences' => [],
+            'revision' => sha1(json_encode([$workplaces, $staff, $assignments], JSON_UNESCAPED_UNICODE)),
+            'refreshed_at' => now()->toIso8601String(),
+        ];
+    }
+
+    /** @return array{ok: bool, message: string} */
+    private function placeLocalBoardStaff(int $staffId, int $workplaceId, string $workDate): array
+    {
+        $rows = $this->readLocalAssignments();
+        $staffMasterType = (string) config('assignments.master_type.staff');
+        $rows = array_values(array_filter(
+            $rows,
+            fn ($row) => ! ((int) ($row['master_id'] ?? 0) === $staffId
+                && (string) ($row['master_type'] ?? '') === $staffMasterType
+                && (string) ($row['work_date'] ?? '') === $workDate)
+        ));
+        $nextId = 1;
+        foreach ($rows as $row) {
+            $nextId = max($nextId, (int) ($row['id'] ?? 0) + 1);
+        }
+        $rows[] = [
+            'id' => $nextId,
+            'workplace_id' => $workplaceId,
+            'work_date' => $workDate,
+            'master_id' => $staffId,
+            'master_type' => $staffMasterType,
+        ];
+
+        return $this->writeLocalAssignments($rows)
+            ? ['ok' => true, 'message' => '配置を保存しました。']
+            : ['ok' => false, 'message' => '配置の保存に失敗しました。'];
+    }
+
+    /** @return array{ok: bool, message: string} */
+    private function removeLocalBoardStaff(int $staffId, int $workplaceId, string $workDate): array
+    {
+        $staffMasterType = (string) config('assignments.master_type.staff');
+        $rows = array_values(array_filter(
+            $this->readLocalAssignments(),
+            fn ($row) => ! ((int) ($row['master_id'] ?? 0) === $staffId
+                && (int) ($row['workplace_id'] ?? 0) === $workplaceId
+                && (string) ($row['master_type'] ?? '') === $staffMasterType
+                && (string) ($row['work_date'] ?? '') === $workDate)
+        ));
+
+        return $this->writeLocalAssignments($rows)
+            ? ['ok' => true, 'message' => '配置を解除しました。']
+            : ['ok' => false, 'message' => '配置の解除に失敗しました。'];
+    }
+
+    /** @return array{ok: bool, message: string, source_date?: string} */
+    private function copyLocalBoardDay(string $workDate, string $previousDate): array
+    {
+        $rows = $this->readLocalAssignments();
+        $staffMasterType = (string) config('assignments.master_type.staff');
+        $source = array_values(array_filter(
+            $rows,
+            fn ($row) => (string) ($row['master_type'] ?? '') === $staffMasterType
+                && (string) ($row['work_date'] ?? '') === $previousDate
+        ));
+        if ($source === []) {
+            return ['ok' => false, 'message' => 'コピー元となる前稼働日の配置がありません。'];
+        }
+        $rows = array_values(array_filter(
+            $rows,
+            fn ($row) => ! ((string) ($row['master_type'] ?? '') === $staffMasterType
+                && (string) ($row['work_date'] ?? '') === $workDate)
+        ));
+        $nextId = 1;
+        foreach ($rows as $row) {
+            $nextId = max($nextId, (int) ($row['id'] ?? 0) + 1);
+        }
+        foreach ($source as $row) {
+            $row['id'] = $nextId++;
+            $row['work_date'] = $workDate;
+            $rows[] = $row;
+        }
+
+        return $this->writeLocalAssignments($rows)
+            ? ['ok' => true, 'message' => Carbon::parse($previousDate)->format('n/j').'の配置をコピーしました。', 'source_date' => $previousDate]
+            : ['ok' => false, 'message' => '前日コピーに失敗しました。'];
+    }
+
     /**
      * @return array<int, object>
      */
@@ -850,6 +1337,7 @@ class AssignmentService
         }
 
         usort($result, fn ($a, $b) => ((int) ($a->sort_number ?? 0)) <=> ((int) ($b->sort_number ?? 0)));
+
         return $result;
     }
 
@@ -894,6 +1382,7 @@ class AssignmentService
         }
 
         usort($result, fn ($a, $b) => ((int) ($a->sort_number ?? 0)) <=> ((int) ($b->sort_number ?? 0)));
+
         return $result;
     }
 
@@ -976,9 +1465,10 @@ class AssignmentService
     {
         $path = storage_path(self::LOCAL_ASSIGNMENT_FILE);
         $dir = dirname($path);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             @mkdir($dir, 0775, true);
         }
+
         return @file_put_contents($path, json_encode(array_values($rows), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)) !== false;
     }
 
@@ -988,14 +1478,15 @@ class AssignmentService
     private function readLocalJson(string $relativePath): array
     {
         $path = storage_path($relativePath);
-        if (!is_file($path)) {
+        if (! is_file($path)) {
             return [];
         }
         $json = @file_get_contents($path);
-        if (!is_string($json) || $json === '') {
+        if (! is_string($json) || $json === '') {
             return [];
         }
         $data = json_decode($json, true);
+
         return is_array($data) ? $data : [];
     }
 
@@ -1012,6 +1503,7 @@ class AssignmentService
                 return true;
             }
         }
+
         return false;
     }
 
@@ -1028,15 +1520,16 @@ class AssignmentService
                 return true;
             }
         }
+
         return false;
     }
 
     /**
      * ローカル: 指定日に配置がある現場一覧（PDF用・DBの v_assignment_staff 代替）
      *
-     * @return \Illuminate\Support\Collection<int, object{workplace_id: int, workplace_name: string}>
+     * @return Collection<int, object{workplace_id: int, workplace_name: string}>
      */
-    private function getAssignedWorkplaceLocal(string $workDate): \Illuminate\Support\Collection
+    private function getAssignedWorkplaceLocal(string $workDate): Collection
     {
         $assignments = $this->readLocalAssignments();
         $workplaceIds = [];
@@ -1081,4 +1574,3 @@ class AssignmentService
         return collect($list);
     }
 }
-

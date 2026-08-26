@@ -1,0 +1,190 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Services\AssignmentService;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Tests\TestCase;
+
+class AssignmentBoardTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config([
+            'database.default' => 'sqlite',
+            'database.connections.sqlite.database' => ':memory:',
+            'assignments.master_type.staff' => '1',
+            'assignments.company.workplace_name' => '会社',
+            'assignments.company.soumu_staff_type' => 4,
+        ]);
+        DB::purge('sqlite');
+        DB::setDefaultConnection('sqlite');
+
+        Schema::create('m_staff', function (Blueprint $table): void {
+            $table->id();
+            $table->string('staff_name');
+            $table->unsignedTinyInteger('staff_type');
+            $table->unsignedInteger('sort_number')->default(0);
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('m_workplace', function (Blueprint $table): void {
+            $table->id();
+            $table->string('workplace_name');
+            $table->boolean('active_flg')->default(true);
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('t_assignment', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('workplace_id');
+            $table->date('work_date');
+            $table->unsignedBigInteger('master_id');
+            $table->string('master_type');
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+            $table->unique(['master_type', 'master_id', 'workplace_id', 'work_date']);
+        });
+        Schema::create('t_absence', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('staff_id');
+            $table->date('work_date');
+            $table->boolean('absence_flg')->default(true);
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('t_attendance', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('staff_id');
+            $table->unsignedBigInteger('workplace_id');
+            $table->date('work_date');
+            $table->timestamps();
+        });
+
+        $now = now();
+        DB::table('m_staff')->insert([
+            ['id' => 1, 'staff_name' => '村田 亮介', 'staff_type' => 1, 'sort_number' => 1, 'deleted_at' => null, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 2, 'staff_name' => '住吉 正己', 'staff_type' => 2, 'sort_number' => 2, 'deleted_at' => null, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 3, 'staff_name' => '総務担当', 'staff_type' => 4, 'sort_number' => 3, 'deleted_at' => null, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 4, 'staff_name' => '使用停止', 'staff_type' => 3, 'sort_number' => 4, 'deleted_at' => $now, 'created_at' => $now, 'updated_at' => $now],
+        ]);
+        DB::table('m_workplace')->insert([
+            ['id' => 10, 'workplace_name' => '滝ノ下', 'active_flg' => true, 'deleted_at' => null, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 20, 'workplace_name' => '吉岡', 'active_flg' => true, 'deleted_at' => null, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 30, 'workplace_name' => '会社', 'active_flg' => true, 'deleted_at' => null, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 40, 'workplace_name' => '終了現場', 'active_flg' => false, 'deleted_at' => null, 'created_at' => $now, 'updated_at' => $now],
+        ]);
+    }
+
+    public function test_board_data_uses_live_masters_assignments_and_absences(): void
+    {
+        DB::table('t_assignment')->insert([
+            'workplace_id' => 10,
+            'work_date' => '2026-08-31',
+            'master_id' => 1,
+            'master_type' => '1',
+            'deleted_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('t_absence')->insert([
+            'staff_id' => 2,
+            'work_date' => '2026-09-01',
+            'absence_flg' => true,
+            'deleted_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $board = app(AssignmentService::class)->getBoardData('2026-08-31', 14);
+
+        $this->assertSame(['滝ノ下', '吉岡'], array_column($board['workplaces'], 'name'));
+        $this->assertSame(['村田 亮介', '住吉 正己'], array_column($board['staff'], 'name'));
+        $this->assertSame([['workplace_id' => 10, 'work_date' => '2026-08-31', 'staff_id' => 1]], $board['assignments']);
+        $this->assertSame([['staff_id' => 2, 'work_date' => '2026-09-01']], $board['absences']);
+    }
+
+    public function test_place_endpoint_moves_staff_and_removes_old_attendance(): void
+    {
+        DB::table('t_assignment')->insert([
+            'workplace_id' => 10,
+            'work_date' => '2026-08-31',
+            'master_id' => 1,
+            'master_type' => '1',
+            'deleted_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('t_attendance')->insert([
+            'staff_id' => 1,
+            'workplace_id' => 10,
+            'work_date' => '2026-08-31',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->withSession(['login_user_id' => 1])->postJson(route('top.assignment.board.place'), [
+            'staff_id' => 1,
+            'workplace_id' => 20,
+            'work_date' => '2026-08-31',
+            'start_date' => '2026-08-31',
+        ]);
+
+        $response->assertOk()->assertJsonPath('board.assignments.0.workplace_id', 20);
+        $this->assertDatabaseMissing('t_assignment', ['workplace_id' => 10, 'master_id' => 1, 'work_date' => '2026-08-31']);
+        $this->assertDatabaseHas('t_assignment', ['workplace_id' => 20, 'master_id' => 1, 'work_date' => '2026-08-31']);
+        $this->assertSame(0, DB::table('t_attendance')->count());
+    }
+
+    public function test_absent_staff_cannot_be_placed(): void
+    {
+        DB::table('t_absence')->insert([
+            'staff_id' => 2,
+            'work_date' => '2026-09-01',
+            'absence_flg' => true,
+            'deleted_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->withSession(['login_user_id' => 1])->postJson(route('top.assignment.board.place'), [
+            'staff_id' => 2,
+            'workplace_id' => 10,
+            'work_date' => '2026-09-01',
+            'start_date' => '2026-08-31',
+        ]);
+
+        $response->assertStatus(409)->assertJsonPath('message', '欠勤予定のため配置できません。');
+        $this->assertSame(0, DB::table('t_assignment')->count());
+    }
+
+    public function test_monday_copy_uses_previous_friday_and_skips_absent_staff(): void
+    {
+        DB::table('t_assignment')->insert([
+            ['workplace_id' => 10, 'work_date' => '2026-09-04', 'master_id' => 1, 'master_type' => '1', 'deleted_at' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['workplace_id' => 20, 'work_date' => '2026-09-04', 'master_id' => 2, 'master_type' => '1', 'deleted_at' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['workplace_id' => 20, 'work_date' => '2026-09-07', 'master_id' => 1, 'master_type' => '1', 'deleted_at' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        DB::table('t_absence')->insert([
+            'staff_id' => 2,
+            'work_date' => '2026-09-07',
+            'absence_flg' => true,
+            'deleted_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->withSession(['login_user_id' => 1])->postJson(route('top.assignment.board.copy-day'), [
+            'work_date' => '2026-09-07',
+            'start_date' => '2026-09-07',
+        ]);
+
+        $response->assertOk()->assertJsonPath('message', '9/4の配置をコピーしました。');
+        $this->assertDatabaseHas('t_assignment', ['workplace_id' => 10, 'work_date' => '2026-09-07', 'master_id' => 1]);
+        $this->assertDatabaseMissing('t_assignment', ['work_date' => '2026-09-07', 'master_id' => 2]);
+    }
+}

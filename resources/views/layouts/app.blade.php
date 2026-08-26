@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Nakatsuka DX' }}</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
@@ -167,6 +168,7 @@
             background-color: rgba(59, 130, 246, 0.25);
         }
     </style>
+    @stack('styles')
 </head>
 <body>
     <div class="app-shell">
@@ -314,5 +316,6 @@
             });
         });
     </script>
+    @stack('scripts')
 </body>
 </html>

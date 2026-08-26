@@ -7,14 +7,17 @@ use App\Services\NewsService;
 use App\Services\UserService;
 use App\Services\WorkplaceService;
 use App\Support\UserPermission;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class TopAssignmentController extends Controller
 {
     private AssignmentService $assignmentService;
+
     private WorkplaceService $workplaceService;
+
     private NewsService $newsService;
 
     public function __construct(AssignmentService $assignmentService, WorkplaceService $workplaceService, NewsService $newsService)
@@ -26,7 +29,7 @@ class TopAssignmentController extends Controller
 
     public function index(Request $request, UserService $userService)
     {
-        if (!session()->has('login_user_id')) {
+        if (! session()->has('login_user_id')) {
             return redirect()->route('login');
         }
 
@@ -35,6 +38,34 @@ class TopAssignmentController extends Controller
         if ($uid > 0) {
             $user = $userService->GetUser($uid);
             $canAccessAssignmentSettings = $user && UserPermission::isManager($user->permission ?? null);
+        }
+
+        // 通常表示は、実DBと常時同期する2週間配置ボード。
+        // PDF/ブラウザ出力は従来の1日単位処理をそのまま利用する。
+        if (! $request->has('output_preview') && ! $request->has('output_pdf')) {
+            $startDate = $this->resolveBoardStartDate(
+                (string) ($request->input('start_date') ?: $request->input('work_date') ?: defaultWorkDate())
+            );
+            $boardData = $this->assignmentService->getBoardData($startDate, 14);
+
+            return view('top.assignment', [
+                'boardData' => $boardData ?: [
+                    'start_date' => $startDate,
+                    'end_date' => Carbon::parse($startDate)->addDays(13)->toDateString(),
+                    'days' => 14,
+                    'workplaces' => [],
+                    'staff' => [],
+                    'assignments' => [],
+                    'absences' => [],
+                    'revision' => '',
+                    'refreshed_at' => now()->toIso8601String(),
+                ],
+                'canAccessAssignmentSettings' => (bool) $canAccessAssignmentSettings,
+                'boardDataUrl' => route('top.assignment.board.data'),
+                'boardPlaceUrl' => route('top.assignment.board.place'),
+                'boardRemoveUrl' => route('top.assignment.board.remove'),
+                'boardCopyDayUrl' => route('top.assignment.board.copy-day'),
+            ]);
         }
 
         $workplaceId = $request->input('workplace_id');
@@ -210,7 +241,7 @@ class TopAssignmentController extends Controller
 
     public function update(Request $request)
     {
-        if (!session()->has('login_user_id')) {
+        if (! session()->has('login_user_id')) {
             return redirect()->route('login');
         }
 
@@ -235,19 +266,19 @@ class TopAssignmentController extends Controller
 
     public function copy(Request $request)
     {
-        if (!session()->has('login_user_id')) {
+        if (! session()->has('login_user_id')) {
             return redirect()->route('login');
         }
 
         $workplaceId = $request->input('workplace_id');
         $workDate = $request->input('work_date');
 
-        if (!$workplaceId || !$workDate) {
+        if (! $workplaceId || ! $workDate) {
             return redirect()->route('top.assignment');
         }
 
         $previousDate = $this->assignmentService->CheckAssignmentPreviousDate($workplaceId, $workDate);
-        if (!$previousDate) {
+        if (! $previousDate) {
             return redirect()
                 ->route('top.assignment', ['workplace_id' => $workplaceId, 'work_date' => $workDate])
                 ->with('status', 'コピー元となる前日の配置が見つかりませんでした。');
@@ -260,6 +291,84 @@ class TopAssignmentController extends Controller
             ->with('status', $ok ? '前日の配置をコピーしました' : 'コピーに失敗しました（欠勤や他現場との重複をご確認ください）');
     }
 
+    public function boardData(Request $request)
+    {
+        if (! session()->has('login_user_id')) {
+            return response()->json(['message' => 'ログインが必要です。'], 401);
+        }
+
+        $validated = $request->validate([
+            'start_date' => ['required', 'date_format:Y-m-d'],
+        ]);
+        $startDate = $this->resolveBoardStartDate($validated['start_date']);
+        $boardData = $this->assignmentService->getBoardData($startDate, 14);
+
+        if ($boardData === false) {
+            return response()->json(['message' => '配置データを取得できませんでした。'], 500);
+        }
+
+        return response()->json($boardData);
+    }
+
+    public function boardPlace(Request $request)
+    {
+        if (! session()->has('login_user_id')) {
+            return response()->json(['message' => 'ログインが必要です。'], 401);
+        }
+
+        $validated = $request->validate([
+            'staff_id' => ['required', 'integer', 'min:1'],
+            'workplace_id' => ['required', 'integer', 'min:1'],
+            'work_date' => ['required', 'date_format:Y-m-d'],
+            'start_date' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        $result = $this->assignmentService->placeStaffOnBoard(
+            (int) $validated['staff_id'],
+            (int) $validated['workplace_id'],
+            $validated['work_date']
+        );
+
+        return $this->boardMutationResponse($result, $validated['start_date']);
+    }
+
+    public function boardRemove(Request $request)
+    {
+        if (! session()->has('login_user_id')) {
+            return response()->json(['message' => 'ログインが必要です。'], 401);
+        }
+
+        $validated = $request->validate([
+            'staff_id' => ['required', 'integer', 'min:1'],
+            'workplace_id' => ['required', 'integer', 'min:1'],
+            'work_date' => ['required', 'date_format:Y-m-d'],
+            'start_date' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        $result = $this->assignmentService->removeStaffFromBoard(
+            (int) $validated['staff_id'],
+            (int) $validated['workplace_id'],
+            $validated['work_date']
+        );
+
+        return $this->boardMutationResponse($result, $validated['start_date']);
+    }
+
+    public function boardCopyDay(Request $request)
+    {
+        if (! session()->has('login_user_id')) {
+            return response()->json(['message' => 'ログインが必要です。'], 401);
+        }
+
+        $validated = $request->validate([
+            'work_date' => ['required', 'date_format:Y-m-d'],
+            'start_date' => ['required', 'date_format:Y-m-d'],
+        ]);
+        $result = $this->assignmentService->copyPreviousBoardDay($validated['work_date']);
+
+        return $this->boardMutationResponse($result, $validated['start_date']);
+    }
+
     private function normalizeIntMap(array $map): array
     {
         $result = [];
@@ -269,7 +378,40 @@ class TopAssignmentController extends Controller
             }
             $result[$k] = intval($v);
         }
+
         return $result;
+    }
+
+    private function resolveBoardStartDate(string $date): string
+    {
+        try {
+            return Carbon::createFromFormat('Y-m-d', $date)
+                ->startOfWeek(Carbon::MONDAY)
+                ->toDateString();
+        } catch (\Throwable) {
+            return Carbon::parse(defaultWorkDate())
+                ->startOfWeek(Carbon::MONDAY)
+                ->toDateString();
+        }
+    }
+
+    /** @param array{ok: bool, message: string} $result */
+    private function boardMutationResponse(array $result, string $startDate)
+    {
+        if (! ($result['ok'] ?? false)) {
+            return response()->json(['message' => $result['message'] ?? '処理に失敗しました。'], 409);
+        }
+
+        $boardData = $this->assignmentService->getBoardData($this->resolveBoardStartDate($startDate), 14);
+
+        if ($boardData === false) {
+            return response()->json(['message' => '保存後の最新配置を取得できませんでした。画面を再読み込みしてください。'], 500);
+        }
+
+        return response()->json([
+            'message' => $result['message'] ?? '保存しました。',
+            'board' => $boardData,
+        ]);
     }
 
     private function ensureArray($value): array
@@ -280,8 +422,8 @@ class TopAssignmentController extends Controller
         if (is_array($value)) {
             return $value;
         }
+
         // DB::select returns array; Eloquent/Collection also implement count.
         return [];
     }
 }
-

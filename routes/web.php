@@ -41,6 +41,10 @@ Route::post('/top/attendance/update', [TopAttendanceController::class, 'update']
 Route::get('/top/assignment', [TopAssignmentController::class, 'index'])->name('top.assignment');
 Route::post('/top/assignment/update', [TopAssignmentController::class, 'update'])->name('top.assignment.update');
 Route::post('/top/assignment/copy', [TopAssignmentController::class, 'copy'])->name('top.assignment.copy');
+Route::get('/top/assignment/board-data', [TopAssignmentController::class, 'boardData'])->name('top.assignment.board.data');
+Route::post('/top/assignment/board-place', [TopAssignmentController::class, 'boardPlace'])->name('top.assignment.board.place');
+Route::post('/top/assignment/board-remove', [TopAssignmentController::class, 'boardRemove'])->name('top.assignment.board.remove');
+Route::post('/top/assignment/board-copy-day', [TopAssignmentController::class, 'boardCopyDay'])->name('top.assignment.board.copy-day');
 
 // 機械（車両・重機）配置予定表（ガント形式）
 Route::get('/top/machine-schedule', [MachineScheduleController::class, 'index'])->name('top.machine.schedule');
