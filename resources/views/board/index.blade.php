@@ -13,7 +13,7 @@
         <a href="{{ route('board.create') }}" class="btn btn-primary">＋ 新規投稿</a>
     </div>
 
-    <form method="get" action="{{ route('board.index') }}" class="card border-0 shadow-sm mb-3">
+    <form id="board-search-form" method="get" action="{{ route('board.index') }}" class="card border-0 shadow-sm mb-3">
         <div class="card-body py-3">
             <div class="row g-2 align-items-center">
                 <div class="col-12 col-md">
@@ -26,89 +26,115 @@
                         class="form-control"
                         maxlength="100"
                         placeholder="タイトル・本文・投稿者を検索"
+                        autocomplete="off"
+                        aria-controls="board-search-results"
                     >
                 </div>
                 <div class="col-auto">
                     <button class="btn btn-outline-primary" type="submit">検索</button>
                 </div>
-                @if ($keyword !== '')
-                    <div class="col-auto">
-                        <a href="{{ route('board.index') }}" class="btn btn-outline-secondary">解除</a>
-                    </div>
-                @endif
+                <div id="board-search-clear" class="col-auto{{ $keyword === '' ? ' d-none' : '' }}">
+                    <button class="btn btn-outline-secondary" type="button">解除</button>
+                </div>
             </div>
+            <div id="board-search-feedback" class="small text-danger mt-2 d-none" role="alert"></div>
         </div>
     </form>
 
-    @if ($keyword !== '')
-        <p class="small text-muted mb-2">「{{ $keyword }}」の検索結果：{{ number_format($threads->total()) }}件</p>
-    @else
-        <p class="small text-muted mb-2">全{{ number_format($threads->total()) }}件</p>
-    @endif
-
-    <div class="card border-0 shadow-sm overflow-hidden">
-        <div class="table-responsive d-none d-md-block">
-            <table class="table table-hover align-middle mb-0 board-list-table">
-                <thead class="table-light">
-                    <tr>
-                        <th>タイトル</th>
-                        <th class="text-nowrap">投稿者</th>
-                        <th class="text-nowrap text-end">反応</th>
-                        <th class="text-nowrap">最終更新</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($threads as $thread)
-                        <tr>
-                            <td>
-                                <a href="{{ route('board.show', ['thread' => $thread->id]) }}" class="fw-semibold text-decoration-none stretched-link-scope">
-                                    {{ $thread->title }}
-                                </a>
-                                @if ((int) $thread->reply_count > 0)
-                                    <span class="badge rounded-pill text-bg-light border ms-1">返信 {{ number_format($thread->reply_count) }}</span>
-                                @endif
-                            </td>
-                            <td class="text-nowrap">{{ $thread->author_name }}</td>
-                            <td class="text-nowrap text-end small text-muted">
-                                <span title="閲覧数">👁 {{ number_format($thread->view_count) }}</span>
-                                <span class="ms-2" title="いいね">👍 {{ number_format($thread->like_count) }}</span>
-                            </td>
-                            <td class="text-nowrap small text-muted">
-                                {{ \App\Support\DatetimeDisplay::formatStoredAt($thread->last_activity_at) }}
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="text-center text-muted py-5">該当する投稿はありません。</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <div class="d-md-none list-group list-group-flush">
-            @forelse ($threads as $thread)
-                <a href="{{ route('board.show', ['thread' => $thread->id]) }}" class="list-group-item list-group-item-action py-3">
-                    <div class="fw-semibold mb-1">{{ $thread->title }}</div>
-                    <div class="d-flex flex-wrap gap-2 small text-muted">
-                        <span>{{ $thread->author_name }}</span>
-                        <span>👁 {{ number_format($thread->view_count) }}</span>
-                        <span>👍 {{ number_format($thread->like_count) }}</span>
-                        @if ((int) $thread->reply_count > 0)
-                            <span>返信 {{ number_format($thread->reply_count) }}</span>
-                        @endif
-                    </div>
-                    <div class="small text-muted mt-1">{{ \App\Support\DatetimeDisplay::formatStoredAt($thread->last_activity_at) }}</div>
-                </a>
-            @empty
-                <div class="list-group-item text-center text-muted py-5">該当する投稿はありません。</div>
-            @endforelse
-        </div>
+    <div id="board-search-results" aria-live="polite">
+        @include('board.partials.thread-list')
     </div>
-
-    @if ($threads->hasPages())
-        <div class="mt-3 d-flex justify-content-center">
-            {{ $threads->onEachSide(1)->links('pagination::bootstrap-5') }}
-        </div>
-    @endif
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var form = document.getElementById('board-search-form');
+            var input = document.getElementById('board-keyword');
+            var results = document.getElementById('board-search-results');
+            var clear = document.getElementById('board-search-clear');
+            var feedback = document.getElementById('board-search-feedback');
+            var timer = null;
+            var request = null;
+            var composing = false;
+
+            if (!form || !input || !results || !clear || !feedback || !window.fetch) return;
+
+            function search() {
+                var keyword = input.value.trim();
+                var url = new URL(form.action, window.location.origin);
+                var controller = new AbortController();
+
+                if (keyword !== '') {
+                    url.searchParams.set('q', keyword);
+                }
+
+                if (request) request.abort();
+                request = controller;
+                results.setAttribute('aria-busy', 'true');
+                results.classList.add('is-loading');
+                feedback.classList.add('d-none');
+
+                fetch(url.toString(), {
+                    headers: {
+                        'Accept': 'text/html',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    signal: controller.signal
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('Search request failed');
+                        return response.text();
+                    })
+                    .then(function (html) {
+                        results.innerHTML = html;
+                        clear.classList.toggle('d-none', keyword === '');
+                        window.history.replaceState({}, '', url.toString());
+                    })
+                    .catch(function (error) {
+                        if (error.name === 'AbortError') return;
+                        feedback.textContent = '検索結果を更新できませんでした。検索ボタンを押して再度お試しください。';
+                        feedback.classList.remove('d-none');
+                    })
+                    .finally(function () {
+                        if (request === controller) {
+                            request = null;
+                            results.removeAttribute('aria-busy');
+                            results.classList.remove('is-loading');
+                        }
+                    });
+            }
+
+            function scheduleSearch() {
+                window.clearTimeout(timer);
+                if (request) request.abort();
+                clear.classList.toggle('d-none', input.value.trim() === '');
+                timer = window.setTimeout(search, 300);
+            }
+
+            input.addEventListener('compositionstart', function () {
+                composing = true;
+                window.clearTimeout(timer);
+                if (request) request.abort();
+            });
+            input.addEventListener('compositionend', function () {
+                composing = false;
+                scheduleSearch();
+            });
+            input.addEventListener('input', function () {
+                if (!composing) scheduleSearch();
+            });
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                window.clearTimeout(timer);
+                search();
+            });
+            clear.querySelector('button').addEventListener('click', function () {
+                input.value = '';
+                input.focus();
+                window.clearTimeout(timer);
+                search();
+            });
+        });
+    </script>
+@endpush

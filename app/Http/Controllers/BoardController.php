@@ -19,10 +19,17 @@ class BoardController extends Controller
     {
         $keyword = trim((string) $request->query('q', ''));
 
-        return view('board.index', [
-            'title' => '掲示板',
+        $viewData = [
             'keyword' => $keyword,
             'threads' => $this->board->paginateThreads($keyword),
+        ];
+
+        if ($request->ajax()) {
+            return view('board.partials.thread-list', $viewData);
+        }
+
+        return view('board.index', $viewData + [
+            'title' => '掲示板',
         ]);
     }
 

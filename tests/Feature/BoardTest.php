@@ -101,6 +101,33 @@ class BoardTest extends TestCase
         $this->assertSame(1, (int) DB::table('t_board_threads')->where('id', $threadId)->value('view_count'));
     }
 
+    public function test_incremental_search_returns_only_the_filtered_list_partial(): void
+    {
+        $matchingThreadId = $this->insertThread(authorUserId: 2);
+        DB::table('t_board_threads')->where('id', $matchingThreadId)->update([
+            'title' => '豊浜 工事日報',
+        ]);
+        DB::table('t_board_threads')->insert([
+            'title' => '社内連絡',
+            'body' => '別の投稿です。',
+            'author_user_id' => 3,
+            'author_name' => '一般ユーザー',
+            'view_count' => 0,
+            'last_activity_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->withSession(['login_user_id' => 3])
+            ->withHeader('X-Requested-With', 'XMLHttpRequest')
+            ->get(route('board.index', ['q' => '豊浜']))
+            ->assertOk()
+            ->assertSee('「豊浜」の検索結果：1件')
+            ->assertSee('豊浜 工事日報')
+            ->assertDontSee('社内連絡')
+            ->assertDontSee('board-search-form');
+    }
+
     public function test_user_can_reply_and_toggle_like_once_per_account(): void
     {
         $threadId = $this->insertThread(authorUserId: 2);

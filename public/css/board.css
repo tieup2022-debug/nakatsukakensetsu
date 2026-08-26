@@ -7,6 +7,15 @@
     position: relative;
 }
 
+#board-search-results {
+    transition: opacity 0.15s ease;
+}
+
+#board-search-results.is-loading {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
 .gap-x-3 {
     column-gap: 1rem;
 }
