@@ -230,9 +230,12 @@ class CrawlHiWareBoardCommand extends Command
     }
 
     /** @param array<string, mixed> $post */
-    private function downloadPostAttachments(HiWareBoardCrawler $crawler, string $output, array &$post): void
+    protected function downloadPostAttachments(HiWareBoardCrawler $crawler, string $output, array &$post): void
     {
-        foreach ($post['attachments'] ?? [] as &$attachment) {
+        if (! isset($post['attachments']) || ! is_array($post['attachments'])) {
+            return;
+        }
+        foreach ($post['attachments'] as &$attachment) {
             $index = (int) ($attachment['index'] ?? 0);
             $original = $this->safeFilename((string) ($attachment['original_name'] ?? 'attachment'));
             $legacyId = (string) $post['legacy_id'];

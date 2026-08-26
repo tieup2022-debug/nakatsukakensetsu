@@ -130,7 +130,7 @@ class HiWareBoardImportService
         $count = 0;
         foreach ($attachments as $position => $attachment) {
             if (! is_array($attachment) || empty($attachment['path'])) {
-                continue;
+                throw new RuntimeException('添付ファイルの保存先情報がありません。');
             }
             $index = max(1, (int) ($attachment['index'] ?? $position + 1));
             $attachmentLegacyId = $legacyPostId.':'.str_pad((string) $index, 3, '0', STR_PAD_LEFT);

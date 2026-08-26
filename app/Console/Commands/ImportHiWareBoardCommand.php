@@ -38,9 +38,11 @@ class ImportHiWareBoardCommand extends Command
                 }
                 $valid++;
                 $replies += count((array) ($record['replies'] ?? []));
-                foreach (array_merge([$record], (array) ($record['replies'] ?? [])) as $post) {
-                    if (is_array($post)) {
-                        $attachments += count((array) ($post['attachments'] ?? []));
+                if (! $this->option('skip-attachments')) {
+                    foreach (array_merge([$record], (array) ($record['replies'] ?? [])) as $post) {
+                        if (is_array($post)) {
+                            $attachments += $this->validateAttachments($post, $root);
+                        }
                     }
                 }
             } catch (\Throwable $e) {
@@ -93,6 +95,26 @@ class ImportHiWareBoardCommand extends Command
         $this->info(sprintf('取込完了: 新規%d件、更新%d件', $created, $updated));
 
         return self::SUCCESS;
+    }
+
+    /** @param array<string, mixed> $post */
+    private function validateAttachments(array $post, string $root): int
+    {
+        $count = 0;
+        foreach ((array) ($post['attachments'] ?? []) as $attachment) {
+            if (! is_array($attachment) || empty($attachment['path'])) {
+                throw new \RuntimeException('添付ファイルの保存先情報がありません。');
+            }
+            $source = realpath($root.'/'.ltrim((string) $attachment['path'], '/'));
+            if ($source === false
+                || ! str_starts_with($source, $root.DIRECTORY_SEPARATOR)
+                || ! is_file($source)) {
+                throw new \RuntimeException('添付ファイルが見つかりません: '.(string) $attachment['path']);
+            }
+            $count++;
+        }
+
+        return $count;
     }
 
     /** @return \Generator<int, string> */

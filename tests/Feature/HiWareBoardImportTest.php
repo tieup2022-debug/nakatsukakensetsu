@@ -99,4 +99,25 @@ class HiWareBoardImportTest extends TestCase
         $attachment = DB::table('t_board_attachments')->first();
         Storage::disk('local')->assertExists($attachment->path);
     }
+
+    public function test_it_rejects_an_attachment_without_a_downloaded_path(): void
+    {
+        $record = [
+            'legacy_id' => '000000000000014',
+            'title' => '旧投稿',
+            'body' => '本文',
+            'author_name' => '住吉 秀美',
+            'created_at' => '2001-04-19 17:54:39',
+            'attachments' => [[
+                'index' => 1,
+                'original_name' => 'missing.jpg',
+            ]],
+            'replies' => [],
+        ];
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('添付ファイルの保存先情報がありません。');
+
+        app(HiWareBoardImportService::class)->import($record, $this->exportRoot);
+    }
 }
