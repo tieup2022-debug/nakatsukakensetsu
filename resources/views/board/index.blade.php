@@ -25,7 +25,7 @@
                         value="{{ $keyword }}"
                         class="form-control"
                         maxlength="100"
-                        placeholder="タイトル・本文・投稿者を検索"
+                        placeholder="タイトル・本文・投稿者・画像内容を検索"
                         autocomplete="off"
                         aria-controls="board-search-results"
                     >

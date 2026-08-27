@@ -33,6 +33,8 @@ class BoardTest extends TestCase
         $migration->up();
         $legacyMigration = require database_path('migrations/2026_08_26_000002_add_legacy_fields_to_board_tables.php');
         $legacyMigration->up();
+        $imageAnalysisMigration = require database_path('migrations/2026_08_27_000001_add_ai_analysis_to_board_attachments.php');
+        $imageAnalysisMigration->up();
 
         DB::table('m_user')->insert([
             [
@@ -160,6 +162,38 @@ class BoardTest extends TestCase
             ->assertSee('豊浜 工事日報')
             ->assertDontSee('社内連絡')
             ->assertDontSee('board-search-form');
+    }
+
+    public function test_search_finds_a_thread_by_analyzed_image_content(): void
+    {
+        $threadId = $this->insertThread(authorUserId: 2);
+        DB::table('t_board_attachments')->insert([
+            'thread_id' => $threadId,
+            'reply_id' => null,
+            'disk' => 'local',
+            'path' => 'board/test/red-excavator.jpg',
+            'original_name' => 'IMG_0001.jpg',
+            'mime_type' => 'image/jpeg',
+            'size' => 100,
+            'ai_description' => '赤い重機が魚礁の工事現場で作業している。',
+            'ai_ocr_text' => 'R08魚礁',
+            'ai_keywords' => '["赤い重機","魚礁"]',
+            'ai_search_text' => '赤い重機 魚礁 油圧ショベル バックホウ ユンボ',
+            'ai_analysis_status' => 'completed',
+            'ai_analyzed_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->withSession(['login_user_id' => 3])
+            ->get(route('board.index', ['q' => '赤い重機']))
+            ->assertOk()
+            ->assertSee('テスト投稿');
+
+        $this->withSession(['login_user_id' => 3])
+            ->get(route('board.index', ['q' => 'ユンボ']))
+            ->assertOk()
+            ->assertSee('テスト投稿');
     }
 
     public function test_user_can_reply_and_toggle_like_once_per_account(): void

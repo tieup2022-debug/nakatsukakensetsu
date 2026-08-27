@@ -40,7 +40,17 @@ class BoardService
                 $pattern = '%'.$escaped.'%';
                 $search->whereRaw("threads.title LIKE ? ESCAPE '!'", [$pattern])
                     ->orWhereRaw("threads.body LIKE ? ESCAPE '!'", [$pattern])
-                    ->orWhereRaw("threads.author_name LIKE ? ESCAPE '!'", [$pattern]);
+                    ->orWhereRaw("threads.author_name LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereExists(function ($attachments) use ($pattern): void {
+                        $attachments->selectRaw('1')
+                            ->from('t_board_attachments as search_attachments')
+                            ->whereColumn('search_attachments.thread_id', 'threads.id')
+                            ->where(function ($attachmentSearch) use ($pattern): void {
+                                $attachmentSearch
+                                    ->whereRaw("search_attachments.original_name LIKE ? ESCAPE '!'", [$pattern])
+                                    ->orWhereRaw("search_attachments.ai_search_text LIKE ? ESCAPE '!'", [$pattern]);
+                            });
+                    });
             });
         }
 
@@ -313,6 +323,9 @@ class BoardService
             }
             $storedPaths[] = $path;
 
+            $mimeType = strtolower((string) $file->getMimeType());
+            $isImage = str_starts_with($mimeType, 'image/');
+
             DB::table('t_board_attachments')->insert([
                 'thread_id' => $threadId,
                 'reply_id' => $replyId,
@@ -323,8 +336,9 @@ class BoardService
                     0,
                     255,
                 ),
-                'mime_type' => $file->getMimeType(),
+                'mime_type' => $mimeType,
                 'size' => $file->getSize() ?: 0,
+                'ai_analysis_status' => $isImage ? 'pending' : 'not_applicable',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
