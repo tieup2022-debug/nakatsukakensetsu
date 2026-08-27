@@ -56,9 +56,11 @@ class BoardImageAnalysisTest extends TestCase
             return $request->url() === 'https://api.openai.test/v1/responses'
                 && $payload['model'] === 'test-vision-model'
                 && $payload['store'] === false
+                && $payload['reasoning']['effort'] === 'low'
                 && $payload['input'][0]['content'][1]['type'] === 'input_image'
                 && str_starts_with($payload['input'][0]['content'][1]['image_url'], 'data:image/jpeg;base64,')
-                && $payload['text']['format']['type'] === 'json_schema';
+                && $payload['text']['format']['type'] === 'json_schema'
+                && $payload['max_output_tokens'] === 3000;
         });
     }
 

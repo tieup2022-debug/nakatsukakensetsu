@@ -115,6 +115,9 @@ class BoardImageAnalysisService
             ->post(rtrim((string) config('services.openai.base_url', 'https://api.openai.com/v1'), '/').'/responses', [
                 'model' => (string) config('services.openai.vision_model', 'gpt-5.6-luna'),
                 'store' => false,
+                'reasoning' => [
+                    'effort' => 'low',
+                ],
                 'input' => [[
                     'role' => 'user',
                     'content' => [
@@ -162,7 +165,7 @@ class BoardImageAnalysisService
                         ],
                     ],
                 ],
-                'max_output_tokens' => 1000,
+                'max_output_tokens' => 3000,
             ]);
 
         if (! $response->successful()) {
