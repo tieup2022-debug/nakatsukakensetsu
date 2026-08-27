@@ -20,6 +20,6 @@ return [
         13 => 'narisawa@e-nakatsuka.com',
         9 => 'setsuro@e-nakatsuka.com',
         25 => 'kikuchi@e-nakatsuka.com',
-        40 => 'tieuo2022@gmail.com',
+        40 => 'tieup2022@gmail.com',
     ],
 ];
