@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use GuzzleHttp\Handler\StreamHandler;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -103,6 +104,10 @@ class BoardImageAnalysisService
     private function requestAnalysis(object $attachment): array
     {
         $response = Http::withToken((string) config('services.openai.api_key'))
+            // The production PHP cURL extension lacks some modern TLS constants.
+            // OpenSSL-backed streams provide the same HTTPS verification without
+            // relying on those cURL constants.
+            ->setHandler(new StreamHandler)
             ->acceptJson()
             ->connectTimeout(10)
             ->timeout(max(30, (int) config('services.openai.timeout', 90)))
