@@ -101,6 +101,40 @@ class BoardTest extends TestCase
         $this->assertSame(1, (int) DB::table('t_board_threads')->where('id', $threadId)->value('view_count'));
     }
 
+    public function test_image_attachment_opens_as_an_inline_lightbox_instead_of_a_download(): void
+    {
+        Storage::fake('local');
+
+        $this->withSession(['login_user_id' => 2])
+            ->post(route('board.store'), [
+                'title' => '現場写真',
+                'body' => '作業状況です。',
+                'attachments' => [UploadedFile::fake()->image('progress.jpg', 800, 600)],
+            ]);
+
+        $threadId = (int) DB::table('t_board_threads')->value('id');
+        $attachment = DB::table('t_board_attachments')->first();
+
+        $this->withSession(['login_user_id' => 3])
+            ->get(route('board.show', ['thread' => $threadId]))
+            ->assertOk()
+            ->assertSee('data-board-image-preview', false)
+            ->assertSee('data-board-lightbox', false)
+            ->assertSee(route('board.attachments.show', [
+                'attachment' => $attachment->id,
+                'inline' => 1,
+            ]), false);
+
+        $this->withSession(['login_user_id' => 3])
+            ->get(route('board.attachments.show', [
+                'attachment' => $attachment->id,
+                'inline' => 1,
+            ]))
+            ->assertOk()
+            ->assertHeader('content-type', 'image/jpeg')
+            ->assertHeader('content-disposition', 'inline');
+    }
+
     public function test_incremental_search_returns_only_the_filtered_list_partial(): void
     {
         $matchingThreadId = $this->insertThread(authorUserId: 2);

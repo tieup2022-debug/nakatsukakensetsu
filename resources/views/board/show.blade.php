@@ -43,7 +43,14 @@
                 <div class="board-attachments mb-3">
                     @foreach ($thread->attachments as $attachment)
                         @if ($isImage($attachment))
-                            <a href="{{ route('board.attachments.show', ['attachment' => $attachment->id]) }}" class="board-image-link" title="{{ $attachment->original_name }}">
+                            <a
+                                href="{{ route('board.attachments.show', ['attachment' => $attachment->id, 'inline' => 1]) }}"
+                                class="board-image-link"
+                                title="{{ $attachment->original_name }}"
+                                aria-label="画像を拡大：{{ $attachment->original_name }}"
+                                data-board-image-preview
+                                data-image-name="{{ $attachment->original_name }}"
+                            >
                                 <img
                                     src="{{ route('board.attachments.show', ['attachment' => $attachment->id, 'inline' => 1]) }}"
                                     alt="{{ $attachment->original_name }}"
@@ -102,7 +109,14 @@
                             <div class="board-attachments mb-3">
                                 @foreach ($reply->attachments as $attachment)
                                     @if ($isImage($attachment))
-                                        <a href="{{ route('board.attachments.show', ['attachment' => $attachment->id]) }}" class="board-image-link" title="{{ $attachment->original_name }}">
+                                        <a
+                                            href="{{ route('board.attachments.show', ['attachment' => $attachment->id, 'inline' => 1]) }}"
+                                            class="board-image-link"
+                                            title="{{ $attachment->original_name }}"
+                                            aria-label="画像を拡大：{{ $attachment->original_name }}"
+                                            data-board-image-preview
+                                            data-image-name="{{ $attachment->original_name }}"
+                                        >
                                             <img src="{{ route('board.attachments.show', ['attachment' => $attachment->id, 'inline' => 1]) }}" alt="{{ $attachment->original_name }}" class="board-image" loading="lazy">
                                         </a>
                                     @else
@@ -149,6 +163,14 @@
             </form>
         </div>
     </section>
+
+    <div class="board-lightbox" data-board-lightbox hidden role="dialog" aria-modal="true" aria-label="添付画像の拡大表示">
+        <button type="button" class="board-lightbox-close" data-board-lightbox-close aria-label="拡大表示を閉じる">×</button>
+        <div class="board-lightbox-content" data-board-lightbox-content>
+            <img src="" alt="" class="board-lightbox-image" data-board-lightbox-image>
+            <div class="board-lightbox-caption" data-board-lightbox-caption></div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')

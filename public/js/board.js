@@ -46,4 +46,50 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    var lightbox = document.querySelector('[data-board-lightbox]');
+    if (lightbox) {
+        var lightboxImage = lightbox.querySelector('[data-board-lightbox-image]');
+        var lightboxCaption = lightbox.querySelector('[data-board-lightbox-caption]');
+        var closeButton = lightbox.querySelector('[data-board-lightbox-close]');
+        var lastFocusedElement = null;
+
+        function closeLightbox() {
+            if (lightbox.hidden) return;
+
+            lightbox.hidden = true;
+            document.body.classList.remove('board-lightbox-open');
+            lightboxImage.removeAttribute('src');
+            lightboxImage.alt = '';
+            lightboxCaption.textContent = '';
+
+            if (lastFocusedElement) {
+                lastFocusedElement.focus();
+                lastFocusedElement = null;
+            }
+        }
+
+        document.querySelectorAll('[data-board-image-preview]').forEach(function (link) {
+            link.addEventListener('click', function (event) {
+                event.preventDefault();
+                var imageName = link.dataset.imageName || '';
+
+                lastFocusedElement = link;
+                lightboxImage.src = link.href;
+                lightboxImage.alt = imageName;
+                lightboxCaption.textContent = imageName;
+                lightbox.hidden = false;
+                document.body.classList.add('board-lightbox-open');
+                closeButton.focus();
+            });
+        });
+
+        closeButton.addEventListener('click', closeLightbox);
+        lightbox.addEventListener('click', function (event) {
+            if (event.target === lightbox) closeLightbox();
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') closeLightbox();
+        });
+    }
 });
