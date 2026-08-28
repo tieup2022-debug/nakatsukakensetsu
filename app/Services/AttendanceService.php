@@ -2142,8 +2142,18 @@ class AttendanceService
                         $attendanceDataList[$fullDate]['worked_time'] = '';
                         $attendanceDataList[$fullDate]['absence'] = '休み';
 
-                        // 前日の深夜ブロック（日跨ぎ分）は欠勤日でも時刻だけ表示する
+                        // 前日の深夜ブロック（日跨ぎ分）は、日中が欠勤でも実績を残す。
+                        // 「欠」は現場行で併記し、前夜分の休憩・実働・深夜数値は同じ日付列に表示する。
                         if ($carryMidnight !== null) {
+                            $carryBreakMinutes = $this->timeToMinutes((string) $carryMidnight['break'], true) ?? 0;
+                            $carryWorkedMinutes = max(0, (int) $carryMidnight['worked_minutes']);
+
+                            $attendanceDataList[$fullDate]['break_time'] = $carryBreakMinutes > 0
+                                ? sprintf('%02d:%02d', intdiv($carryBreakMinutes, 60), $carryBreakMinutes % 60)
+                                : '';
+                            $attendanceDataList[$fullDate]['worked_time'] = $carryWorkedMinutes > 0
+                                ? sprintf('%02d:%02d', intdiv($carryWorkedMinutes, 60), $carryWorkedMinutes % 60)
+                                : '';
                             $attendanceDataList[$fullDate]['midnight_start'] = $carryMidnight['start'];
                             $attendanceDataList[$fullDate]['midnight_end'] = $carryMidnight['end'];
                             $attendanceDataList[$fullDate]['midnight_time'] = $this->formatMidnightForDisplay($carryMidnight['midnight_minutes']);

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\AttendanceService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -168,5 +169,117 @@ class AttendanceBulkMidnightTest extends TestCase
             '出勤・退勤、深夜出勤・深夜退勤は、それぞれ両方を入力してください。'
         );
         $this->assertSame(0, DB::table('t_attendance')->count());
+    }
+
+    public function test_monthly_data_keeps_previous_night_values_when_the_following_day_is_absent(): void
+    {
+        Schema::create('m_staff', function (Blueprint $table): void {
+            $table->id();
+            $table->string('staff_name');
+            $table->integer('sort_number')->default(0);
+            $table->timestamp('deleted_at')->nullable();
+        });
+        Schema::create('m_attendance_defaults', function (Blueprint $table): void {
+            $table->id();
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
+            $table->integer('break_time')->nullable();
+            $table->boolean('is_enabled')->default(true);
+        });
+        Schema::create('t_absence', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('staff_id');
+            $table->date('work_date');
+            $table->boolean('absence_flg')->default(true);
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('v_attendance_all', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('staff_id');
+            $table->unsignedBigInteger('workplace_id');
+            $table->date('work_date');
+            $table->string('workplace_name')->nullable();
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
+            $table->integer('break_time')->nullable();
+            $table->boolean('absence_flg')->default(false);
+        });
+
+        DB::table('m_staff')->insert([
+            'id' => 10,
+            'staff_name' => '夜勤 太郎',
+            'sort_number' => 1,
+            'deleted_at' => null,
+        ]);
+        DB::table('m_attendance_defaults')->insert([
+            'start_time' => '08:00:00',
+            'end_time' => '17:00:00',
+            'break_time' => 60,
+            'is_enabled' => true,
+        ]);
+        DB::table('t_attendance')->insert([
+            [
+                'staff_id' => 10,
+                'workplace_id' => 1,
+                'work_date' => '2026-08-27',
+                'start_time' => null,
+                'end_time' => null,
+                'break_time' => 0,
+                'absence_flg' => 0,
+                'midnight_overtime_minutes' => null,
+                'midnight_start_time' => '20:00:00',
+                'midnight_end_time' => '04:30:00',
+                'midnight_break_time' => 60,
+                'midnight_break_deduct_flg' => 1,
+                'deleted_at' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'staff_id' => 10,
+                'workplace_id' => 1,
+                'work_date' => '2026-08-28',
+                'start_time' => '08:00:00',
+                'end_time' => '17:00:00',
+                'break_time' => 0,
+                'absence_flg' => 1,
+                'midnight_overtime_minutes' => null,
+                'midnight_start_time' => null,
+                'midnight_end_time' => null,
+                'midnight_break_time' => null,
+                'midnight_break_deduct_flg' => 0,
+                'deleted_at' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        $data = app(AttendanceService::class)->GetPdfData('2026-08-01');
+        $cell = $data['attendance_table_list'][0][0]['2026-08-28'];
+
+        $this->assertSame('#absence', $cell['workplace_name']);
+        $this->assertSame('', $cell['start_time']);
+        $this->assertSame('', $cell['end_time']);
+        $this->assertSame('01:00', $cell['break_time']);
+        $this->assertSame('07:30', $cell['worked_time']);
+        $this->assertSame('20:00', $cell['midnight_start']);
+        $this->assertSame('04:30', $cell['midnight_end']);
+        $this->assertSame('05:30', $cell['midnight_time']);
+
+        $html = view('top.attendance_monthly', array_merge($data, [
+            'display_month' => '2026年8月',
+            'filter_work_date' => '2026-08-01',
+            'previous_month_work_date' => '2026-07-01',
+            'current_month_work_date' => '2026-08-01',
+            'next_month_work_date' => '2026-09-01',
+        ]))->render();
+
+        $this->assertStringContainsString('>欠<', $html);
+        $this->assertStringContainsString('>01:00<', $html);
+        $this->assertStringContainsString('>07:30<', $html);
+        $this->assertStringContainsString('>20:00<', $html);
+        $this->assertStringContainsString('>04:30<', $html);
+        $this->assertStringContainsString('>05:30<', $html);
     }
 }

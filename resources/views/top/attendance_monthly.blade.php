@@ -130,10 +130,9 @@
                                     $cell = $staffRow[$date] ?? null;
                                     $value = '';
                                     if ($cell) {
-                                        if (($cell['workplace_name'] ?? '') === '#absence') {
-                                            $value = $label === '現場' ? '欠' : '';
-                                        } elseif ($label === '現場') {
-                                            $value = $cell['workplace_name'] ?? '';
+                                        $isAbsent = ($cell['workplace_name'] ?? '') === '#absence';
+                                        if ($label === '現場') {
+                                            $value = $isAbsent ? '欠' : ($cell['workplace_name'] ?? '');
                                         } elseif ($label === '出勤') {
                                             $value = $cell['start_time'] ?? '';
                                         } elseif ($label === '退勤') {
