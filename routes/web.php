@@ -50,6 +50,7 @@ Route::post('/top/assignment/board-copy-day', [TopAssignmentController::class, '
 // 社内掲示板
 Route::middleware('nakatsuka.auth')->group(function (): void {
     Route::get('/board', [BoardController::class, 'index'])->name('board.index');
+    Route::get('/board/images', [BoardController::class, 'images'])->name('board.images');
     Route::get('/board/create', [BoardController::class, 'create'])->name('board.create');
     Route::post('/board', [BoardController::class, 'store'])->name('board.store');
     Route::get('/board/attachments/{attachment}', [BoardController::class, 'attachment'])->name('board.attachments.show')->where('attachment', '[0-9]+');

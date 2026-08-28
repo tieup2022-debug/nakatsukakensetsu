@@ -33,6 +33,33 @@ class BoardController extends Controller
         ]);
     }
 
+    public function images(Request $request)
+    {
+        $filters = [
+            'keyword' => mb_substr(trim((string) $request->query('q', '')), 0, 100),
+            'author' => mb_substr(trim((string) $request->query('author', '')), 0, 255),
+            'fromDate' => $this->dateFilter($request->query('from')),
+            'toDate' => $this->dateFilter($request->query('to')),
+        ];
+        $viewData = $filters + [
+            'images' => $this->board->paginateImages(
+                $filters['keyword'],
+                $filters['author'],
+                $filters['fromDate'],
+                $filters['toDate'],
+            ),
+        ];
+
+        if ($request->ajax()) {
+            return view('board.partials.image-grid', $viewData);
+        }
+
+        return view('board.images', $viewData + [
+            'title' => '画像検索・掲示板',
+            'authors' => $this->board->imageAuthors(),
+        ]);
+    }
+
     public function create(Request $request)
     {
         $user = $this->currentUser($request);
@@ -112,13 +139,24 @@ class BoardController extends Controller
         $file = $this->board->findAttachment($attachment);
         abort_unless($file && Storage::disk($file->disk)->exists($file->path), 404);
 
-        if ($request->boolean('inline') && in_array((string) $file->mime_type, [
+        $extension = strtolower(pathinfo((string) $file->original_name, PATHINFO_EXTENSION));
+        $extensionMime = match ($extension) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            default => null,
+        };
+        $storedMime = strtolower((string) $file->mime_type);
+        $inlineMime = in_array($storedMime, [
             'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-        ], true)) {
+        ], true) ? $storedMime : $extensionMime;
+
+        if ($request->boolean('inline') && $inlineMime !== null) {
             return Storage::disk($file->disk)->response(
                 $file->path,
                 $file->original_name,
-                ['Content-Type' => $file->mime_type, 'Content-Disposition' => 'inline']
+                ['Content-Type' => $inlineMime, 'Content-Disposition' => 'inline']
             );
         }
 
@@ -159,6 +197,18 @@ class BoardController extends Controller
     {
         return (int) ($user->permission ?? 0) === 1
             || ($authorUserId !== null && (int) $authorUserId === (int) $user->id);
+    }
+
+    private function dateFilter(mixed $value): string
+    {
+        $value = trim((string) $value);
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return '';
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        return $date && $date->format('Y-m-d') === $value ? $value : '';
     }
 
     private function postRules(): array

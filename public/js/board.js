@@ -69,19 +69,20 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        document.querySelectorAll('[data-board-image-preview]').forEach(function (link) {
-            link.addEventListener('click', function (event) {
-                event.preventDefault();
-                var imageName = link.dataset.imageName || '';
+        document.addEventListener('click', function (event) {
+            var link = event.target.closest('[data-board-image-preview]');
+            if (!link) return;
 
-                lastFocusedElement = link;
-                lightboxImage.src = link.href;
-                lightboxImage.alt = imageName;
-                lightboxCaption.textContent = imageName;
-                lightbox.hidden = false;
-                document.body.classList.add('board-lightbox-open');
-                closeButton.focus();
-            });
+            event.preventDefault();
+            var imageName = link.dataset.imageName || '';
+
+            lastFocusedElement = link;
+            lightboxImage.src = link.href;
+            lightboxImage.alt = imageName;
+            lightboxCaption.textContent = link.dataset.imageCaption || imageName;
+            lightbox.hidden = false;
+            document.body.classList.add('board-lightbox-open');
+            closeButton.focus();
         });
 
         closeButton.addEventListener('click', closeLightbox);

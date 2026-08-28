@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -62,6 +63,69 @@ class BoardService
         });
 
         return $paginator;
+    }
+
+    public function paginateImages(
+        ?string $keyword,
+        ?string $author,
+        ?string $fromDate,
+        ?string $toDate,
+        int $perPage = 30,
+    ): LengthAwarePaginator {
+        $query = $this->imageAttachmentsQuery()
+            ->select([
+                'attachments.id',
+                'attachments.thread_id',
+                'attachments.reply_id',
+                'attachments.original_name',
+                'attachments.mime_type',
+                'attachments.ai_description',
+                'threads.title as thread_title',
+            ])
+            ->selectRaw('COALESCE(replies.author_name, threads.author_name) as post_author_name')
+            ->selectRaw('COALESCE(replies.created_at, threads.created_at) as posted_at');
+
+        $terms = preg_split('/[\s　]+/u', trim((string) $keyword), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        foreach (array_slice($terms, 0, 10) as $term) {
+            $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_substr($term, 0, 100));
+            $pattern = '%'.$escaped.'%';
+            $query->where(function (Builder $search) use ($pattern): void {
+                $search->whereRaw("attachments.original_name LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereRaw("attachments.ai_search_text LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereRaw("threads.title LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereRaw("threads.body LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereRaw("threads.author_name LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereRaw("replies.body LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereRaw("replies.author_name LIKE ? ESCAPE '!'", [$pattern]);
+            });
+        }
+
+        $author = trim((string) $author);
+        if ($author !== '') {
+            $query->whereRaw('COALESCE(replies.author_name, threads.author_name) = ?', [$author]);
+        }
+        if ($fromDate) {
+            $query->whereRaw('COALESCE(replies.created_at, threads.created_at) >= ?', [$fromDate.' 00:00:00']);
+        }
+        if ($toDate) {
+            $query->whereRaw('COALESCE(replies.created_at, threads.created_at) <= ?', [$toDate.' 23:59:59']);
+        }
+
+        return $query
+            ->orderByRaw('COALESCE(replies.created_at, threads.created_at) DESC')
+            ->orderByDesc('attachments.id')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    public function imageAuthors(): Collection
+    {
+        return $this->imageAttachmentsQuery()
+            ->selectRaw('COALESCE(replies.author_name, threads.author_name) as author_name')
+            ->whereRaw("COALESCE(replies.author_name, threads.author_name) <> ''")
+            ->distinct()
+            ->orderBy('author_name')
+            ->pluck('author_name');
     }
 
     public function findThread(int $threadId, int $viewerUserId = 0, bool $incrementViews = false): ?object
@@ -301,6 +365,25 @@ class BoardService
         $replyId === null ? $query->whereNull('reply_id') : $query->where('reply_id', $replyId);
 
         return $query->orderBy('id')->get();
+    }
+
+    private function imageAttachmentsQuery(): Builder
+    {
+        return DB::table('t_board_attachments as attachments')
+            ->join('t_board_threads as threads', 'threads.id', '=', 'attachments.thread_id')
+            ->leftJoin('t_board_replies as replies', function ($join): void {
+                $join->on('replies.id', '=', 'attachments.reply_id')
+                    ->on('replies.thread_id', '=', 'attachments.thread_id');
+            })
+            ->where(function (Builder $images): void {
+                $images->whereIn(DB::raw('LOWER(attachments.mime_type)'), [
+                    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+                ]);
+
+                foreach (['jpg', 'jpeg', 'png', 'gif', 'webp'] as $extension) {
+                    $images->orWhereRaw('LOWER(attachments.original_name) LIKE ?', ['%.'.$extension]);
+                }
+            });
     }
 
     /**

@@ -13,6 +13,11 @@
         <a href="{{ route('board.create') }}" class="btn btn-primary">＋ 新規投稿</a>
     </div>
 
+    <nav class="nav nav-pills board-view-tabs mb-3" aria-label="掲示板の表示切替">
+        <a href="{{ route('board.index') }}" class="nav-link active" aria-current="page">投稿一覧</a>
+        <a href="{{ route('board.images') }}" class="nav-link">画像一覧</a>
+    </nav>
+
     <form id="board-search-form" method="get" action="{{ route('board.index') }}" class="card border-0 shadow-sm mb-3">
         <div class="card-body py-3">
             <div class="row g-2 align-items-center">

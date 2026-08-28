@@ -62,6 +62,9 @@ class BoardTest extends TestCase
     {
         $this->get(route('board.index'))
             ->assertRedirect(route('login'));
+
+        $this->get(route('board.images'))
+            ->assertRedirect(route('login'));
     }
 
     public function test_user_can_create_search_and_view_a_thread_with_an_attachment(): void
@@ -194,6 +197,106 @@ class BoardTest extends TestCase
             ->get(route('board.index', ['q' => 'ユンボ']))
             ->assertOk()
             ->assertSee('テスト投稿');
+    }
+
+    public function test_image_gallery_searches_image_content_and_filters_by_author_and_date(): void
+    {
+        $redThreadId = $this->insertThread(authorUserId: 2);
+        DB::table('t_board_threads')->where('id', $redThreadId)->update([
+            'title' => '魚礁工事 写真',
+            'body' => '海岸での施工状況です。',
+            'author_name' => '投稿者',
+            'created_at' => '2026-08-10 09:00:00',
+        ]);
+        $redImageId = DB::table('t_board_attachments')->insertGetId([
+            'thread_id' => $redThreadId,
+            'reply_id' => null,
+            'disk' => 'local',
+            'path' => 'board/test/red-excavator.jpg',
+            'original_name' => 'IMG_RED.JPG',
+            'mime_type' => 'application/octet-stream',
+            'size' => 100,
+            'ai_description' => '赤い重機が魚礁工事をしている。',
+            'ai_search_text' => '赤い 重機 魚礁 バックホウ',
+            'ai_analysis_status' => 'completed',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('t_board_attachments')->insert([
+            'thread_id' => $redThreadId,
+            'reply_id' => null,
+            'disk' => 'local',
+            'path' => 'board/test/report.pdf',
+            'original_name' => '施工報告.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 100,
+            'ai_analysis_status' => 'not_applicable',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $blueThreadId = $this->insertThread(authorUserId: 3);
+        DB::table('t_board_threads')->where('id', $blueThreadId)->update([
+            'title' => '会社資材置場',
+            'author_name' => '一般ユーザー',
+            'created_at' => '2026-07-01 09:00:00',
+        ]);
+        DB::table('t_board_attachments')->insert([
+            'thread_id' => $blueThreadId,
+            'reply_id' => null,
+            'disk' => 'local',
+            'path' => 'board/test/blue-crane.png',
+            'original_name' => 'blue-crane.png',
+            'mime_type' => 'image/png',
+            'size' => 100,
+            'ai_description' => '青いクレーン車が停車している。',
+            'ai_search_text' => '青い クレーン車 資材置場',
+            'ai_analysis_status' => 'completed',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->withSession(['login_user_id' => 3])
+            ->get(route('board.images'))
+            ->assertOk()
+            ->assertSee('画像：全2件')
+            ->assertSee('魚礁工事 写真')
+            ->assertSee('会社資材置場')
+            ->assertDontSee('施工報告.pdf')
+            ->assertSee('data-board-lightbox', false);
+
+        $this->withSession(['login_user_id' => 3])
+            ->get(route('board.images', ['q' => '赤い 重機']))
+            ->assertOk()
+            ->assertSee('条件に一致する画像：1件')
+            ->assertSee('魚礁工事 写真')
+            ->assertDontSee('会社資材置場');
+
+        $this->withSession(['login_user_id' => 3])
+            ->get(route('board.images', [
+                'author' => '一般ユーザー',
+                'from' => '2026-07-01',
+                'to' => '2026-07-31',
+            ]))
+            ->assertOk()
+            ->assertSee('条件に一致する画像：1件')
+            ->assertSee('会社資材置場')
+            ->assertDontSee('魚礁工事 写真');
+
+        $this->withSession(['login_user_id' => 3])
+            ->withHeader('X-Requested-With', 'XMLHttpRequest')
+            ->get(route('board.images', ['q' => '魚礁']))
+            ->assertOk()
+            ->assertSee('魚礁工事 写真')
+            ->assertDontSee('board-image-search-form');
+
+        Storage::fake('local');
+        Storage::disk('local')->put('board/test/red-excavator.jpg', 'legacy image');
+        $this->withSession(['login_user_id' => 3])
+            ->get(route('board.attachments.show', ['attachment' => $redImageId, 'inline' => 1]))
+            ->assertOk()
+            ->assertHeader('content-type', 'image/jpeg')
+            ->assertHeader('content-disposition', 'inline');
     }
 
     public function test_user_can_reply_and_toggle_like_once_per_account(): void

@@ -7,13 +7,76 @@
     position: relative;
 }
 
-#board-search-results {
+#board-search-results,
+#board-image-results {
     transition: opacity 0.15s ease;
 }
 
-#board-search-results.is-loading {
+#board-search-results.is-loading,
+#board-image-results.is-loading {
     opacity: 0.55;
     pointer-events: none;
+}
+
+.board-view-tabs {
+    gap: 0.25rem;
+}
+
+.board-image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+    gap: 1rem;
+}
+
+.board-gallery-card {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.board-gallery-preview {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #e9ecef;
+    cursor: zoom-in;
+}
+
+.board-gallery-preview::after {
+    content: "拡大";
+    position: absolute;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    font-size: 0.72rem;
+    pointer-events: none;
+}
+
+.board-gallery-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+
+.board-gallery-preview:hover .board-gallery-image,
+.board-gallery-preview:focus-visible .board-gallery-image {
+    transform: scale(1.035);
+}
+
+.board-gallery-title,
+.board-gallery-description {
+    overflow-wrap: anywhere;
+}
+
+.board-gallery-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
 }
 
 .gap-x-3 {
