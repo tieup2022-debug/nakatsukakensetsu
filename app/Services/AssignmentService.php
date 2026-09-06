@@ -350,12 +350,9 @@ class AssignmentService
                             ->where('id', '=', $exsitsStaffCheck->id)
                             ->delete();
 
-                        DB::table('t_attendance')
-                            ->where('staff_id', '=', $staffId)
-                            ->where('work_date', '=', $workDate)
-                            ->where('workplace_id', '=', $workplaceId)
-                            ->delete();
+                        // Keep saved hours when unassigning before a workplace change.
                     } elseif (! $exsitsStaffCheck && $assignFlg == 1) {
+                        $this->moveSavedAttendance((int) $staffId, (int) $workplaceId, (string) $workDate);
                         DB::table('t_assignment')
                             ->insert([
                                 'workplace_id' => $workplaceId,
@@ -432,6 +429,10 @@ class AssignmentService
 
                 return true;
             }
+
+            return false;
+        } catch (\DomainException $e) {
+            DB::rollBack();
 
             return false;
         } catch (\Exception $e) {
@@ -750,20 +751,14 @@ class AssignmentService
                     return;
                 }
 
+                $this->moveSavedAttendance($staffId, $workplaceId, $workDate);
+
                 DB::table('t_assignment')
                     ->where('master_id', $staffId)
                     ->where('master_type', $staffMasterType)
                     ->where('work_date', $workDate)
                     ->whereNull('deleted_at')
                     ->delete();
-
-                if ($currentWorkplaceIds !== []) {
-                    DB::table('t_attendance')
-                        ->where('staff_id', $staffId)
-                        ->where('work_date', $workDate)
-                        ->whereIn('workplace_id', $currentWorkplaceIds)
-                        ->delete();
-                }
 
                 DB::table('t_assignment')->insert([
                     'workplace_id' => $workplaceId,
@@ -776,6 +771,8 @@ class AssignmentService
             });
 
             return ['ok' => true, 'message' => '配置を保存しました。'];
+        } catch (\DomainException $e) {
+            return ['ok' => false, 'message' => $e->getMessage()];
         } catch (\Throwable $e) {
             error($e, __FILE__, __METHOD__, __LINE__);
             if (app()->environment('local')) {
@@ -805,11 +802,7 @@ class AssignmentService
                     ->whereNull('deleted_at')
                     ->delete();
 
-                DB::table('t_attendance')
-                    ->where('staff_id', $staffId)
-                    ->where('workplace_id', $workplaceId)
-                    ->where('work_date', $workDate)
-                    ->delete();
+                // Attendance is an actual record, not part of the placement plan.
             });
 
             return ['ok' => true, 'message' => '配置を解除しました。'];
@@ -820,6 +813,25 @@ class AssignmentService
             }
 
             return ['ok' => false, 'message' => '配置の解除に失敗しました。'];
+        }
+    }
+
+    private function moveSavedAttendance(int $staffId, int $workplaceId, string $workDate): void
+    {
+        $rows = DB::table('t_attendance')
+            ->where('staff_id', $staffId)
+            ->where('work_date', $workDate)
+            ->whereNull('deleted_at')
+            ->lockForUpdate()
+            ->get();
+
+        if ($rows->count() > 1) {
+            throw new \DomainException('同じ社員・日付の勤怠が複数あります。既存の勤怠を確認してから現場を変更してください。');
+        }
+
+        if ($rows->isNotEmpty()) {
+            DB::table('t_attendance')->where('id', $rows->first()->id)
+                ->update(['workplace_id' => $workplaceId, 'updated_at' => now()]);
         }
     }
 

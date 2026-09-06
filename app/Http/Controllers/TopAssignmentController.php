@@ -262,13 +262,13 @@ class TopAssignmentController extends Controller
         $vehicleList = $this->normalizeIntMap($request->input('vehicle_list', []));
         $equipmentList = $this->normalizeIntMap($request->input('equipment_list', []));
 
-        $staffList = array_merge($staffFirst, $staffSecond, $staffThird);
+        $staffList = $staffFirst + $staffSecond + $staffThird;
 
         $ok = $this->assignmentService->AssignmentUpdate($workplaceId, $workDate, $staffList, $vehicleList, $equipmentList);
 
         return redirect()
             ->route('top.assignment', ['workplace_id' => $workplaceId, 'work_date' => $workDate])
-            ->with('status', $ok ? '配置一覧を保存しました' : '保存に失敗しました（内容をご確認ください）');
+            ->with('status', $ok ? '配置一覧を保存しました' : '保存に失敗しました。同日の重複配置・勤怠、欠勤予定をご確認ください。');
     }
 
     public function copy(Request $request)

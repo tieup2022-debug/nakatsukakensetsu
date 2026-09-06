@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Services\AssignmentService;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -72,6 +73,13 @@ class AssignmentBoardTest extends TestCase
             $table->unsignedBigInteger('staff_id');
             $table->unsignedBigInteger('workplace_id');
             $table->date('work_date');
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
+            $table->integer('break_time')->nullable();
+            $table->time('midnight_start_time')->nullable();
+            $table->integer('midnight_break_time')->nullable();
+            $table->boolean('enabled')->default(true);
+            $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
         });
 
@@ -202,7 +210,7 @@ class AssignmentBoardTest extends TestCase
         $this->assertStringContainsString('技術者 技術者4', $html);
     }
 
-    public function test_place_endpoint_moves_staff_and_removes_old_attendance(): void
+    public function test_place_endpoint_moves_staff_and_preserves_saved_attendance(): void
     {
         DB::table('t_assignment')->insert([
             'workplace_id' => 10,
@@ -217,10 +225,17 @@ class AssignmentBoardTest extends TestCase
             'staff_id' => 1,
             'workplace_id' => 10,
             'work_date' => '2026-08-31',
+            'start_time' => '07:30:00',
+            'end_time' => '17:00:00',
+            'break_time' => 90,
+            'midnight_start_time' => '19:00:00',
+            'midnight_break_time' => 60,
+            'enabled' => true,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
+        $before = (array) DB::table('t_attendance')->first();
         $response = $this->withSession(['login_user_id' => 1])->postJson(route('top.assignment.board.place'), [
             'staff_id' => 1,
             'workplace_id' => 20,
@@ -231,7 +246,47 @@ class AssignmentBoardTest extends TestCase
         $response->assertOk()->assertJsonPath('board.assignments.0.workplace_id', 20);
         $this->assertDatabaseMissing('t_assignment', ['workplace_id' => 10, 'master_id' => 1, 'work_date' => '2026-08-31']);
         $this->assertDatabaseHas('t_assignment', ['workplace_id' => 20, 'master_id' => 1, 'work_date' => '2026-08-31']);
-        $this->assertSame(0, DB::table('t_attendance')->count());
+        $this->assertSame(1, DB::table('t_attendance')->count());
+        $after = (array) DB::table('t_attendance')->first();
+        $this->assertEquals(Arr::except($before, ['workplace_id', 'updated_at']), Arr::except($after, ['workplace_id', 'updated_at']));
+        $this->assertSame(20, $after['workplace_id']);
+    }
+
+    public function test_legacy_unassign_then_reassign_preserves_hours(): void
+    {
+        $service = app(AssignmentService::class);
+        $this->assertTrue($service->AssignmentUpdate(10, '2026-08-31', [1 => 1], [], []));
+        DB::table('t_attendance')->insert(['staff_id' => 1, 'workplace_id' => 10, 'work_date' => '2026-08-31', 'start_time' => '08:15:00', 'enabled' => true]);
+        $this->assertTrue($service->AssignmentUpdate(10, '2026-08-31', [1 => 0], [], []));
+        $this->assertSame(1, DB::table('t_attendance')->count());
+        $this->assertTrue($service->AssignmentUpdate(20, '2026-08-31', [1 => 1], [], []));
+        $this->assertDatabaseHas('t_attendance', ['staff_id' => 1, 'workplace_id' => 20, 'start_time' => '08:15:00', 'enabled' => true]);
+    }
+
+    public function test_conflicting_attendance_blocks_move_without_changing_records(): void
+    {
+        $service = app(AssignmentService::class);
+        $this->assertTrue($service->AssignmentUpdate(10, '2026-08-31', [1 => 1], [], []));
+        foreach ([10, 20] as $workplaceId) {
+            DB::table('t_attendance')->insert(['staff_id' => 1, 'workplace_id' => $workplaceId, 'work_date' => '2026-08-31', 'start_time' => '08:15:00']);
+        }
+        $before = DB::table('t_attendance')->get()->toArray();
+        $result = $service->placeStaffOnBoard(1, 20, '2026-08-31');
+        $this->assertFalse($result['ok']);
+        $this->assertStringContainsString('複数', $result['message']);
+        $this->assertEquals($before, DB::table('t_attendance')->get()->toArray());
+        $this->assertDatabaseHas('t_assignment', ['master_id' => 1, 'workplace_id' => 10]);
+    }
+
+    public function test_board_unassign_then_reassign_preserves_attendance(): void
+    {
+        $service = app(AssignmentService::class);
+        $this->assertTrue($service->placeStaffOnBoard(1, 10, '2026-08-31')['ok']);
+        DB::table('t_attendance')->insert(['staff_id' => 1, 'workplace_id' => 10, 'work_date' => '2026-08-31', 'start_time' => '08:15:00', 'enabled' => true]);
+        $this->assertTrue($service->removeStaffFromBoard(1, 10, '2026-08-31')['ok']);
+        $this->assertSame(1, DB::table('t_attendance')->count());
+        $this->assertTrue($service->placeStaffOnBoard(1, 20, '2026-08-31')['ok']);
+        $this->assertDatabaseHas('t_attendance', ['workplace_id' => 20, 'start_time' => '08:15:00', 'enabled' => true]);
     }
 
     public function test_absent_staff_cannot_be_placed(): void
