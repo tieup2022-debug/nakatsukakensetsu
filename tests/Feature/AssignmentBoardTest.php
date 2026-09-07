@@ -144,7 +144,7 @@ class AssignmentBoardTest extends TestCase
 
         $board = app(AssignmentService::class)->getBoardData('2026-08-31', 14);
 
-        $this->assertSame(['滝ノ下', '吉岡'], array_column($board['workplaces'], 'name'));
+        $this->assertSame(['滝ノ下', '吉岡', '会社'], array_column($board['workplaces'], 'name'));
         $this->assertSame(['村田 亮介', '住吉 正己'], array_column($board['staff'], 'name'));
         $this->assertSame([['workplace_id' => 10, 'work_date' => '2026-08-31', 'staff_id' => 1]], $board['assignments']);
         $this->assertSame([['staff_id' => 2, 'work_date' => '2026-09-01']], $board['absences']);
@@ -287,6 +287,18 @@ class AssignmentBoardTest extends TestCase
         $this->assertSame(1, DB::table('t_attendance')->count());
         $this->assertTrue($service->placeStaffOnBoard(1, 20, '2026-08-31')['ok']);
         $this->assertDatabaseHas('t_attendance', ['workplace_id' => 20, 'start_time' => '08:15:00', 'enabled' => true]);
+    }
+
+    public function test_company_is_available_for_placement_pdf_and_copy_while_preserving_soumu(): void
+    {
+        $service = app(AssignmentService::class);
+        $this->assertTrue($service->placeStaffOnBoard(1, 30, '2026-08-28')['ok']);
+        $this->assertContains(30, $service->GetAssignedWorkplace('2026-08-28')->pluck('workplace_id')->all());
+        $this->assertTrue($service->placeStaffOnBoard(3, 30, '2026-08-31')['ok']);
+        $soumu = DB::table('t_assignment')->where('master_id', 3)->first();
+        $this->assertTrue($service->copyPreviousBoardDay('2026-08-31')['ok']);
+        $this->assertDatabaseHas('t_assignment', ['master_id' => 1, 'workplace_id' => 30, 'work_date' => '2026-08-31']);
+        $this->assertEquals($soumu, DB::table('t_assignment')->where('master_id', 3)->first());
     }
 
     public function test_absent_staff_cannot_be_placed(): void

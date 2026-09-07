@@ -566,7 +566,6 @@ class AssignmentService
         try {
             $start = Carbon::createFromFormat('Y-m-d', $startDate)->startOfDay();
             $end = $start->copy()->addDays($days - 1);
-            $companyName = (string) config('assignments.company.workplace_name', '会社');
             $soumuStaffType = (int) config('assignments.company.soumu_staff_type', 4);
             $staffMasterType = (string) config('assignments.master_type.staff');
             $vehicleMasterType = (string) config('assignments.master_type.vehicle');
@@ -575,7 +574,6 @@ class AssignmentService
             $workplaces = DB::table('m_workplace')
                 ->select('id', 'workplace_name')
                 ->where('active_flg', true)
-                ->where('workplace_name', '!=', $companyName)
                 ->whereNull('deleted_at')
                 ->orderBy('id')
                 ->get();
@@ -846,16 +844,18 @@ class AssignmentService
 
         try {
             $staffMasterType = (string) config('assignments.master_type.staff');
-            $companyName = (string) config('assignments.company.workplace_name', '会社');
+            $manualStaffIds = DB::table('m_staff')
+                ->where('staff_type', '!=', (int) config('assignments.company.soumu_staff_type', 4))
+                ->whereNull('deleted_at')->pluck('id')->all();
             $workplaceIds = DB::table('m_workplace')
                 ->where('active_flg', true)
-                ->where('workplace_name', '!=', $companyName)
                 ->whereNull('deleted_at')
                 ->pluck('id')
                 ->all();
 
             $sourceRows = DB::table('t_assignment')
                 ->where('master_type', $staffMasterType)
+                ->whereIn('master_id', $manualStaffIds)
                 ->where('work_date', $previousDate)
                 ->whereIn('workplace_id', $workplaceIds)
                 ->whereNull('deleted_at')
@@ -874,9 +874,10 @@ class AssignmentService
                 ->map(fn ($id) => (int) $id)
                 ->all();
 
-            DB::transaction(function () use ($sourceRows, $workDate, $workplaceIds, $staffMasterType, $absentStaffIds): void {
+            DB::transaction(function () use ($sourceRows, $workDate, $workplaceIds, $staffMasterType, $absentStaffIds, $manualStaffIds): void {
                 DB::table('t_assignment')
                     ->where('master_type', $staffMasterType)
+                    ->whereIn('master_id', $manualStaffIds)
                     ->where('work_date', $workDate)
                     ->whereIn('workplace_id', $workplaceIds)
                     ->whereNull('deleted_at')
@@ -925,8 +926,6 @@ class AssignmentService
         try {
             // ブラウザ表示/PDF は「その日に何かしら配置がある現場」を対象にする。
             // 以前は staff view 基準だったため、車両/重機のみ配置の現場が漏れていた。
-            // 「会社」現場は総務スタッフの勤怠管理用なので、配置表には載せない。
-            $companyName = (string) config('assignments.company.workplace_name', '会社');
 
             return DB::table('t_assignment AS ta')
                 ->join('m_workplace AS mwp', function ($join) {
@@ -935,7 +934,6 @@ class AssignmentService
                 })
                 ->select('ta.workplace_id', 'mwp.workplace_name')
                 ->where('ta.work_date', '=', $workDate)
-                ->where('mwp.workplace_name', '!=', $companyName)
                 ->whereNull('ta.deleted_at')
                 ->distinct()
                 ->orderBy('ta.workplace_id')
@@ -1218,7 +1216,6 @@ class AssignmentService
     {
         $start = Carbon::createFromFormat('Y-m-d', $startDate)->startOfDay();
         $end = $start->copy()->addDays($days - 1);
-        $companyName = (string) config('assignments.company.workplace_name', '会社');
         $soumuStaffType = (int) config('assignments.company.soumu_staff_type', 4);
         $staffMasterType = (string) config('assignments.master_type.staff');
         $vehicleMasterType = (string) config('assignments.master_type.vehicle');
@@ -1228,7 +1225,6 @@ class AssignmentService
             $this->readLocalJson('app/local_workplaces.json'),
             fn ($row) => (bool) ($row['active_flg'] ?? false)
                 && empty($row['deleted_at'])
-                && (string) ($row['workplace_name'] ?? '') !== $companyName
         ));
         $staff = array_values(array_filter(
             $this->readLocalJson('app/local_staff.json'),
@@ -1657,8 +1653,6 @@ class AssignmentService
             }
         }
 
-        $companyName = (string) config('assignments.company.workplace_name', '会社');
-
         $sortedIds = array_keys($workplaceIds);
         sort($sortedIds, SORT_NUMERIC);
 
@@ -1666,10 +1660,6 @@ class AssignmentService
 
         foreach ($sortedIds as $wid) {
             $name = $nameById[$wid] ?? ('現場ID '.$wid);
-            // 「会社」現場は配置表には載せない（総務の勤怠管理用）。
-            if ($name === $companyName) {
-                continue;
-            }
             $list[] = (object) [
                 'workplace_id' => $wid,
                 'workplace_name' => $name,
