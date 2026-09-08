@@ -38,15 +38,15 @@
                         <button class="btn btn-outline-primary" type="submit">検索</button>
                         <button
                             id="board-image-search-clear"
-                            class="btn btn-outline-secondary{{ $keyword === '' && $author === '' && $fromDate === '' && $toDate === '' ? ' d-none' : '' }}"
+                            class="btn btn-outline-secondary{{ $keyword === '' && $author === '' && $fromDate === '' && $toDate === '' && $sort === 'newest' ? ' d-none' : '' }}"
                             type="button"
                         >解除</button>
                     </div>
                 </div>
                 <div class="col-12 col-sm-4 col-lg-3">
-                    <label for="board-image-author" class="form-label small fw-semibold mb-1">投稿者</label>
+                    <label for="board-image-author" class="form-label small fw-semibold mb-1">担当者（投稿者）</label>
                     <select id="board-image-author" name="author" class="form-select">
-                        <option value="">すべての投稿者</option>
+                        <option value="">すべての担当者</option>
                         @foreach ($authors as $authorName)
                             <option value="{{ $authorName }}" @selected($author === $authorName)>{{ $authorName }}</option>
                         @endforeach
@@ -59,6 +59,16 @@
                 <div class="col-6 col-sm-4 col-lg-2">
                     <label for="board-image-to" class="form-label small fw-semibold mb-1">終了日</label>
                     <input id="board-image-to" type="date" name="to" value="{{ $toDate }}" class="form-control">
+                </div>
+            </div>
+            <div class="row g-2 mt-1">
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <label for="board-image-sort" class="form-label small fw-semibold mb-1">並び順</label>
+                    <select id="board-image-sort" name="sort" class="form-select">
+                        <option value="newest" @selected($sort === 'newest')>新しい順</option>
+                        <option value="oldest" @selected($sort === 'oldest')>古い順</option>
+                        <option value="author" @selected($sort === 'author')>担当者別（名前順）</option>
+                    </select>
                 </div>
             </div>
             <div id="board-image-search-feedback" class="small text-danger mt-2 d-none" role="alert"></div>
@@ -87,6 +97,7 @@
             var authorInput = document.getElementById('board-image-author');
             var fromInput = document.getElementById('board-image-from');
             var toInput = document.getElementById('board-image-to');
+            var sortInput = document.getElementById('board-image-sort');
             var results = document.getElementById('board-image-results');
             var clear = document.getElementById('board-image-search-clear');
             var feedback = document.getElementById('board-image-search-feedback');
@@ -97,7 +108,7 @@
             if (!form || !keywordInput || !authorInput || !fromInput || !toInput || !results || !clear || !feedback || !window.fetch) return;
 
             function hasFilters() {
-                return keywordInput.value.trim() !== '' || authorInput.value !== '' || fromInput.value !== '' || toInput.value !== '';
+                return keywordInput.value.trim() !== '' || authorInput.value !== '' || fromInput.value !== '' || toInput.value !== '' || sortInput.value !== 'newest';
             }
 
             function formUrl() {
@@ -106,7 +117,8 @@
                     q: keywordInput.value.trim(),
                     author: authorInput.value,
                     from: fromInput.value,
-                    to: toInput.value
+                    to: toInput.value,
+                    sort: sortInput.value
                 };
 
                 Object.keys(values).forEach(function (name) {
@@ -173,7 +185,7 @@
             keywordInput.addEventListener('input', function () {
                 if (!composing) schedule(300);
             });
-            [authorInput, fromInput, toInput].forEach(function (input) {
+            [authorInput, fromInput, toInput, sortInput].forEach(function (input) {
                 input.addEventListener('change', function () { schedule(0); });
             });
             form.addEventListener('submit', function (event) {
@@ -187,6 +199,7 @@
                 authorInput.value = '';
                 fromInput.value = '';
                 toInput.value = '';
+                sortInput.value = 'newest';
                 keywordInput.focus();
                 window.clearTimeout(timer);
                 load(formUrl());

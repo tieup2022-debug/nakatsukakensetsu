@@ -71,6 +71,7 @@ class BoardService
         ?string $fromDate,
         ?string $toDate,
         int $perPage = 30,
+        string $sort = 'newest',
     ): LengthAwarePaginator {
         $query = $this->imageAttachmentsQuery()
             ->select([
@@ -111,8 +112,12 @@ class BoardService
             $query->whereRaw('COALESCE(replies.created_at, threads.created_at) <= ?', [$toDate.' 23:59:59']);
         }
 
+        if ($sort === 'author') {
+            $query->orderByRaw('COALESCE(replies.author_name, threads.author_name) ASC');
+        }
+
         return $query
-            ->orderByRaw('COALESCE(replies.created_at, threads.created_at) DESC')
+            ->orderByRaw('COALESCE(replies.created_at, threads.created_at) '.($sort === 'oldest' ? 'ASC' : 'DESC'))
             ->orderByDesc('attachments.id')
             ->paginate($perPage)
             ->withQueryString();

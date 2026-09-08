@@ -35,7 +35,9 @@ class BoardController extends Controller
 
     public function images(Request $request)
     {
+        $sort = $request->query('sort', 'newest');
         $filters = [
+            'sort' => in_array($sort, ['newest', 'oldest', 'author'], true) ? $sort : 'newest',
             'keyword' => mb_substr(trim((string) $request->query('q', '')), 0, 100),
             'author' => mb_substr(trim((string) $request->query('author', '')), 0, 255),
             'fromDate' => $this->dateFilter($request->query('from')),
@@ -47,6 +49,7 @@ class BoardController extends Controller
                 $filters['author'],
                 $filters['fromDate'],
                 $filters['toDate'],
+                sort: $filters['sort'],
             ),
         ];
 

@@ -265,8 +265,20 @@ class BoardTest extends TestCase
             ->assertDontSee('施工報告.pdf')
             ->assertSee('data-board-lightbox', false);
 
+        foreach (['author', 'oldest'] as $sort) {
+            $this->withSession(['login_user_id' => 3])
+                ->get(route('board.images', ['sort' => $sort]))
+                ->assertOk()
+                ->assertViewHas('images', fn ($images) => $images->first()->thread_id === $blueThreadId);
+        }
         $this->withSession(['login_user_id' => 3])
-            ->get(route('board.images', ['q' => '赤い 重機']))
+            ->get(route('board.images', ['sort' => 'invalid']))
+            ->assertOk()
+            ->assertViewHas('sort', 'newest')
+            ->assertViewHas('images', fn ($images) => $images->first()->thread_id === $redThreadId);
+
+        $this->withSession(['login_user_id' => 3])
+            ->get(route('board.images', ['q' => '赤い 重機', 'sort' => 'author']))
             ->assertOk()
             ->assertSee('条件に一致する画像：1件')
             ->assertSee('魚礁工事 写真')
