@@ -82,7 +82,8 @@
                 </form>
                 @if(!empty($previous_date))
                     <div class="d-flex justify-content-lg-end flex-shrink-0">
-                        <form method="POST" action="{{ route('top.assignment.copy') }}" class="d-inline" onsubmit="return confirm('前日の配置をコピーしますか？（現在の配置は上書きされます）');">
+                        <form method="POST" action="{{ route('top.assignment.copy') }}" class="d-inline" onsubmit="return confirm(this.dataset.copyConfirmation);"
+                              data-copy-confirmation="{{ \Carbon\Carbon::parse($work_date)->isWeekend() ? \Carbon\Carbon::parse($work_date)->format('n/j').'は土日です。休日ですが配置しますか？（前日の配置をコピーし、現在の配置は上書きされます）' : '前日の配置をコピーしますか？（現在の配置は上書きされます）' }}">
                             @csrf
                             <input type="hidden" name="workplace_id" value="{{ $workplace_id }}">
                             <input type="hidden" name="work_date" value="{{ $work_date }}">

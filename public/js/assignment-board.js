@@ -298,7 +298,12 @@
 
     async function copyPreviousDay(workDate) {
         var date = parseDate(workDate);
-        if (!window.confirm((date.getMonth() + 1) + '/' + date.getDate() + 'の配置を前稼働日からコピーしますか？\n現在の人員配置は上書きされます。')) return;
+        var isWeekend = date.getDay() === 0 || date.getDay() === 6;
+        var dateLabel = (date.getMonth() + 1) + '/' + date.getDate();
+        var message = isWeekend
+            ? dateLabel + 'は' + (date.getDay() === 6 ? '土曜日' : '日曜日') + 'です。休日ですが配置しますか？\n金曜日の配置をコピーし、現在の人員配置は上書きされます。'
+            : dateLabel + 'の配置を前稼働日からコピーしますか？\n現在の人員配置は上書きされます。';
+        if (!window.confirm(message)) return;
         await mutate(urls.copyDay, {work_date: workDate});
     }
 
