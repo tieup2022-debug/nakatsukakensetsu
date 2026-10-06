@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Services\Genba3dChatService;
+use App\Support\Genba3dCatalog;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\RateLimiter;
@@ -19,13 +19,16 @@ use Illuminate\View\View;
  */
 class Genba3dController extends Controller
 {
-    /** メニューの「現場3D」直下: 先頭の現場へ送る。 */
-    public function index(): RedirectResponse
+    /** 現場3D の入口: 工事ごとに現場を並べ、3Dモデル・工程表・資料へ直接行ける一覧。 */
+    public function index(): View
     {
-        $slug = array_key_first($this->sites());
-        abort_if($slug === null, 404);
+        $projects = Genba3dCatalog::projects();
 
-        return redirect()->route('genba3d.show', ['site' => $slug]);
+        return view('genba3d.index', [
+            'title' => '現場3D',
+            'projects' => array_filter($projects, fn (array $project): bool => $project['sites'] !== []),
+            'upcoming' => array_filter($projects, fn (array $project): bool => $project['sites'] === []),
+        ]);
     }
 
     /** 3Dモデルのタブ。 */
@@ -184,9 +187,13 @@ class Genba3dController extends Controller
         abort_if($tab === 'schedule' && empty($sites[$site]['schedule_file']), 404);
         abort_if($tab === 'page' && ! isset($sites[$site]['pages'][$pageKey]['file']), 404);
 
+        // 現場を切り替えるボタンには、同じ工事の現場だけを並べる。
+        $project = Genba3dCatalog::projectOf($site);
+
         return view('genba3d.show', [
             'title' => '現場3D｜'.$sites[$site]['name'],
-            'sites' => $sites,
+            'project' => $project,
+            'sites' => $project['sites'] ?? $sites,
             'currentSlug' => $site,
             'current' => $sites[$site],
             'tab' => $tab,

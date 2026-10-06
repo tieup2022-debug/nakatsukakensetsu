@@ -60,13 +60,13 @@
     </li>
     --}}
     @php
-        // 現場3D: 押すと現場の一覧が開く。PC用とスマホ用で2回読み込まれるので id を分ける。
-        $genba3dSites = (array) config('genba3d.sites', []);
+        // 現場3D: 押すと「一覧」と工事の名前が開く。PC用とスマホ用で2回読み込まれるので id を分ける。
+        $genba3dProjects = \App\Support\Genba3dCatalog::activeProjects();
         $genba3dOpen = request()->routeIs('genba3d.*');
         $genba3dCurrent = (string) request()->route('site');
         $genba3dListId = $dismiss ? 'genba3dNavMobile' : 'genba3dNavDesktop';
     @endphp
-    @if (! empty($genba3dSites))
+    @if (! empty($genba3dProjects))
         <li class="nav-item mt-3">
             <button
                 type="button"
@@ -80,10 +80,16 @@
                 <span class="ms-auto small" aria-hidden="true">▾</span>
             </button>
             <ul id="{{ $genba3dListId }}" class="collapse {{ $genba3dOpen ? 'show' : '' }} list-unstyled ms-3 ps-2 mt-1 mb-0 border-start border-secondary border-opacity-50">
-                @foreach ($genba3dSites as $genba3dSlug => $genba3dSite)
+                <li class="nav-item">
+                    <a href="{{ route('genba3d.index') }}" class="nav-link py-1 small {{ request()->routeIs('genba3d.index') ? 'active' : 'text-white-50' }}">
+                        一覧
+                    </a>
+                </li>
+                {{-- 工事ごとに1行。押すと、その工事の最初の現場が開く（現場は画面の上のボタンで切り替える） --}}
+                @foreach ($genba3dProjects as $genba3dProject)
                     <li class="nav-item">
-                        <a href="{{ route('genba3d.show', ['site' => $genba3dSlug]) }}" class="nav-link py-1 small {{ $genba3dOpen && $genba3dCurrent === $genba3dSlug ? 'active' : 'text-white-50' }}">
-                            {{ $genba3dSite['name'] }}
+                        <a href="{{ route('genba3d.show', ['site' => array_key_first($genba3dProject['sites'])]) }}" class="nav-link py-1 small {{ isset($genba3dProject['sites'][$genba3dCurrent]) ? 'active' : 'text-white-50' }}">
+                            {{ $genba3dProject['name'] }}
                         </a>
                     </li>
                 @endforeach

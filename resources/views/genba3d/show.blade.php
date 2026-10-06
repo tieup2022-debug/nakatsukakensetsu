@@ -24,8 +24,8 @@
         .genba3d-frame {
             display: block;
             width: 100%;
-            height: calc(100vh - 310px);
-            height: calc(100dvh - 310px);
+            height: calc(100vh - 335px);
+            height: calc(100dvh - 335px);
             min-height: 520px;
             border: 0;
             background: #e9eef0;
@@ -133,8 +133,8 @@
         @endif
         @media (max-width: 991.98px) {
             .genba3d-frame {
-                height: calc(100vh - 270px);
-                height: calc(100dvh - 270px);
+                height: calc(100vh - 295px);
+                height: calc(100dvh - 295px);
                 min-height: 460px;
             }
             .genba3d-frame.is-document {
@@ -147,7 +147,12 @@
 @section('content')
     <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
         <div class="min-w-0">
-            <h1 class="h4 mb-1 fw-semibold">現場3D</h1>
+            <nav class="small mb-1" aria-label="現在の位置">
+                <a href="{{ route('genba3d.index') }}" class="text-decoration-none">現場3D</a>
+                <span class="text-muted mx-1" aria-hidden="true">›</span>
+                <span class="text-muted">{{ $project['name'] ?? '現場' }}</span>
+            </nav>
+            <h1 class="h4 mb-1 fw-semibold">{{ $project['name'] ?? '現場3D' }}</h1>
             <div class="text-muted small">
                 @if ($extra !== null)
                     {{ $extra['note'] ?? '' }}
