@@ -24,9 +24,8 @@ class Genba3dTest extends TestCase
         $page->assertOk();
 
         // 現場のある工事: 現場ごとに、3Dモデル・工程表・資料へ直接行ける
-        $page->assertSeeInOrder(['R08-16大沢', '3現場', '朝日地区 船揚場', '朝日地区 東護岸', '大沢漁港海岸 護岸工']);
-        foreach (config('genba3d.projects.r08-16.sites') as $slug) {
-            $site = config("genba3d.sites.{$slug}");
+        $page->assertSeeInOrder(['R08-01福島トンネル', '1現場', '福島トンネル補修工事', 'R08-16大沢', '3現場', '朝日地区 船揚場', '朝日地区 東護岸', '大沢漁港海岸 護岸工']);
+        foreach (config('genba3d.sites') as $slug => $site) {
             $page->assertSee($site['summary']);
             $page->assertSee('href="'.route('genba3d.show', ['site' => $slug]).'"', false);
             $page->assertSee('href="'.route('genba3d.schedule', ['site' => $slug]).'"', false);
@@ -35,7 +34,7 @@ class Genba3dTest extends TestCase
         $page->assertSee('重機用足場');
 
         // 現場のまだ無い工事は「準備中」に名前だけ出る
-        $page->assertSeeInOrder(['準備中の工事', 'R08-01福島トンネル', 'R08-02魚礁', 'R08-03桧倉', 'R08-04軌道施設', 'R08-06桧倉維持', 'R08-08滝ノ下', 'R08-11吉岡', 'R08-12岩部線', 'R08-14豊浜']);
+        $page->assertSeeInOrder(['準備中の工事', 'R08-02魚礁', 'R08-03桧倉', 'R08-04軌道施設', 'R08-06桧倉維持', 'R08-08滝ノ下', 'R08-11吉岡', 'R08-12岩部線', 'R08-14豊浜']);
     }
 
     public function test_every_site_belongs_to_exactly_one_project(): void
@@ -64,14 +63,14 @@ class Genba3dTest extends TestCase
         $page = $this->withSession(['login_user_id' => 1])->get(route('genba3d.index'));
         $page->assertOk();
         // 工事に入れ忘れた現場は「その他」に出る。設定に無い現場のキーは無視する
-        $page->assertSeeInOrder(['R08-16大沢', '1現場', '朝日地区 船揚場', 'その他', '2現場', '朝日地区 東護岸', '大沢漁港海岸 護岸工']);
+        $page->assertSeeInOrder(['R08-16大沢', '1現場', '朝日地区 船揚場', 'その他', '3現場', '朝日地区 東護岸', '大沢漁港海岸 護岸工', '福島トンネル補修工事']);
         $page->assertDontSee('準備中の工事');
     }
 
     public function test_every_site_serves_its_model_as_html(): void
     {
         $sites = config('genba3d.sites');
-        $this->assertCount(3, $sites);
+        $this->assertCount(4, $sites);
 
         foreach ($sites as $slug => $site) {
             $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', $slug);
@@ -139,21 +138,23 @@ class Genba3dTest extends TestCase
 
     public function test_menu_shows_one_entry_per_project(): void
     {
-        $first = config('genba3d.projects.r08-16.sites.0');
 
         // レイアウトと同じメニュー部品を、PC用・スマホ用の両方の設定で描く。
         foreach ([false, true] as $dismiss) {
             $menu = $this->withSession(['login_user_id' => 1])
                 ->view('layouts.partials.app-sidebar-nav', ['dismissOffcanvas' => $dismiss]);
 
-            $menu->assertSeeInOrder(['現場3D', '一覧', 'R08-16大沢', 'お問い合わせ']);
+            // 現場のある工事が、設定の並び順で出る。行き先はその工事の最初の現場
+            $menu->assertSeeInOrder(['現場3D', '一覧', 'R08-01福島トンネル', 'R08-16大沢', 'お問い合わせ']);
             $menu->assertSee('href="'.route('genba3d.index').'"', false);
-            $menu->assertSee('href="'.route('genba3d.show', ['site' => $first]).'"', false);
+            foreach (['r08-01', 'r08-16'] as $key) {
+                $menu->assertSee('href="'.route('genba3d.show', ['site' => config("genba3d.projects.{$key}.sites.0")]).'"', false);
+            }
             // 現場の名前と、準備中の工事はメニューに並べない
             foreach (config('genba3d.sites') as $site) {
                 $menu->assertDontSee($site['name']);
             }
-            $menu->assertDontSee('R08-01福島トンネル');
+            $menu->assertDontSee('R08-02魚礁');
         }
     }
 
@@ -170,13 +171,7 @@ class Genba3dTest extends TestCase
 
     public function test_site_page_offers_only_the_sites_of_its_project(): void
     {
-        // 別の工事に現場を1つ足しても、ほかの工事の画面には並ばない
-        $sites = config('genba3d.sites');
-        $sites['fukushima-tunnel'] = ['name' => '福島トンネル 坑口', 'summary' => 'テスト用', 'file' => $sites['asahi-funaageba']['file']];
-        $projects = config('genba3d.projects');
-        $projects['r08-01']['sites'] = ['fukushima-tunnel'];
-        config(['genba3d.sites' => $sites, 'genba3d.projects' => $projects]);
-
+        // 現場の切替えに並ぶのは同じ工事の現場だけ。別の工事の現場は並ばない
         $osawa = $this->withSession(['login_user_id' => 1])->get(route('genba3d.show', ['site' => 'asahi-higashi-gogan']));
         $osawa->assertOk();
         $osawa->assertSee('<h1 class="h4 mb-1 fw-semibold">R08-16大沢</h1>', false);
@@ -184,14 +179,14 @@ class Genba3dTest extends TestCase
         foreach (['asahi-funaageba', 'asahi-higashi-gogan', 'osawa-kaigan-gogan'] as $slug) {
             $osawa->assertSee('href="'.route('genba3d.show', ['site' => $slug]).'"', false);
         }
-        $osawa->assertDontSee('福島トンネル 坑口');
+        $osawa->assertDontSee('福島トンネル補修工事');
 
         $tunnel = $this->withSession(['login_user_id' => 1])->get(route('genba3d.show', ['site' => 'fukushima-tunnel']));
         $tunnel->assertOk();
         $tunnel->assertSee('<h1 class="h4 mb-1 fw-semibold">R08-01福島トンネル</h1>', false);
-        $tunnel->assertSee('福島トンネル 坑口');
+        $tunnel->assertSee('福島トンネル補修工事');
         $tunnel->assertDontSee('朝日地区 船揚場');
-        // メニューには、現場ができた工事が設定の並び順で出る
+        // メニューには、現場のある工事が設定の並び順で出る
         $tunnel->assertSeeInOrder(['一覧', 'R08-01福島トンネル', 'R08-16大沢', 'お問い合わせ']);
     }
 

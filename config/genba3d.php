@@ -30,7 +30,7 @@
 
 return [
     'projects' => [
-        'r08-01' => ['name' => 'R08-01福島トンネル', 'sites' => []],
+        'r08-01' => ['name' => 'R08-01福島トンネル', 'sites' => ['fukushima-tunnel']],
         'r08-02' => ['name' => 'R08-02魚礁', 'sites' => []],
         'r08-03' => ['name' => 'R08-03桧倉', 'sites' => []],
         'r08-04' => ['name' => 'R08-04軌道施設', 'sites' => []],
@@ -70,6 +70,13 @@ return [
             'file' => 'osawa-kaigan-gogan.html',
             'schedule_file' => 'osawa-kaigan-gogan-kotei.html',
             'knowledge_file' => 'osawa-kaigan-gogan.md',
+        ],
+        'fukushima-tunnel' => [
+            'name' => '福島トンネル補修工事',
+            'summary' => '一般国道228号 福島トンネル（L=382m）。坑口のルーバー部のシート防水・塗装・金属パテ補修、起点側PS001のはく落対策、トンネル本体の漏水対策。',
+            'file' => 'fukushima-tunnel.html',
+            'schedule_file' => 'fukushima-tunnel-kotei.html',
+            'knowledge_file' => 'fukushima-tunnel.md',
         ],
     ],
 
