@@ -59,6 +59,37 @@
         </a>
     </li>
     --}}
+    @php
+        // 現場3D: 押すと現場の一覧が開く。PC用とスマホ用で2回読み込まれるので id を分ける。
+        $genba3dSites = (array) config('genba3d.sites', []);
+        $genba3dOpen = request()->routeIs('genba3d.*');
+        $genba3dCurrent = (string) request()->route('site');
+        $genba3dListId = $dismiss ? 'genba3dNavMobile' : 'genba3dNavDesktop';
+    @endphp
+    @if (! empty($genba3dSites))
+        <li class="nav-item mt-3">
+            <button
+                type="button"
+                class="nav-link d-flex align-items-center w-100 text-start {{ $genba3dOpen ? 'text-white' : 'text-white-50' }}"
+                data-bs-toggle="collapse"
+                data-bs-target="#{{ $genba3dListId }}"
+                aria-expanded="{{ $genba3dOpen ? 'true' : 'false' }}"
+                aria-controls="{{ $genba3dListId }}"
+            >
+                <span class="me-2">🏗️</span> 現場3D
+                <span class="ms-auto small" aria-hidden="true">▾</span>
+            </button>
+            <ul id="{{ $genba3dListId }}" class="collapse {{ $genba3dOpen ? 'show' : '' }} list-unstyled ms-3 ps-2 mt-1 mb-0 border-start border-secondary border-opacity-50">
+                @foreach ($genba3dSites as $genba3dSlug => $genba3dSite)
+                    <li class="nav-item">
+                        <a href="{{ route('genba3d.show', ['site' => $genba3dSlug]) }}" class="nav-link py-1 small {{ $genba3dOpen && $genba3dCurrent === $genba3dSlug ? 'active' : 'text-white-50' }}">
+                            {{ $genba3dSite['name'] }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </li>
+    @endif
     <li class="nav-item mt-4 pt-3 border-top border-secondary border-opacity-25">
         <a href="{{ route('inquiry.create') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('inquiry.*') ? 'active' : 'text-white-50' }}">
             <span class="me-2">✉️</span> お問い合わせ

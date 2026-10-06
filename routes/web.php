@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BoardController;
+use App\Http\Controllers\Genba3dController;
 use App\Http\Controllers\GratitudePointController;
 use App\Http\Controllers\InAppNotificationController;
 use App\Http\Controllers\MachineScheduleController;
@@ -183,6 +184,13 @@ Route::get('/gratitude-points', [GratitudePointController::class, 'index'])->mid
 Route::get('/notifications', [InAppNotificationController::class, 'index'])->middleware('nakatsuka.auth')->name('notifications.index');
 Route::post('/notifications/{id}/read', [InAppNotificationController::class, 'markRead'])->middleware('nakatsuka.auth')->name('notifications.read')->where('id', '[0-9]+');
 Route::post('/notifications/read-all', [InAppNotificationController::class, 'markAllRead'])->middleware('nakatsuka.auth')->name('notifications.read-all');
+
+// 現場3D（設計図から組み立てた3Dモデルの閲覧。モデル本体は resources/genba3d/、一覧は config/genba3d.php）
+Route::middleware('nakatsuka.auth')->group(function (): void {
+    Route::get('/genba3d', [Genba3dController::class, 'index'])->name('genba3d.index');
+    Route::get('/genba3d/{site}', [Genba3dController::class, 'show'])->name('genba3d.show')->where('site', '[a-z0-9-]+');
+    Route::get('/genba3d/{site}/model', [Genba3dController::class, 'model'])->name('genba3d.model')->where('site', '[a-z0-9-]+');
+});
 
 // お問い合わせ（不具合・追加要望）
 Route::get('/inquiry', [SystemInquiryController::class, 'create'])->middleware('nakatsuka.auth')->name('inquiry.create');
