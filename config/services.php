@@ -42,6 +42,12 @@ return [
         'timeout' => (int) env('OPENAI_TIMEOUT', 90),
     ],
 
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
+        'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com/v1'),
+        'timeout' => (int) env('ANTHROPIC_TIMEOUT', 60),
+    ],
+
     'board_image_analysis' => [
         'enabled' => env('BOARD_IMAGE_AI_ENABLED', true),
         'scheduled_limit' => max(1, (int) env('BOARD_IMAGE_AI_SCHEDULED_LIMIT', 2)),

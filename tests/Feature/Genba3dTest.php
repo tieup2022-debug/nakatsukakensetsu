@@ -13,6 +13,9 @@ class Genba3dTest extends TestCase
         foreach (['genba3d.show', 'genba3d.model', 'genba3d.schedule', 'genba3d.schedule.page'] as $name) {
             $this->get(route($name, ['site' => 'asahi-funaageba']))->assertRedirect(route('login'));
         }
+        foreach (['genba3d.page', 'genba3d.page.raw'] as $name) {
+            $this->get(route($name, ['site' => 'asahi-higashi-gogan', 'page' => 'ashiba']))->assertRedirect(route('login'));
+        }
     }
 
     public function test_index_opens_the_first_site(): void
@@ -139,6 +142,58 @@ class Genba3dTest extends TestCase
         $page->assertSee('src="'.route('genba3d.schedule.page', ['site' => $current]).'"', false);
         foreach (array_keys($sites) as $slug) {
             $page->assertSee('href="'.route('genba3d.schedule', ['site' => $slug]).'"', false);
+        }
+    }
+
+    public function test_extra_page_is_shown_as_a_tab_of_its_site(): void
+    {
+        $site = 'asahi-higashi-gogan';
+        $this->assertFileExists(resource_path('genba3d/'.config("genba3d.sites.{$site}.pages.ashiba.file")));
+
+        // 追加資料のタブ: 本体を枠に入れ、説明文を出し、タブを選択中にする
+        $tab = $this->withSession(['login_user_id' => 1])
+            ->get(route('genba3d.page', ['site' => $site, 'page' => 'ashiba']));
+        $tab->assertOk()
+            ->assertSee('src="'.route('genba3d.page.raw', ['site' => $site, 'page' => 'ashiba']).'"', false)
+            ->assertSee('重機用足場の形・数量とクレーンの位置をまとめた資料')
+            ->assertSee('is-document', false);
+        $this->assertMatchesRegularExpression('/aria-current="page"\s*>重機用足場<\/a>/u', (string) $tab->getContent());
+
+        // 本体
+        $raw = $this->withSession(['login_user_id' => 1])
+            ->get(route('genba3d.page.raw', ['site' => $site, 'page' => 'ashiba']));
+        $raw->assertOk();
+        $raw->assertHeader('Content-Type', 'text/html; charset=UTF-8');
+        $raw->assertHeader('X-Frame-Options', 'SAMEORIGIN');
+        $raw->assertSee('<html lang="ja" data-theme="light">', false);
+        $raw->assertSee('重機用足場');
+
+        // ほかのタブからも入口が見える。資料の無い現場には出ない
+        foreach (['genba3d.show', 'genba3d.schedule'] as $name) {
+            $this->withSession(['login_user_id' => 1])
+                ->get(route($name, ['site' => $site]))
+                ->assertOk()
+                ->assertSee(route('genba3d.page', ['site' => $site, 'page' => 'ashiba']), false);
+        }
+        $this->withSession(['login_user_id' => 1])
+            ->get(route('genba3d.show', ['site' => 'asahi-funaageba']))
+            ->assertOk()
+            ->assertDontSee('/shiryo/', false);
+    }
+
+    public function test_unknown_extra_page_is_not_found(): void
+    {
+        foreach (['genba3d.page', 'genba3d.page.raw'] as $name) {
+            $this->withSession(['login_user_id' => 1])
+                ->get(route($name, ['site' => 'asahi-higashi-gogan', 'page' => 'no-such-page']))
+                ->assertNotFound();
+            // ほかの現場の資料は、その現場の URL では開けない
+            $this->withSession(['login_user_id' => 1])
+                ->get(route($name, ['site' => 'asahi-funaageba', 'page' => 'ashiba']))
+                ->assertNotFound();
+            $this->withSession(['login_user_id' => 1])
+                ->get(route($name, ['site' => 'no-such-site', 'page' => 'ashiba']))
+                ->assertNotFound();
         }
     }
 }

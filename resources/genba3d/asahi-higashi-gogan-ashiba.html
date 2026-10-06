@@ -1,0 +1,494 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>東護岸 重機用足場</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a one-page site reference sheet. Key numbers first, the main point to confirm next, then section, plan, crane positions, quantities and the list of points to confirm. Same tokens as the schedule page of this site. */
+:root{
+  --bg:#EEF1F2; --panel:#F8FAFA; --ink:#1C2A33; --muted:#5A6A74; --line:#CBD4D9; --chip:#E3E9EC;
+  --accent:#C2302A; --warn-bg:#FBEFD9; --warn-line:#D9A441; --warn-ink:#8A5A00;
+  --c-sea:#CFE2EC; --c-land:#F4F6F6; --c-apron:#E4E9EB; --c-ex:#B4BEC4; --c-new:#E98A85;
+  --c-soil:#D8BE8E; --c-crest:#C19A5B; --c-ramp:#CDAE78; --c-soil-line:#7A5A22;
+  --c-crane:#D97706; --c-mach:#FFFFFF;
+  --font-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A;
+  --accent:#F0766E; --warn-bg:#2E2717; --warn-line:#A57E2E; --warn-ink:#E8C06A;
+  --c-sea:#1B3442; --c-land:#141C22; --c-apron:#202B33; --c-ex:#55626B; --c-new:#B5524D;
+  --c-soil:#6E5A36; --c-crest:#8A6C38; --c-ramp:#7A6238; --c-soil-line:#D9BC84;
+  --c-crane:#F59E0B; --c-mach:#1D2830;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A;
+  --accent:#F0766E; --warn-bg:#2E2717; --warn-line:#A57E2E; --warn-ink:#E8C06A;
+  --c-sea:#1B3442; --c-land:#141C22; --c-apron:#202B33; --c-ex:#55626B; --c-new:#B5524D;
+  --c-soil:#6E5A36; --c-crest:#8A6C38; --c-ramp:#7A6238; --c-soil-line:#D9BC84;
+  --c-crane:#F59E0B; --c-mach:#1D2830;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.65}
+.page{max-width:1240px;margin:0 auto;padding-inline:20px;padding-block:24px 56px;display:flex;flex-direction:column;gap:28px}
+.num{font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+h1{font-size:22px;font-weight:700;margin:0;letter-spacing:.02em;text-wrap:balance;line-height:1.35}
+h2{font-size:16px;font-weight:700;margin:0;text-wrap:balance}
+h3{font-size:14px;font-weight:700;margin:0}
+p{margin:0}
+.eyebrow{font-size:12px;color:var(--muted);letter-spacing:.06em}
+.lead{max-width:48em;color:var(--muted)}
+header.top{display:flex;flex-direction:column;gap:6px}
+section{display:flex;flex-direction:column;gap:12px;min-width:0}
+.small{font-size:12px;color:var(--muted)}
+.body{max-width:58em}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.stat{background:var(--panel);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat span{font-size:12px;color:var(--muted)}
+.stat b{font-size:20px;font-weight:500;font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stat small{font-size:11.5px;color:var(--muted);line-height:1.45}
+
+.warn{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.warn p{max-width:58em}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;border-radius:3px;padding:1px 7px;margin-right:8px;vertical-align:1px;white-space:nowrap}
+.tag.big{background:var(--accent);color:#fff}
+.tag.mid{background:var(--warn-line);color:#1C2A33}
+.tag.low{background:var(--chip);color:var(--muted)}
+
+figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:12px}
+figcaption{font-size:12.5px;color:var(--muted);margin-top:8px;max-width:64em}
+.figscroll{overflow-x:auto}
+.figscroll svg{display:block;width:100%;height:auto;font-family:var(--font-ui)}
+.figscroll.wide svg{min-width:720px}
+.figscroll.mid svg{min-width:560px;max-width:860px;margin-inline:auto}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.key{display:inline-block;width:20px;height:11px;border-radius:2px;border:1px solid var(--line)}
+.key.ring{background:none;border:2px dashed var(--c-crane);border-radius:50%;width:13px;height:13px}
+.key.dot{background:var(--c-crane);border:none;border-radius:50%;width:10px;height:10px}
+.key.dot.on{border:2.5px solid var(--accent);width:14px;height:14px}
+
+.two{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+.twrap{overflow-x:auto}
+table.q{border-collapse:collapse;font-size:13px;width:100%}
+table.q th,table.q td{border-bottom:1px solid var(--line);padding:6px 14px 6px 0;text-align:left;vertical-align:top}
+table.q th{font-size:12px;color:var(--muted);font-weight:500;white-space:nowrap}
+table.q td:first-child{min-width:8.5em}
+table.q td.v{font-family:var(--font-data);font-variant-numeric:tabular-nums;white-space:nowrap}
+table.q td.src{font-size:12px;color:var(--muted)}
+table.q.min{min-width:560px}
+
+ol.pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+ol.pts li{padding:13px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+ol.pts li:last-child{border-bottom:1px solid var(--line)}
+ol.pts h3{font-size:14.5px}
+ol.pts p{max-width:60em}
+ol.pts p.src{font-size:12px;color:var(--muted)}
+ul.notes{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;max-width:60em}
+
+/* figures */
+svg text{fill:var(--ink);font-size:12px}
+.p-sea,.s-sea{fill:var(--c-sea)} .p-apron,.s-apron{fill:var(--c-apron)}
+.p-ex,.s-ex{fill:var(--c-ex)} .p-new,.s-new{fill:var(--c-new)}
+.p-slope,.s-soil{fill:var(--c-soil)} .p-crest{fill:var(--c-crest)} .p-ramp{fill:var(--c-ramp)}
+.p-crest-h{fill:url(#hatch)} .p-hatch{stroke:var(--c-soil-line);stroke-width:1;opacity:.35}
+.p-edge{fill:none;stroke:var(--c-soil-line);stroke-width:1} .p-edge2{fill:none;stroke:var(--c-soil-line);stroke-width:1.4}
+.s-soil{stroke:var(--c-soil-line);stroke-width:1.2}
+.p-arrow{stroke:var(--ink);stroke-width:1.4} .p-arrowh{fill:var(--ink)}
+.p-pole{fill:var(--panel);stroke:var(--ink);stroke-width:1.4}
+.p-reach{fill:none;stroke:var(--c-crane);stroke-width:1.6;stroke-dasharray:7 5}
+.p-outr{fill:none;stroke:var(--c-crane);stroke-width:1.6}
+.p-float{fill:var(--c-crane);stroke:var(--panel);stroke-width:1.2} .p-float.on{stroke:var(--accent);stroke-width:2.6} .p-cc{fill:var(--panel);stroke:var(--c-crane);stroke-width:2}
+.p-tick{stroke:var(--muted);stroke-width:1} .p-sp{font-family:var(--font-data);font-size:11px;fill:var(--muted);paint-order:stroke;stroke:var(--c-sea);stroke-width:4px;stroke-linejoin:round}
+.p-dnew{stroke:var(--accent);stroke-width:1.4} .p-dnew-t{fill:var(--accent);font-size:12.5px;font-weight:700}
+.p-lb{font-size:13px;fill:var(--muted);font-weight:500} .p-sm{font-size:11px;fill:var(--muted)} .p-sm2{font-size:11px;font-weight:500}
+.p-cr,.p-cr2{paint-order:stroke;stroke:var(--c-apron);stroke-width:4px;stroke-linejoin:round}
+.p-on{font-size:12px;font-weight:700} .p-on2{font-size:11.5px}
+.p-cr{font-size:12.5px;font-weight:700;fill:var(--c-crane)} .p-cr2{font-size:11.5px;fill:var(--c-crane);font-family:var(--font-data)}
+.p-lead,.s-lead{stroke:var(--muted);stroke-width:1}
+.p-dim,.s-dim{stroke:var(--ink);stroke-width:1} .p-dim-t,.s-dim-t{font-family:var(--font-data);font-size:12px}
+.p-scale{stroke:var(--muted);stroke-width:1.4}
+.s-ext{stroke:var(--muted);stroke-width:.8;stroke-dasharray:3 3}
+.s-plate{stroke:var(--ink);stroke-width:3}
+.s-mach{fill:var(--c-mach);stroke:var(--ink);stroke-width:1.2} .s-boom{fill:none;stroke:var(--ink);stroke-width:7;stroke-linejoin:round;stroke-linecap:round;opacity:.75}
+.s-el{font-family:var(--font-data);font-size:12px;fill:var(--muted)}
+.s-lb{font-size:13px;font-weight:700} .s-lb2{font-size:11.5px} .s-in{font-size:11.5px;fill:var(--ink);opacity:.8}
+.s-mt{font-size:12px;font-weight:500} .s-mt2{font-size:11px;fill:var(--muted)}
+.s-ax{font-size:11.5px;fill:var(--muted)} .s-ax2{font-size:11.5px;fill:var(--muted)}
+.c-body{fill:var(--c-crane);fill-opacity:.16;stroke:var(--c-crane);stroke-width:1.6}
+.c-beam{stroke:var(--c-crane);stroke-width:3} .c-float{fill:var(--c-crane)}
+.c-axis{stroke:var(--c-crane);stroke-width:1;stroke-dasharray:6 4}
+.c-ov{fill:var(--accent);fill-opacity:.28;stroke:var(--accent);stroke-width:1.4;stroke-dasharray:5 3}
+.c-in{font-size:11.5px;fill:var(--c-crane)} .c-warn{font-size:12px;font-weight:700;fill:var(--accent)}
+
+@media (max-width:860px){
+  .page{padding-inline:16px}
+  .two{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+
+<div class="page">
+  <header class="top">
+    <p class="eyebrow">令和8年度　大沢朝日漁港（朝日地区）外機能保全工事外（補正明許）外</p>
+    <h1>東護岸　重機用足場<span style="display:inline-block">（バックホウ・</span><span style="display:inline-block">クレーンの足場）</span></h1>
+    <p class="lead">胸壁の背後に土を盛り、重機が護岸の前面に届くようにする仮設の足場です。仮設工平面図と工事用道路詳細図から、形・寸法・数量と、クレーンの据付位置をまとめました。2枚とも「参考図」です。</p>
+  </header>
+
+  <section aria-label="主な数値">
+    <div class="stats">
+      <div class="stat"><span>天端の高さ</span><b>+2.5</b><small>胸壁の天端と同じ。エプロンは +1.2</small></div>
+      <div class="stat"><span>盛土の高さ</span><b>1.30 m</b><small>断面積 A=4.57m²</small></div>
+      <div class="stat"><span>天端の幅</span><b>2.80 m</b><small>胸壁の天端 1.00m と合わせて作業面 3.80m</small></div>
+      <div class="stat"><span>法勾配</span><b>1:1.5</b><small>水平 1.95m、底幅 4.23m</small></div>
+      <div class="stat"><span>盛土（購入土）</span><b>208 m³</b><small>数量計算書の値</small></div>
+      <div class="stat"><span>敷鉄板</span><b>14 枚</b><small>130m²、t=22mm</small></div>
+    </div>
+  </section>
+
+  <section aria-label="先に確認したいこと">
+    <div class="warn">
+      <h3><span class="tag big">要確認</span>クレーンの設計位置が、この盛土と重なっています</h3>
+      <p>工事用道路詳細図のクレーン（25t吊ラフテレーンクレーン、2か所）を仮設工平面図に重ねると、海側のアウトリガは盛土の天端（+2.5）の位置、陸側のアウトリガはエプロン（+1.2）の上になります。高さが 1.30m 違うので、図面の位置のままでは水平に据えられません。クレーン2は旋回中心がスロープの中に入ります。</p>
+      <p>盛土を残したままクレーンを使うなら、クレーンを法尻より陸側へ下げるか、盛土の形を変える必要があります。どちらの図も参考図なので、施工計画で位置を決め直し、発注者に確認してください。</p>
+    </div>
+  </section>
+
+  <section aria-label="断面">
+    <h2>断面　どんな形の足場か</h2>
+    <div class="two">
+      <figure>
+        <div class="figscroll mid"><svg viewBox="0 0 713 496" role="img" aria-label="重機用足場の断面図。胸壁の背後に高さ1.30mの盛土をし、天端を胸壁と同じ+2.5にそろえる">
+<defs><clipPath id="sclip"><rect x="0" y="0" width="713" height="496"/></clipPath></defs><g clip-path="url(#sclip)">
+<rect class="s-sea" x="0" y="381.3" width="111.6" height="62.0"/>
+<rect class="s-apron" x="266.6" y="313.1" width="508.4" height="24.8"/>
+<polygon class="s-ex" points="266.5,313.1 311.4,313.1 279.1,232.3 216.9,232.3 216.9,275.8 210.6,275.8 210.6,313.1 204.6,313.1 204.6,317.8 218.0,317.8 223.3,318.9 225.9,319.1 228.5,319.1 236.1,318.6 238.0,319.7 239.3,321.8 239.3,334.9 237.6,336.7 237.6,338.8 236.3,340.4 233.7,340.4 227.7,338.8 221.9,340.4 204.6,340.4 204.6,431.7 210.1,431.7 210.4,432.0 263.9,432.0 265.5,432.3 266.5,433.3 266.5,432.8 266.5,439.6 266.3,441.4 266.5,442.2 266.0,442.7 265.5,443.5 319.5,443.5"/>
+<polygon class="s-new" points="204.6,431.7 210.1,431.7 210.4,432.0 263.9,432.0 265.5,432.3 266.5,433.3 266.5,439.6 266.3,441.4 266.5,442.2 265.5,443.5 204.6,443.5"/>
+<polygon class="s-new" points="204.6,350.4 204.6,443.5 111.4,443.5 111.4,350.4"/>
+<polygon class="s-new" points="207.5,345.9 208.8,343.0 208.8,340.4 204.6,340.4 204.6,370.8 207.8,367.4 208.5,363.5 208.5,359.0 207.5,355.9 208.8,352.5"/>
+<polygon class="s-new" points="173.4,350.4 204.6,350.4 204.6,340.4 221.9,340.4 227.7,338.8 233.7,340.4 236.3,340.4 237.6,338.8 237.6,336.7 239.3,334.9 239.3,321.8 238.0,319.7 236.1,318.6 228.5,319.1 225.9,319.1 223.3,318.9 218.0,317.8 204.6,317.8 204.6,313.1 173.4,313.1"/>
+<polygon class="s-soil" points="279.1,232.3 311.4,313.1 574.2,313.1 452.9,232.3"/>
+<line class="s-plate" x1="279.0" y1="231.3" x2="452.6" y2="231.3"/>
+<rect class="s-mach" x="248.0" y="194.1" width="37.8" height="36.6"/>
+<rect class="s-mach" x="383.8" y="194.1" width="37.8" height="36.6"/>
+<rect class="s-mach" x="285.8" y="201.5" width="98.0" height="17.4"/>
+<rect class="s-mach" x="238.7" y="136.4" width="282.1" height="52.7"/>
+<rect class="s-mach" x="251.1" y="80.6" width="74.4" height="55.8"/>
+<polyline class="s-boom" points="279.0,111.6 105.4,77.5 -18.6,164.3"/>
+</g>
+<line class="s-dim" x1="217.0" y1="18.6" x2="573.5" y2="18.6"/>
+<line class="s-dim" x1="217.0" y1="13.6" x2="217.0" y2="23.6"/>
+<line class="s-dim" x1="573.5" y1="13.6" x2="573.5" y2="23.6"/>
+<text class="s-dim-t" x="395.2" y="12.4" text-anchor="middle">5.75</text>
+<line class="s-dim" x1="217.0" y1="46.5" x2="452.6" y2="46.5"/>
+<line class="s-dim" x1="217.0" y1="41.5" x2="217.0" y2="51.5"/>
+<line class="s-dim" x1="452.6" y1="41.5" x2="452.6" y2="51.5"/>
+<text class="s-dim-t" x="334.8" y="40.3" text-anchor="middle">3.80（作業面）</text>
+<line class="s-dim" x1="217.0" y1="74.4" x2="279.0" y2="74.4"/>
+<line class="s-dim" x1="217.0" y1="69.4" x2="217.0" y2="79.4"/>
+<line class="s-dim" x1="279.0" y1="69.4" x2="279.0" y2="79.4"/>
+<text class="s-dim-t" x="248.0" y="68.2" text-anchor="middle">1.00</text>
+<line class="s-dim" x1="279.0" y1="74.4" x2="452.6" y2="74.4"/>
+<line class="s-dim" x1="279.0" y1="69.4" x2="279.0" y2="79.4"/>
+<line class="s-dim" x1="452.6" y1="69.4" x2="452.6" y2="79.4"/>
+<text class="s-dim-t" x="365.8" y="68.2" text-anchor="middle">2.80</text>
+<line class="s-dim" x1="452.6" y1="74.4" x2="573.5" y2="74.4"/>
+<line class="s-dim" x1="452.6" y1="69.4" x2="452.6" y2="79.4"/>
+<line class="s-dim" x1="573.5" y1="69.4" x2="573.5" y2="79.4"/>
+<text class="s-dim-t" x="513.0" y="68.2" text-anchor="middle">1.95</text>
+<line class="s-ext" x1="217.0" y1="18.6" x2="217.0" y2="232.5"/>
+<line class="s-ext" x1="279.0" y1="74.4" x2="279.0" y2="232.5"/>
+<line class="s-ext" x1="452.6" y1="74.4" x2="452.6" y2="232.5"/>
+<line class="s-ext" x1="573.5" y1="18.6" x2="573.5" y2="313.1"/>
+<line class="s-dim" x1="311.2" y1="361.5" x2="573.5" y2="361.5"/>
+<line class="s-dim" x1="311.2" y1="356.5" x2="311.2" y2="366.5"/>
+<line class="s-dim" x1="573.5" y1="356.5" x2="573.5" y2="366.5"/>
+<text class="s-dim-t" x="442.4" y="378.2" text-anchor="middle">4.23</text>
+<line class="s-dim" x1="623.1" y1="232.5" x2="623.1" y2="313.1"/>
+<line class="s-dim" x1="618.1" y1="232.5" x2="628.1" y2="232.5"/>
+<line class="s-dim" x1="618.1" y1="313.1" x2="628.1" y2="313.1"/>
+<line class="s-ext" x1="452.6" y1="232.5" x2="623.1" y2="232.5"/>
+<text class="s-dim-t" x="633.6" y="277.1" text-anchor="start">1.30</text>
+<text class="s-el" x="201.5" y="229.4" text-anchor="end">+2.5</text>
+<text class="s-el" x="694.4" y="308.1" text-anchor="end">+1.2</text>
+<text class="s-el" x="105.4" y="346.6" text-anchor="end">+0.6</text>
+<text class="s-el" x="105.4" y="440.8" text-anchor="end">−0.9</text>
+<text class="s-lb" x="375.1" y="279.0" text-anchor="middle">盛土（購入土）</text>
+<text class="s-lb2" x="375.1" y="299.5" text-anchor="middle">A=4.57m²</text>
+<text class="s-lb2" x="530.1" y="262.3" text-anchor="middle" transform="rotate(33.7 530.1 262.3)">1:1.5</text>
+<text class="s-lb2" x="305.0" y="279.0" text-anchor="middle" transform="rotate(68 305.0 279.0)">1:0.4</text>
+<text class="s-in" x="249.2" y="256.1" text-anchor="middle">胸壁</text>
+<text class="s-in" x="272.8" y="399.9" text-anchor="middle">既設護岸</text>
+<text class="s-in" x="158.1" y="399.9" text-anchor="middle">水中コン</text>
+<text class="s-lb2" x="166.2" y="299.5" text-anchor="end">上部コンクリート</text>
+<line class="s-lead" x1="168.6" y1="301.9" x2="189.1" y2="325.5"/>
+<text class="s-lb2" x="468.1" y="218.9" text-anchor="start">敷鉄板 t=22mm</text>
+<text class="s-mt" x="337.9" y="108.5" text-anchor="start">バックホウ 0.8m³型</text>
+<text class="s-mt2" x="337.9" y="127.1" text-anchor="start">形は模式</text>
+<text class="s-mt2" x="380.1" y="169.3" text-anchor="middle">履帯の外幅 2.80m（両側の余裕 0.50m）</text>
+<text class="s-el" x="9.3" y="372.0" text-anchor="start">M.L.W.L +0.10</text>
+</svg></div>
+        <figcaption>重機用足場工 断面図（1:100）の形を、同じ寸法で描き直した図。赤が今回施工するコンクリート、灰色が既設、茶色が盛土。バックホウは位置と履帯の幅だけが図面の値で、形は模式です。</figcaption>
+      </figure>
+      <div class="twrap"><table class="q">
+        <thead><tr><th>項目</th><th>値</th><th>読み取り元</th></tr></thead>
+        <tbody>
+          <tr><td>天端の高さ</td><td class="v">+2.5</td><td class="src">断面図の標高</td></tr>
+          <tr><td>エプロン面</td><td class="v">+1.2</td><td class="src">断面図の標高</td></tr>
+          <tr><td>盛土の高さ</td><td class="v">1.30 m</td><td class="src">断面図の寸法</td></tr>
+          <tr><td>盛土の天端幅</td><td class="v">2.80 m</td><td class="src">断面図の寸法</td></tr>
+          <tr><td>作業面の幅</td><td class="v">3.80 m</td><td class="src">胸壁の天端 1.00 ＋ 盛土の天端 2.80</td></tr>
+          <tr><td>法勾配</td><td class="v">1:1.5</td><td class="src">水平 1.95m</td></tr>
+          <tr><td>底幅</td><td class="v">4.23 m</td><td class="src">胸壁の背面（勾配 1:0.4）の下端から法尻まで</td></tr>
+          <tr><td>胸壁の前面から法尻まで</td><td class="v">5.75 m</td><td class="src">断面図の寸法</td></tr>
+          <tr><td>断面積</td><td class="v">4.57 m²</td><td class="src">断面図の注記。寸法からの計算でも 4.57</td></tr>
+          <tr><td>材料</td><td>盛土は購入土、敷鉄板 t=22mm</td><td class="src">断面図の注記</td></tr>
+          <tr><td>載せる重機</td><td>バックホウ 0.8m³型</td><td class="src">履帯の外幅 2.80m、両側に 0.50m の余裕（寸法線からの読み取り）</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <p class="body">胸壁はエプロンより 1.30m 高いので、エプロンに置いた重機では護岸の前面（床掘りや水中コンクリートの位置）に届きにくくなります。そこで胸壁の背後を胸壁と同じ高さまで盛り、胸壁の天端と盛土の天端を合わせた幅 3.80m を作業面にしています。バックホウの海側の履帯は、胸壁の天端の上に載る配置です。</p>
+  </section>
+
+  <section aria-label="平面">
+    <h2>平面　どこに、どれだけ盛るか</h2>
+    <figure>
+      <div class="legend" aria-label="凡例">
+        <span><i class="key" style="background:var(--c-new)"></i>今回の施工（SP 0.0〜24.98）</span>
+        <span><i class="key" style="background:var(--c-ex)"></i>既設護岸・胸壁</span>
+        <span><i class="key" style="background:var(--c-crest)"></i>盛土の天端（+2.5）</span>
+        <span><i class="key" style="background:var(--c-soil)"></i>盛土の法面</span>
+        <span><i class="key" style="background:var(--c-ramp)"></i>スロープ</span>
+        <span><i class="key dot"></i>クレーンのアウトリガ（実寸に換算）</span>
+        <span><i class="key dot on"></i>盛土の上に来るアウトリガ</span>
+        <span><i class="key ring"></i>作業半径 R=13m</span>
+      </div>
+      <div class="figscroll wide"><svg viewBox="0 0 866 593" role="img" aria-label="重機用足場の平面図。盛土の天端・法面・スロープと、クレーンの設計位置・作業半径を重ねた図">
+<defs><clipPath id="pclip"><rect x="0" y="0" width="866" height="593"/></clipPath><pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><line class="p-hatch" x1="0" y1="0" x2="0" y2="7"/></pattern></defs>
+<g clip-path="url(#pclip)">
+<rect class="p-sea" x="0" y="0" width="866" height="593"/>
+<polygon class="p-apron" points="-50.4,463.9 -38.8,471.4 157.4,511.3 210.9,551.6 963.2,708.0 1003.2,679.1 664.5,197.6 114.1,197.3 102.6,197.4 91.2,213.8"/>
+<polygon class="p-ex" points="114.0,197.6 92.2,199.0 107.6,208.2 103.1,216.9 100.4,226.8 208.6,227.0 303.6,227.1 398.7,226.8 493.4,226.5 588.9,227.1 645.4,226.7 649.8,226.7 665.8,249.9 850.5,513.9 873.4,546.0 882.4,540.4 987.9,690.0 1003.2,679.1 952.0,606.6 897.5,529.0 837.6,444.3 782.9,367.0 723.0,282.0 664.5,197.6 588.6,197.8 493.4,198.2 303.6,198.2 208.9,198.4"/>
+<polygon class="p-ex" points="100.4,226.8 85.3,253.5 208.4,252.8 635.0,251.4 642.1,251.7 705.2,340.7 835.4,525.3 858.2,556.6 863.9,552.8 918.4,630.8 969.8,703.0 987.9,690.0 936.6,617.3 882.4,540.4 873.4,546.0 813.5,462.1 699.7,298.7 649.8,226.7 645.4,226.7 588.9,227.1 493.4,226.5 398.7,226.8 303.6,227.1 208.6,227.0"/>
+<polygon class="p-new" points="303.6,198.2 493.4,198.2 588.6,197.8 588.6,169.3 588.5,169.3 208.9,170.0 114.0,169.2 114.0,197.6 208.9,198.4"/>
+<polygon class="p-slope" points="114.0,218.3 100.4,226.8 76.9,268.1 76.9,307.1 533.1,307.1 511.1,421.5 575.5,454.1 653.3,369.9 715.9,459.0 780.0,414.2 767.3,377.8 655.2,216.1"/>
+<polygon class="p-slope" points="114.0,216.9 114.0,218.3 100.4,226.8 76.9,268.1 76.9,307.1 533.1,307.1 511.1,421.5 575.5,454.1 653.3,369.9 715.9,459.0 780.0,414.2 767.3,377.8 768.6,376.8 655.2,216.1"/>
+<polygon class="p-crest" points="114.0,216.9 114.0,270.0 577.2,269.8 658.6,311.1 725.2,407.3 768.6,376.8 655.2,216.1"/><polygon class="p-crest-h" points="114.0,216.9 114.0,270.0 577.2,269.8 658.6,311.1 725.2,407.3 768.6,376.8 655.2,216.1"/>
+<polygon class="p-ramp" points="577.2,269.8 658.6,311.1 575.5,454.1 511.1,421.5"/>
+<polygon class="p-edge" points="577.2,269.8 533.1,307.1 511.1,421.5"/>
+<polygon class="p-edge" points="658.6,311.1 653.3,369.9 575.5,454.1"/>
+<polygon class="p-edge" points="114.0,216.9 114.0,218.3 100.4,226.8 76.9,268.1 76.9,307.1 533.1,307.1 511.1,421.5 575.5,454.1 653.3,369.9 715.9,459.0 780.0,414.2 767.3,377.8 768.6,376.8 655.2,216.1"/>
+<polygon class="p-edge2" points="114.0,216.9 114.0,270.0 577.2,269.8 658.6,311.1 725.2,407.3 768.6,376.8 655.2,216.1"/>
+<line class="p-arrow" x1="601.5" y1="322.9" x2="558.2" y2="408.3" marker-end="url(#arr)"/>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="p-arrowh" d="M0,1 L10,5 L0,9 z"/></marker></defs>
+<circle class="p-pole" cx="619.8" cy="262.4" r="3.2"/>
+<circle class="p-reach" cx="277.7" cy="300.4" r="247.0"/>
+<polygon class="p-outr" points="211.4,360.8 215.6,240.9 336.9,239.9 333.3,359.6"/>
+<line class="p-outr" x1="211.4" y1="360.8" x2="336.9" y2="239.9"/><line class="p-outr" x1="215.6" y1="240.9" x2="333.3" y2="359.6"/>
+<circle class="p-float" cx="211.4" cy="360.8" r="4.6"/>
+<circle class="p-float on" cx="215.6" cy="240.9" r="5.6"/>
+<circle class="p-float on" cx="336.9" cy="239.9" r="5.6"/>
+<circle class="p-float" cx="333.3" cy="359.6" r="4.6"/>
+<circle class="p-cc" cx="277.7" cy="300.4" r="3.4"/>
+<circle class="p-reach" cx="582.8" cy="319.0" r="247.0"/>
+<polygon class="p-outr" points="517.3,379.3 521.5,259.3 642.8,258.4 638.5,378.3"/>
+<line class="p-outr" x1="517.3" y1="379.3" x2="642.8" y2="258.4"/><line class="p-outr" x1="521.5" y1="259.3" x2="638.5" y2="378.3"/>
+<circle class="p-float" cx="517.3" cy="379.3" r="4.6"/>
+<circle class="p-float on" cx="521.5" cy="259.3" r="5.6"/>
+<circle class="p-float on" cx="642.8" cy="258.4" r="5.6"/>
+<circle class="p-float on" cx="638.5" cy="378.3" r="5.6"/>
+<circle class="p-cc" cx="582.8" cy="319.0" r="3.4"/>
+</g>
+<line class="p-tick" x1="114.0" y1="169.1" x2="114.0" y2="150.1"/>
+<text class="p-sp" x="114.0" y="145.3" text-anchor="middle">SP 0.0</text>
+<line class="p-tick" x1="208.8" y1="169.1" x2="208.8" y2="150.1"/>
+<text class="p-sp" x="208.8" y="145.3" text-anchor="middle">SP 4.99</text>
+<line class="p-tick" x1="303.4" y1="169.1" x2="303.4" y2="150.1"/>
+<text class="p-sp" x="303.4" y="145.3" text-anchor="middle">SP 9.97</text>
+<line class="p-tick" x1="398.4" y1="169.1" x2="398.4" y2="150.1"/>
+<text class="p-sp" x="398.4" y="145.3" text-anchor="middle">SP 14.97</text>
+<line class="p-tick" x1="493.4" y1="169.1" x2="493.4" y2="150.1"/>
+<text class="p-sp" x="493.4" y="145.3" text-anchor="middle">SP 19.97</text>
+<line class="p-tick" x1="588.6" y1="169.1" x2="588.6" y2="150.1"/>
+<text class="p-sp" x="588.6" y="145.3" text-anchor="middle">SP 24.98</text>
+<line class="p-tick" x1="664.5" y1="197.6" x2="680.1" y2="186.7"/>
+<text class="p-sp" x="684.7" y="187.2" text-anchor="start">SP 28.98</text>
+<line class="p-tick" x1="723.7" y1="281.7" x2="739.2" y2="270.7"/>
+<text class="p-sp" x="743.9" y="271.3" text-anchor="start">SP 34.39</text>
+<line class="p-tick" x1="783.5" y1="366.7" x2="799.0" y2="355.8"/>
+<text class="p-sp" x="803.7" y="356.3" text-anchor="start">SP 39.86</text>
+<line class="p-dnew" x1="114.0" y1="115.9" x2="588.6" y2="115.9"/>
+<line class="p-dnew" x1="114.0" y1="110.9" x2="114.0" y2="120.9"/>
+<line class="p-dnew" x1="588.6" y1="110.9" x2="588.6" y2="120.9"/>
+<text class="p-dnew-t" x="351.3" y="109.3" text-anchor="middle">今回の施工（本体工・上部工）SP 0.0〜24.98</text>
+<text class="p-lb" x="7.6" y="28.5" text-anchor="start">港外側（海）</text>
+<text class="p-lb" x="7.6" y="323.0" text-anchor="start">船揚場</text>
+<text class="p-lb" x="7.6" y="575.7" text-anchor="start">港内側（−2.5m物揚場）</text>
+<text class="p-lb" x="361.0" y="448.4" text-anchor="middle">エプロン（+1.2）</text>
+<text class="p-on" x="332.5" y="249.8" text-anchor="middle">盛土の天端 +2.5（幅 2.80m）</text>
+<text class="p-on2" x="370.5" y="295.4" text-anchor="middle">法面 1:1.5</text>
+<text class="p-on" x="539.6" y="477.8" text-anchor="middle">スロープ 15%・L=8.70m</text>
+<text class="p-on" x="716.3" y="323.0" text-anchor="middle" transform="rotate(55 716.3 323.0)">天端</text>
+<text class="p-sm2" x="611.2" y="267.2" text-anchor="end">木柱</text>
+<text class="p-cr" x="277.7" y="380.2" text-anchor="middle">クレーン1</text>
+<text class="p-cr2" x="277.7" y="398.3" text-anchor="middle">旋回中心 SP 8.6</text>
+<text class="p-cr" x="438.4" y="341.8" text-anchor="middle">クレーン2</text>
+<text class="p-cr2" x="438.4" y="359.9" text-anchor="middle">旋回中心 SP 24.7</text>
+<line class="p-lead" x1="489.7" y1="338.0" x2="575.2" y2="320.9"/>
+<text class="p-cr2" x="228.3" y="533.2" text-anchor="middle">R=13m</text>
+<text class="p-cr2" x="643.6" y="550.8" text-anchor="middle">R=13m</text>
+<line class="p-dim" x1="171.0" y1="216.9" x2="171.0" y2="307.1"/>
+<line class="p-dim" x1="167.0" y1="216.9" x2="175.0" y2="216.9"/>
+<line class="p-dim" x1="167.0" y1="270.0" x2="175.0" y2="270.0"/>
+<line class="p-dim" x1="167.0" y1="307.1" x2="175.0" y2="307.1"/>
+<text class="p-dim-t" x="177.7" y="247.0" text-anchor="start">2.80</text>
+<text class="p-dim-t" x="177.7" y="292.6" text-anchor="start">1.95</text>
+<line class="p-scale" x1="693.5" y1="570.0" x2="788.5" y2="570.0"/>
+<line class="p-scale" x1="693.5" y1="566.0" x2="693.5" y2="574.0"/>
+<line class="p-scale" x1="788.5" y1="566.0" x2="788.5" y2="574.0"/>
+<text class="p-sm" x="741.0" y="563.4" text-anchor="middle">5m</text>
+</svg></div>
+      <figcaption>仮設工平面図（1:200）の盛土に、工事用道路詳細図（1:500）のクレーンを重ねた図。上が港外側。2枚の図は護岸の屈曲点と終点で位置を合わせ、起点 SP 0.0 のずれが 2cm 以内になることを確かめました。</figcaption>
+    </figure>
+    <ul class="notes">
+      <li><b>範囲</b>　胸壁の背後に沿って、起点 SP 0.0 から屈曲点（SP 28.98）を回り、SP 39.86 付近まで。胸壁沿いの長さは直線部 約28.5m ＋ 屈曲部 約10.4m です（図から測った値）。起点側は SP 0.0 の手前 1.95m まで法面が回ります。</li>
+      <li><b>スロープ</b>　屈曲点の内側からエプロンへ下ります。勾配 15%、長さ 8.70m、幅は下端 3.80m・上端 4.80m。高さ 1.30m ÷ 15% ＝ 8.67m で、図の長さと合います。</li>
+      <li><b>終点</b>　天端の幅 2.79m、法尻の幅 4.11m（平面図の寸法）。</li>
+      <li><b>今回の施工との関係</b>　本体工・上部工の今回の範囲は SP 0.0〜24.98 ですが、足場は全体計画の終わり（SP 39.86）まで描かれています。</li>
+    </ul>
+  </section>
+
+  <section aria-label="クレーン">
+    <h2>クレーンの位置と届く範囲</h2>
+    <p class="body">工事用道路詳細図には、25t吊ラフテレーンクレーンの据付位置が2か所、作業半径 R=13m の円と一緒に描かれています。この図のクレーンは実際より小さく描かれている（R=13.0m の円が図上では 10.8m）ので、下の値は実寸に換算しています。</p>
+    <div class="twrap"><table class="q min">
+      <thead><tr><th>項目</th><th>クレーン1</th><th>クレーン2</th><th>盛土との関係</th></tr></thead>
+      <tbody>
+        <tr><td>旋回中心の測点</td><td class="v">SP 8.6</td><td class="v">SP 24.7</td><td class="src">クレーン2は今回施工の終点（SP 24.98）付近</td></tr>
+        <tr><td>旋回中心（護岸の前面線から）</td><td class="v">5.4 m</td><td class="v">6.4 m</td><td class="src">クレーン1は法面の上、クレーン2はスロープの中</td></tr>
+        <tr><td>海側のアウトリガ（前面線から）</td><td class="v">2.3 m</td><td class="v">3.2 m</td><td class="src">どちらも盛土の天端の範囲（前面線から 1.0〜3.8m）</td></tr>
+        <tr><td>陸側のアウトリガ（前面線から）</td><td class="v">8.6 m</td><td class="v">9.5 m</td><td class="src">クレーン1は法尻（5.8m）より陸側のエプロン上。クレーン2は1本がスロープ脇の法面の中</td></tr>
+        <tr><td>アウトリガの間隔</td><td class="v">約 6.3 × 6.4 m</td><td class="v">約 6.3 × 6.4 m</td><td class="src">図上のままだと約 5.3m。どちらで読んでも海側は天端に載る</td></tr>
+        <tr><td>R=13m で届く沖側の距離</td><td class="v">前面線から 7.6 m</td><td class="v">前面線から 6.6 m</td><td class="src">水中コンクリートの前面は 1.5m、汚濁防止膜は 3.0m</td></tr>
+        <tr><td>水中コンクリートの前面で届く測点</td><td class="v">SP −2.4〜19.6</td><td class="v">SP 14.3〜24.98</td><td class="src">2か所で今回の施工範囲を覆う（SP 14.3〜19.6 は両方から届く）</td></tr>
+      </tbody>
+    </table></div>
+    <figure>
+      <div class="figscroll mid"><svg viewBox="0 0 685 352" role="img" aria-label="クレーン1の設計位置を盛土の断面に重ねた図。海側のアウトリガは盛土の天端の位置、陸側はエプロンの上になる">
+<defs><clipPath id="cclip"><rect x="0" y="0" width="685" height="352"/></clipPath></defs><g clip-path="url(#cclip)">
+<rect class="s-sea" x="0" y="245.0" width="45.0" height="50.0"/>
+<rect class="s-apron" x="170.0" y="190.0" width="565.0" height="20.0"/>
+<polygon class="s-ex" points="169.9,190.0 206.2,190.0 180.1,124.8 129.9,124.8 129.9,159.9 124.8,159.9 124.8,190.0 120.0,190.0 120.0,193.8 130.8,193.8 135.1,194.6 137.2,194.9 139.2,194.9 145.4,194.5 146.9,195.3 148.0,197.0 148.0,207.5 146.6,209.1 146.6,210.8 145.6,212.0 143.5,212.0 138.6,210.8 133.9,212.0 120.0,212.0 120.0,285.6 124.4,285.6 124.6,285.9 167.8,285.9 169.1,286.1 169.9,286.9 169.9,286.5 169.9,292.0 169.8,293.5 169.9,294.1 169.6,294.6 169.1,295.2 212.7,295.2"/>
+<polygon class="s-new" points="120.0,285.6 124.4,285.6 124.6,285.9 167.8,285.9 169.1,286.1 169.9,286.9 169.9,292.0 169.8,293.5 169.9,294.1 169.1,295.2 120.0,295.2"/>
+<polygon class="s-new" points="120.0,220.0 120.0,295.2 44.9,295.2 44.9,220.0"/>
+<polygon class="s-new" points="122.4,216.4 123.4,214.2 123.4,212.0 120.0,212.0 120.0,236.5 122.5,233.8 123.2,230.6 123.2,227.1 122.4,224.5 123.4,221.8"/>
+<polygon class="s-new" points="94.8,220.0 120.0,220.0 120.0,212.0 133.9,212.0 138.6,210.8 143.5,212.0 145.6,212.0 146.6,210.8 146.6,209.1 148.0,207.5 148.0,197.0 146.9,195.3 145.4,194.5 139.2,194.9 137.2,194.9 135.1,194.6 130.8,193.8 120.0,193.8 120.0,190.0 94.8,190.0"/>
+<polygon class="s-soil" points="180.1,124.8 206.2,190.0 418.1,190.0 320.2,124.8"/>
+<rect class="c-body" x="334.5" y="47.5" width="131.0" height="115.0"/>
+<line class="c-beam" x1="242.1" y1="152.5" x2="557.4" y2="152.5"/>
+<line class="c-beam" x1="242.1" y1="152.5" x2="242.1" y2="187.0"/>
+<rect class="c-float" x="227.1" y="184.0" width="30.0" height="6.0"/>
+<line class="c-beam" x1="557.4" y1="152.5" x2="557.4" y2="187.0"/>
+<rect class="c-float" x="542.4" y="184.0" width="30.0" height="6.0"/>
+<line class="c-axis" x1="400.0" y1="20.0" x2="400.0" y2="190.0"/>
+<polygon class="c-ov" points="219.6,190.0 219.6,125.0 320.0,125.0 417.5,190.0"/>
+</g>
+<text class="s-mt" x="400.0" y="14.0" text-anchor="middle">25t吊ラフテレーンクレーン（形は模式）</text>
+<text class="c-in" x="400.0" y="100.0" text-anchor="middle">車体幅 2.62m</text>
+<text class="s-el" x="117.5" y="122.5" text-anchor="end">+2.5</text>
+<text class="s-el" x="677.5" y="185.0" text-anchor="end">エプロン +1.2</text>
+<text class="c-warn" x="250.0" y="114.0" text-anchor="middle">盛土と重なる範囲</text>
+<text class="s-in" x="156.0" y="144.0" text-anchor="middle">胸壁</text>
+<line class="s-dim" x1="180.0" y1="277.5" x2="572.4" y2="277.5"/>
+<line class="s-dim" x1="180.0" y1="272.5" x2="180.0" y2="282.5"/>
+<line class="s-ext" x1="180.0" y1="277.5" x2="180.0" y2="210.0"/>
+<text class="s-dim-t" x="180.0" y="295.5" text-anchor="middle">0</text>
+<text class="s-ax" x="180.0" y="313.5" text-anchor="middle">胸壁の背面</text>
+<line class="s-dim" x1="242.1" y1="272.5" x2="242.1" y2="282.5"/>
+<line class="s-ext" x1="242.1" y1="277.5" x2="242.1" y2="190.0"/>
+<text class="s-dim-t" x="242.1" y="295.5" text-anchor="middle">1.2</text>
+<text class="s-ax" x="242.1" y="330.5" text-anchor="middle">海側のフロート</text>
+<line class="s-dim" x1="320.0" y1="272.5" x2="320.0" y2="282.5"/>
+<line class="s-ext" x1="320.0" y1="277.5" x2="320.0" y2="190.0"/>
+<text class="s-dim-t" x="320.0" y="295.5" text-anchor="middle">2.80</text>
+<text class="s-ax" x="320.0" y="313.5" text-anchor="middle">盛土の肩</text>
+<line class="s-dim" x1="400.0" y1="272.5" x2="400.0" y2="282.5"/>
+<line class="s-ext" x1="400.0" y1="277.5" x2="400.0" y2="190.0"/>
+<text class="s-dim-t" x="397.0" y="295.5" text-anchor="end">4.4</text>
+<text class="s-ax" x="400.0" y="330.5" text-anchor="middle">旋回中心</text>
+<line class="s-dim" x1="417.5" y1="272.5" x2="417.5" y2="282.5"/>
+<line class="s-ext" x1="417.5" y1="277.5" x2="417.5" y2="190.0"/>
+<text class="s-dim-t" x="420.5" y="295.5" text-anchor="start">4.75</text>
+<text class="s-ax" x="417.5" y="313.5" text-anchor="middle">法尻</text>
+<line class="s-dim" x1="557.4" y1="272.5" x2="557.4" y2="282.5"/>
+<line class="s-ext" x1="557.4" y1="277.5" x2="557.4" y2="190.0"/>
+<text class="s-dim-t" x="557.4" y="295.5" text-anchor="middle">7.5</text>
+<text class="s-ax" x="557.4" y="330.5" text-anchor="middle">陸側のフロート</text>
+<text class="s-ax2" x="180.0" y="348.5" text-anchor="start">胸壁の背面（天端の角）からの距離 (m)</text>
+</svg></div>
+      <figcaption>クレーン1の位置で、平面図の位置関係を盛土の断面に重ねた図。クレーンをエプロン面（+1.2）に水平に据えたとすると、海側のアウトリガと車体の海側が盛土の中に入ります。クレーンの形は模式で、車体幅 2.62m は工事用道路の標準断面図の寸法です。</figcaption>
+    </figure>
+    <p class="body">盛土を図面どおりに残し、4本のアウトリガをすべて法尻より陸側に置くと、旋回中心は前面線から約 9m 以上になります。そのとき R=13m で届くのは沖へ約 4m までです（計算値）。水中コンクリートの前面と汚濁防止膜の位置には届きますが、吊り荷の重さと定格荷重の照合が要ります。</p>
+  </section>
+
+  <section aria-label="数量">
+    <h2>数量と、図面からの検算</h2>
+    <div class="twrap"><table class="q min">
+      <thead><tr><th>項目</th><th>数量計算書の値</th><th>図面から計算した値</th></tr></thead>
+      <tbody>
+        <tr><td>盛土（購入土）</td><td class="v">208 m³</td><td>約 201 m³（胸壁の背面の勾配を引いた値。垂直に切ると約 214 m³）</td></tr>
+        <tr><td>　内訳</td><td>通常部 143.1 ＋ 隅角部 38.9 ＋ スロープ部 25.8</td><td>スロープ本体は約 25 m³（両脇の法面は別に約 5 m³）</td></tr>
+        <tr><td>盛土の運搬</td><td>搬入 14.6 km、撤去時の搬出 4.3 km</td><td class="src">—</td></tr>
+        <tr><td>敷鉄板</td><td class="v">130 m²（14 枚）</td><td>1枚 6.096×1.524m ＝ 9.29 m²、14枚で 130.1 m²。天端は約 108 m²、スロープは約 37 m²</td></tr>
+        <tr><td>敷鉄板の返納</td><td>工事用道路の 16 枚と合わせて 30 枚、44.8 km</td><td class="src">—</td></tr>
+        <tr><td>工程（初期値）</td><td>設置 4 日、撤去 3 日</td><td class="src">工程表のページの値。工事用道路の次に設置し、撤去は逆の順</td></tr>
+      </tbody>
+    </table></div>
+    <p class="small">数量計算書の値は、工程表のページを作ったときに拾ったものです。今回読み直したフォルダには数量計算書が入っていないため、数量計算書そのものは照合し直していません。</p>
+    <p class="body">盛土 208m³ は、図面の形を全延長（SP 39.86 まで）とスロープを含めて計算した値とほぼ合います。今回の施工範囲（SP 24.98 まで）だけに縮めた量ではありません。</p>
+  </section>
+
+  <section aria-label="確認しておきたい点">
+    <h2>確認しておきたい点</h2>
+    <ol class="pts">
+      <li><h3><span class="tag big">要確認・大</span>クレーンの設計位置と盛土が重なる</h3>
+        <p>海側のアウトリガは前面線から 2.3m・3.2m で盛土の天端（+2.5）の範囲、陸側は 8.6m・9.5m でエプロン（+1.2）側です。旋回中心は、クレーン1が法面の上、クレーン2がスロープの中です。盛土を置く時期とクレーンを使う時期が重なるなら、クレーンの位置か盛土の形を決め直す必要があります。</p>
+        <p class="src">仮設工平面図／工事用道路詳細図（どちらも参考図）</p></li>
+      <li><h3><span class="tag mid">要確認</span>今回の施工範囲より先まで足場がある</h3>
+        <p>本体工・上部工の今回の範囲は SP 24.98 までですが、足場は SP 39.86 付近まで描かれ、盛土 208m³ もその形と合います。SP 24.98 より先の屈曲部（スロープの先の約 6m）を今回も盛るのかを確認してください。</p>
+        <p class="src">仮設工平面図／数量計算書</p></li>
+      <li><h3><span class="tag mid">要確認</span>バックホウの履帯が胸壁の天端に載る</h3>
+        <p>断面図では、履帯の外幅 2.80m を幅 3.80m の作業面の中央に置き、両側の余裕は 0.50m です。海側の履帯は既設の胸壁（S58・S62）の天端に載り、海側の端まで 0.50m です。胸壁に重機の荷重を掛けてよいか、転落防止をどうするかを確認してください。</p>
+        <p class="src">仮設工平面図（重機用足場工 断面図）</p></li>
+      <li><h3><span class="tag mid">要確認</span>R=13m での吊り荷</h3>
+        <p>図面には作業半径 R=13m だけが書かれ、吊り荷の種類と重さの記載がありません。型枠・生コンのバケット・掘ったずりなど、吊る物の重さと、使う機種の R=13m での定格荷重を照合してください。</p>
+        <p class="src">工事用道路詳細図</p></li>
+      <li><h3><span class="tag mid">要確認</span>敷鉄板の敷き方が図面にない</h3>
+        <p>敷鉄板は 14 枚・130m² の計上で、断面図に t=22mm の注記があるだけです。どの範囲に何列で敷くかは描かれていません。天端（約 108m²）とスロープ（約 37m²）を合わせると約 145m² で、全面には足りない枚数です。</p>
+        <p class="src">仮設工平面図／数量計算書</p></li>
+      <li><h3><span class="tag mid">要確認</span>盛土の範囲に「木柱」がある</h3>
+        <p>平面図には、屈曲点の近く（スロープの上端付近、胸壁の背後）に「木柱」の文字があります。仮設工平面図では盛土の赤い塗りの下に隠れています。現地で位置を確かめ、支障になるかを確認してください。</p>
+        <p class="src">東護岸平面図／仮設工平面図</p></li>
+      <li><h3><span class="tag low">軽微</span>クレーンの図が小さく描かれている</h3>
+        <p>工事用道路平面図は 1:500 ですが、クレーンと作業半径の円は 1:600 相当です（R=13.0m の円が図上 10.8m）。図をそのまま測ると、届く範囲を約 2m 短く読むことになります。</p>
+        <p class="src">工事用道路詳細図</p></li>
+      <li><h3><span class="tag low">軽微</span>平面図と断面図で胸壁の位置が約 0.2m 違う</h3>
+        <p>護岸の前面から胸壁の背面（天端の角）までが、断面図では 1.20m、仮設工平面図を測ると約 1.0m です。重なりの判断には影響しません。</p>
+        <p class="src">仮設工平面図（平面と断面）</p></li>
+    </ol>
+  </section>
+
+  <section aria-label="作り方と注意">
+    <h2>この資料の作り方と注意</h2>
+    <ul class="notes">
+      <li>読んだ図面は、仮設工平面図（重機用足場工 断面図を含む）、工事用道路詳細図、東護岸平面図、標準断面図です。図面の線の座標を取り出し、図中の寸法で縮尺を確かめてから測っています。</li>
+      <li>「断面図の寸法」「平面図の寸法」と書いた値は図面の数字そのままです。「図から測った値」「計算値」は、この資料で求めた値です。</li>
+      <li>仮設工平面図と工事用道路詳細図は参考図です。仮設の位置や形は、施工者が計画し直せる可能性があります。</li>
+      <li>クレーンとバックホウの形は模式です。図面から取ったのは、位置・作業半径・アウトリガの位置・車体幅・履帯の外幅だけです。</li>
+      <li>盛土の体積は、平面図の天端と法尻の線から立体を組んで計算しました。起点側と終点側の端の形は、法尻の線を高さ +1.2 として扱っています。</li>
+      <li>工事用道路（船揚場A部。切込砕石の不陸整正 309m²、敷鉄板 16 枚、土のう 501 袋）は、工程表のページに手順と数量があります。</li>
+      <li>寸法や数量を使うときは、元の図面と数量計算書で確かめてください。</li>
+    </ul>
+  </section>
+</div>
+
+</body></html>
