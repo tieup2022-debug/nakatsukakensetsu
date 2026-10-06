@@ -1,0 +1,550 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>朝日地区 船揚場 施工手順と工程表</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* レイアウト: 1段組の文書。上から 概要 → 図面で気づいた点（重ね図）→ 施工手順 → 工程表。工程表だけ横にスクロールする */
+:root{
+  --bg:#EEF2F3; --panel:#FBFCFC; --ink:#14232A; --muted:#566870; --line:#C9D2D6; --chip:#E4EBED;
+  --accent:#0A6C80; --accent-ink:#FFFFFF; --warn:#A8500A; --warn-bg:#FBEBD9; --big:#A32424; --big-bg:#F9E1DF;
+  --land:#7A6A4F; --sea-bar:#1F7FA6; --cure:#C9962B; --span:#8FA1A8; --off:#DDE4E6;
+  --c-new:#F27A78; --c-new-d:#B23A3A; --c-exist:#C8CCCD; --c-toe:#9AA2A5; --c-stone:#A3A79D; --c-ground:#C2B49C; --c-bag:#4E565F; --c-crane:#E8521C; --sea:#D4E6EC; --sea-line:#1C6F92;
+  --f-body:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono","SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E161A; --panel:#152026; --ink:#E5EDF0; --muted:#93A5AD; --line:#2B3C44; --chip:#1E2C33;
+    --accent:#56BBD0; --accent-ink:#06222A; --warn:#F2B25C; --warn-bg:#3A2A12; --big:#FF9A93; --big-bg:#3F1B19;
+    --land:#B7A27C; --sea-bar:#4FA9D0; --cure:#E2B552; --span:#5D6E76; --off:#1C282E;
+    --c-new:#D9605D; --c-new-d:#FF9D9A; --c-exist:#5E686C; --c-toe:#7C868A; --c-stone:#4F544C; --c-ground:#4A4234; --c-bag:#9AA4AE; --c-crane:#FF6A33; --sea:#12303B; --sea-line:#6CC1E2;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E161A; --panel:#152026; --ink:#E5EDF0; --muted:#93A5AD; --line:#2B3C44; --chip:#1E2C33;
+  --accent:#56BBD0; --accent-ink:#06222A; --warn:#F2B25C; --warn-bg:#3A2A12; --big:#FF9A93; --big-bg:#3F1B19;
+  --land:#B7A27C; --sea-bar:#4FA9D0; --cure:#E2B552; --span:#5D6E76; --off:#1C282E;
+  --c-new:#D9605D; --c-new-d:#FF9D9A; --c-exist:#5E686C; --c-toe:#7C868A; --c-stone:#4F544C; --c-ground:#4A4234; --c-bag:#9AA4AE; --c-crane:#FF6A33; --sea:#12303B; --sea-line:#6CC1E2;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:28px 64px;display:flex;flex-direction:column;gap:36px}
+header h1{font-size:clamp(22px,3.4vw,30px);line-height:1.3;margin:0 0 6px;text-wrap:balance}
+header p{margin:0;color:var(--muted);max-width:46em}
+h2{font-size:19px;margin:0 0 4px;line-height:1.35;text-wrap:balance}
+h3{font-size:15px;margin:0}
+.lead{color:var(--muted);margin:0 0 14px;max-width:46em}
+.num,td.n,th.n{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+section{min-width:0}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden;margin-top:16px}
+.facts div{padding:10px 14px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);margin:0 -1px -1px 0;min-width:0}
+.facts dt{font-size:12px;color:var(--muted);letter-spacing:.04em}
+.facts dd{margin:0;font-family:var(--f-num);font-size:15px;overflow-wrap:anywhere}
+.facts dd small{font-family:var(--f-body);font-size:12px;color:var(--muted)}
+.find{display:flex;flex-direction:column;gap:10px;list-style:none;padding:0;margin:0}
+.find li{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:start}
+.pill{font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap;margin-top:3px}
+.pill.b{background:var(--big-bg);color:var(--big)} .pill.m{background:var(--warn-bg);color:var(--warn)} .pill.s{background:var(--chip);color:var(--muted)}
+.find h3{grid-column:2} .find p{grid-column:2;margin:0;font-size:14px;overflow-wrap:anywhere;min-width:0} .find .src{color:var(--muted);font-size:12.5px}
+.fig{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;margin:14px 0 0}
+.fig figcaption{font-size:13px;color:var(--muted);margin-top:6px}
+.figscroll{overflow-x:auto}
+.figscroll svg{display:block;width:100%;min-width:640px;height:auto;font-family:var(--f-body)}
+figure{margin:0}
+.f-sea{fill:var(--sea)} .f-ex{fill:var(--c-exist)} .f-toe{fill:var(--c-toe)} .f-gr{fill:var(--c-ground)} .f-st2{fill:var(--c-stone)}
+.f-new{fill:var(--c-new);stroke:var(--ink);stroke-width:.6}
+.f-thin{stroke:var(--muted);stroke-width:.8;fill:none} .f-thin2{stroke:var(--ink);stroke-width:1;fill:none}
+.f-tide{stroke:var(--sea-line);stroke-width:1.2;stroke-dasharray:6 4;fill:none}
+.f-plat{fill:var(--c-bag);fill-opacity:.8} .f-bag{fill:var(--c-bag);stroke:var(--panel);stroke-width:1}
+.f-warn{fill:var(--warn);fill-opacity:.5;stroke:var(--warn);stroke-width:1.5}
+.f-out{fill:var(--warn);fill-opacity:.22;stroke:var(--warn);stroke-width:1.5;stroke-dasharray:5 3}
+.f-crane{fill:none;stroke:var(--c-crane);stroke-width:1.5;stroke-dasharray:4 3} .f-crane2{fill:var(--c-crane)} .f-crane3{stroke:var(--c-crane);stroke-width:6;fill:none}
+.f-r{fill:none;stroke:var(--c-crane);stroke-width:1.2} .f-dot{fill:var(--ink)}
+.f-pn{font-size:12px;fill:var(--ink);font-family:var(--f-num)}
+.f-lb,.f-tt,.f-el,.d-new-t,.d-bag-t,.d-warn-t{paint-order:stroke;stroke:var(--panel);stroke-width:3.5px;stroke-linejoin:round}
+.f-lb{font-size:11.5px;fill:var(--ink)} .f-tt{font-size:11px;fill:var(--sea-line)} .f-el{font-size:11px;fill:var(--ink);font-family:var(--f-num)}
+.f-st{font-size:10.5px;fill:var(--muted);font-family:var(--f-num)}
+.d-new{stroke:var(--c-new-d);stroke-width:1.4} .d-new-t{fill:var(--c-new-d);font-size:12px;font-weight:700}
+.d-bag{stroke:var(--ink);stroke-width:1.4} .d-bag-t{fill:var(--ink);font-size:12px;font-weight:700}
+.d-warn{stroke:var(--warn);stroke-width:1.4} .d-warn-t{fill:var(--warn);font-size:12px;font-weight:700}
+.steps{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.steps .grp{background:var(--chip);font-weight:700;font-size:13px;padding:7px 14px;letter-spacing:.04em}
+.steps li.st{display:grid;grid-template-columns:2.4em minmax(0,1fr);gap:2px 10px;padding:10px 14px;border-top:1px solid var(--line)}
+.steps .no{font-family:var(--f-num);color:var(--muted);font-size:14px;padding-top:1px}
+.steps .nm{font-weight:700;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+.steps .q{grid-column:2;font-size:14px} .steps .nt{grid-column:2;font-size:13px;color:var(--muted)}
+.tag{font-size:11px;font-weight:700;border-radius:4px;padding:1px 7px;color:#fff;white-space:nowrap}
+.tag.land{background:var(--land)} .tag.sea{background:var(--sea-bar)} .tag.cure{background:var(--cure);color:#231a05}
+:root[data-theme="dark"] .tag{color:#0b1114}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tag{color:#0b1114}}
+.ctl{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.ctl label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--muted);min-width:0}
+.ctl label.ck{flex-direction:row;align-items:center;gap:7px;color:var(--ink);font-size:14px;padding-bottom:6px}
+.ctl input[type=date],.ctl select,.ctl input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-height:36px}
+.ctl input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent)}
+.ctl .rate{display:flex;align-items:center;gap:8px}
+.ctl input[type=range]{accent-color:var(--accent);width:150px;max-width:44vw}
+.sum{display:flex;flex-wrap:wrap;gap:6px 22px;margin:12px 0 8px;font-size:14px}
+.sum b{font-family:var(--f-num);font-weight:500;font-size:16px}
+.warns{list-style:none;padding:0;margin:0 0 12px;display:flex;flex-direction:column;gap:6px}
+.warns li{border-left:3px solid var(--warn);background:var(--warn-bg);padding:7px 11px;border-radius:0 8px 8px 0;font-size:13.5px}
+.warns li.big{border-color:var(--big);background:var(--big-bg)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted);margin:0 0 8px}
+.legend i{display:inline-block;width:22px;height:10px;border-radius:3px;vertical-align:middle;margin-right:5px}
+.gwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.gantt{--namew:clamp(150px,36vw,330px);position:relative;display:grid;grid-template-columns:var(--namew) max-content;width:max-content;min-width:100%}
+.gantt .c{border-bottom:1px solid var(--line);min-height:40px}
+.gantt .nmc{position:sticky;left:0;z-index:3;background:var(--panel);border-right:1px solid var(--line);padding:5px 8px 5px 10px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;font-size:13px;line-height:1.35;min-width:0}
+.gantt .nmc .t{flex:1 1 9em;min-width:0}
+.gantt .nmc .t small{display:block;color:var(--muted);font-size:11.5px}
+.gantt .nmc input{width:4.2em;font:inherit;font-family:var(--f-num);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:3px 4px;text-align:right}
+.gantt .nmc .u{font-size:11.5px;color:var(--muted)}
+.gantt .hd{position:sticky;top:0;z-index:4;background:var(--chip);font-size:11.5px;color:var(--muted);min-height:44px}
+.gantt .hd.nmc{z-index:5;font-weight:700;background:var(--chip)}
+.gantt .grow{grid-column:1/-1;background:var(--chip);font-size:12px;font-weight:700;padding:3px 10px;position:relative;z-index:2;border-bottom:1px solid var(--line)}
+.gantt .grow span{position:sticky;left:10px}
+.gantt .ch{position:relative}
+.gantt .bar{position:absolute;top:50%;height:22px;margin-top:-11px;border-radius:4px;z-index:2;min-width:3px}
+.gantt .bar.land{background:var(--land)} .gantt .bar.sea{background:var(--sea-bar)}
+.gantt .bar.cure{background:repeating-linear-gradient(135deg,var(--cure) 0 6px,transparent 6px 9px),var(--warn-bg);outline:1.5px solid var(--cure);outline-offset:-1.5px}
+.gantt .bar.span{background:var(--span);height:8px;margin-top:-4px}
+.gantt .bl{position:absolute;top:50%;transform:translateY(-50%);font-family:var(--f-num);font-size:11px;color:var(--muted);white-space:nowrap;z-index:2;padding-left:6px}
+.gantt .shade{position:absolute;top:0;bottom:0;left:var(--namew);z-index:1;pointer-events:none}
+.gantt .shade i{position:absolute;top:0;bottom:0;background:var(--off)}
+.gantt .shade b{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.gantt .mon{position:absolute;top:4px;font-weight:700;color:var(--ink);white-space:nowrap;padding-left:4px}
+.gantt .dy{position:absolute;top:24px;font-family:var(--f-num);font-size:10.5px;transform:translateX(-50%)}
+.notes{font-size:13.5px;color:var(--muted);margin:14px 0 0;padding-left:1.2em}
+.notes li{margin:3px 0}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:600px){ body{font-size:14.5px} .find li{grid-template-columns:minmax(0,1fr)} .find h3,.find p{grid-column:1} .pill{justify-self:start} }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>大沢朝日漁港（朝日地区）船揚場　施工手順と工程表</h1>
+    <p>設計図（令和8年3月、北海道函館建設管理部）から拾った数量で組んだ案です。フォルダに数量計算書がないため、数量はすべて図面の値か、図面から数えた値です。</p>
+    <dl class="facts">
+      <div><dt>工事名（図面）</dt><dd style="font-family:var(--f-body);font-size:14px">大沢朝日漁港（朝日地区）外 機能保全工事外（補正明許）外</dd></div>
+      <div><dt>施工範囲</dt><dd>P8.49〜P33.06　L=24.5m</dd></div>
+      <div><dt>張コンクリート C-5S t=20cm</dt><dd>212.48m² <small>詳細図の集計。各版の合計は 216.46m²</small></dd></div>
+      <div><dt>鉄網 SD295 D6 150×150</dt><dd>198.60m²</dd></div>
+      <div><dt>型枠／伸縮目地</dt><dd>6.93m²／20.11m²</dd></div>
+      <div><dt>滑り材（撤去・新設）</dt><dd>60本 <small>L=2.5m、平面図から数えた本数</small></dd></div>
+      <div><dt>大型土のう</dt><dd>163袋 <small>仮締切 水中54・陸上42、足場67</small></dd></div>
+      <div><dt>潮位</dt><dd>H.W.L +0.60／M.L.W.L +0.10</dd></div>
+    </dl>
+  </header>
+
+  <section>
+    <h2>図面と数量で気づいた点</h2>
+    <p class="lead">図面どうしを同じ座標に重ねて照合しました。どれも図面からの読み取りなので、発注者に確認してください。</p>
+    <ul class="find">
+      <li><span class="pill b">要確認・大</span><h3>施工範囲が図面によって2通りある</h3>
+        <p>平面図・標準断面図・詳細図・仮設工図は P8.49〜33.06（L=24.5m、No.2〜No.4スパン、版9枚）。横断図の取壊し面積は SP18.55 が 0.00m² で SP18.55' から始まり、数量算出図（仮設工）と水替え調書の施工箇所も P18.55〜33.06（約14.5m、No.3・No.4スパン、版5枚）です。No.2スパン（版4枚、約99m²、取壊し約20m³）が数量に入っているかを確認してください。</p>
+        <p class="src">平面図／標準断面図(1)(2)／張コンクリート詳細図／横断図(1)(2)／数量算出図 仮設工／水替え略図調書</p></li>
+      <li><span class="pill b">要確認・大</span><h3>仮締切が No.2 スパンを囲えていない</h3>
+        <p>大型土のうは延長 19.8m（P13.26〜33.06）。施工範囲の P8.49〜13.4（約4.9m）は締切の外です。妻の土のう（B・C部）は版 1-2 の上、前面から最大 4.95m まで載るため、そのままでは 1-1・1-2 を取り壊せません。</p>
+        <p class="src">数量算出図 仮設工／仮設工図（参考図）／平面図</p></li>
+      <li><span class="pill b">要確認・大</span><h3>重機用足場が2列目の版にかぶる</h3>
+        <p>足場（7.4×11.0m）の法尻は前面から 8.40m、天端の肩は 9.06m。2列目の版（2-3・2-4）は 10.93m まで。天端で約1.8m（仮設工図の寸法 1.80）、法尻で約2.5m、幅 7.4m が重なります。足場を置いたままでは、この部分の取壊しと打設ができません。</p>
+        <p class="src">仮設工図（参考図）重機用足場断面図／平面図</p></li>
+      <li><span class="pill b">要確認・大</span><h3>コンクリート面積の集計式に鉄網の値が入っている</h3>
+        <p>詳細図の式は「24.85*2+24.35+24.70+20.50+24.53+24.56+22.07*7 = 212.48m²」。2-3・2-4 のコンクリートは 24.06m² ですが、鉄網の 22.07m² が入っています（「*7」は「*2」の誤記と思われ、×2 で 212.48 になります）。各版の値を足すと 216.46m²。差は 3.98m²、t=20cm で約 0.8m³ です。</p>
+        <p class="src">張コンクリート詳細図（集計欄）</p></li>
+      <li><span class="pill m">要確認</span><h3>仮締切は H.W.L では水が回る</h3>
+        <p>妻の土のうは前面から 4.95m（地盤 +0.26）まで。H.W.L +0.60 の水際は前面から約 7.4m なので、満潮時は妻の陸側から締切の内側に水が入ります。A部の天端は +0.80〜0.90 で、H.H.W.L +1.30 より低い高さです。水替え計算の水位は L.W.L〜M.L.W.L 付近。潮待ち作業の前提かどうかを確認してください。</p>
+        <p class="src">数量算出図 仮設工（A〜D部断面）／水替え略図調書</p></li>
+      <li><span class="pill m">要確認</span><h3>仮締切と水替が綴じ込みの図面に入っていない</h3>
+        <p>01_設計図.pdf（8ページ）の仮設工図は「土のう消去」版で、仮締切の土のうと遮水シートが描かれていません。数量算出図（仮設工）と水替え調書は綴じ込み外で、フォルダに「11.は図面につけてない」というメモがあります。仮締切・水替が契約数量に含まれるかを確認してください。</p>
+        <p class="src">01_設計図.pdf／org フォルダ</p></li>
+      <li><span class="pill m">要確認</span><h3>打替え範囲に環が4か所ある</h3>
+        <p>P12.3・15.2・19.0・23.1、前面から約 8.0m（版 1-3・1-4・2-3）。撤去・再設置の記載が見当たりません。平面図の「付属工 1式」の内訳を確認してください。</p>
+        <p class="src">平面図</p></li>
+      <li><span class="pill m">要確認</span><h3>滑り材の間隔と列数が図面で違う</h3>
+        <p>標準断面図(1)は 0.77m＋1.49m 間隔で7列。平面図は約 1.51m 間隔で7列（計60本）。横断図は 1.50m と 1.40m が混じり、SP18.55' は 0.75m 間隔が入って8列です。</p>
+        <p class="src">標準断面図(1)(2)／横断図(1)／平面図</p></li>
+      <li><span class="pill m">要確認</span><h3>クレーンの作業半径がほぼ一杯</h3>
+        <p>旋回中心から仮締切の両端の袋の中心まで約 19.1〜19.5m で、R=19m の円をわずかに超えます。R=19m の定格荷重と大型土のう1袋の質量を照合してください。アウトリガは外々約 6.8m、足場幅 7.4m で、端までの余裕は 0.2〜0.4m。前のアウトリガは足場の肩から約 1.0m です。</p>
+        <p class="src">仮設工図（参考図）／数量算出図 仮設工</p></li>
+      <li><span class="pill s">軽微</span><h3>版ごとの面積計算の小さな食い違い</h3>
+        <p>1-1・1-2 は A1' が 24.52 なのに平均に 24.82 を使っています（24.85 → 24.70）。3-1 の A1' は高さに鉄網の 4.79 を使っています（4.97 なら平均 20.87）。2-2 の鉄網の式は 4.82 と書かれていますが、結果の 22.68 は 4.79 の値です。直すと合計は約 216.5m²。また、詳細図の面積は平面図の水平長で計算されています。斜比 1.010 を掛ける扱いかも確認してください（掛けると約 218.7m²）。</p>
+        <p class="src">張コンクリート詳細図／標準断面図（斜比算出）</p></li>
+      <li><span class="pill s">軽微</span><h3>伸縮目地と破線の目地</h3>
+        <p>3-1 の上端（L=3.89m、約 0.78m²）は標準断面図(2)に伸縮目地の表示がありますが、集計 20.11m² に入っていません。版の中間の破線（1-1|1-2、1-3|1-4、2-1|2-2、2-3|2-4 の4本）は、鉄網を版ごとに切ってあるのに型枠・目地材の計上がありません。目地の種類を確認してください。</p>
+        <p class="src">張コンクリート詳細図／標準断面図(2)／平面図</p></li>
+      <li><span class="pill s">軽微</span><h3>敷鉄板の重なり</h3>
+        <p>8枚（1.524×6.096m、74.32m²）は手前4枚と奥4枚が約 1.7m 重なる配置です（2枚分の長さ 12.19m が足場の奥行 11.0m を超えるため）。</p>
+        <p class="src">仮設工図（参考図）／数量算出図 仮設工</p></li>
+    </ul>
+
+    <figure class="fig">
+      <div class="figscroll"><svg viewBox="0 0 796 594" role="img" aria-label="平面の重ね図。施工範囲、仮締切、重機用足場の位置関係">
+<rect class="f-sea" x="0" y="0" width="796" height="152.0"/>
+<polygon class="f-ex" points="64.0,152.0 725.4,152.0 670.2,554.0 35.0,553.2 33.4,352.4 33.8,212.0"/>
+<polygon class="f-toe" points="64.0,152.0 725.4,152.0 722.6,172.0 54.0,172.0"/>
+<polygon class="f-new" points="234.0,172.2 334.5,172.3 334.5,271.7 234.6,271.6"/>
+<polygon class="f-new" points="334.5,172.3 435.0,172.4 434.3,271.8 334.5,271.7"/>
+<polygon class="f-new" points="435.0,172.4 534.3,172.5 532.3,272.6 434.3,271.8"/>
+<polygon class="f-new" points="534.3,172.5 633.5,172.7 630.7,273.3 532.3,272.6"/>
+<polygon class="f-new" points="633.5,172.7 722.5,172.5 708.6,274.2 630.7,273.3"/>
+<polygon class="f-new" points="234.6,271.6 334.5,271.7 334.6,370.9 235.3,371.1"/>
+<polygon class="f-new" points="334.5,271.7 434.3,271.8 433.7,370.7 334.6,370.9"/>
+<polygon class="f-new" points="434.3,271.8 532.3,272.6 531.2,370.6 433.7,370.7"/>
+<polygon class="f-new" points="532.3,272.6 630.7,273.3 628.9,370.6 531.2,370.6"/>
+<line class="f-thin" x1="33.6" y1="271.8" x2="234.6" y2="271.6"/>
+<line class="f-thin" x1="33.6" y1="370.2" x2="235.3" y2="371.1"/>
+<line class="f-thin" x1="630.7" y1="273.3" x2="708.6" y2="274.2"/>
+<line class="f-thin" x1="628.9" y1="370.6" x2="695.6" y2="368.6"/>
+<line class="f-thin" x1="34.6" y1="469.8" x2="236.2" y2="470.8"/>
+<line class="f-thin" x1="236.2" y1="470.8" x2="433.6" y2="470.6"/>
+<line class="f-thin" x1="433.6" y1="470.6" x2="626.4" y2="469.8"/>
+<line class="f-thin" x1="626.4" y1="469.8" x2="682.2" y2="467.2"/>
+<line class="f-thin" x1="235.3" y1="371.1" x2="236.2" y2="470.8"/>
+<line class="f-thin" x1="433.7" y1="370.7" x2="433.6" y2="470.6"/>
+<line class="f-thin" x1="628.9" y1="370.6" x2="626.4" y2="469.8"/>
+<line class="f-thin" x1="236.2" y1="470.8" x2="233.2" y2="554.0"/>
+<line class="f-thin" x1="433.6" y1="470.6" x2="427.8" y2="553.6"/>
+<line class="f-thin" x1="626.4" y1="469.8" x2="626.0" y2="554.4"/>
+<line class="f-tide" x1="34.0" y1="228.8" x2="714.9" y2="228.8"/>
+<text class="f-tt" x="40.0" y="224.8">M.L.W.L +0.10 の水際（前面から3.8m）</text>
+<line class="f-tide" x1="34.0" y1="299.8" x2="705.1" y2="299.8"/>
+<text class="f-tt" x="40.0" y="295.8">H.W.L +0.60 の水際（前面から7.4m）</text>
+<rect class="f-plat" x="470.6" y="320.0" width="148.0" height="233.2"/>
+<line class="f-thin2" x1="470.6" y1="333.2" x2="618.6" y2="333.2"/>
+<rect class="f-warn" x="470.6" y="320.0" width="148.0" height="50.6"/>
+<rect class="f-crane" x="475.4" y="352.4" width="136.0" height="147.6"/>
+<rect class="f-crane2" x="517.4" y="352.4" width="52.4" height="147.6"/>
+<circle class="f-r" cx="543.6" cy="422.6" r="380.0"/><circle class="f-dot" cx="543.6" cy="422.6" r="3"/>
+<rect class="f-bag" x="397.8" y="63.0" width="330.0" height="68.0"/>
+<rect class="f-bag" x="375.8" y="86.0" width="22.0" height="165.0"/>
+<rect class="f-bag" x="353.8" y="86.0" width="22.0" height="121.0"/>
+<rect class="f-bag" x="331.8" y="86.0" width="22.0" height="66.0"/>
+<rect class="f-out" x="233.8" y="152.0" width="98.0" height="119.6"/>
+<text class="f-pn" x="284.4" y="225.9" text-anchor="middle">1-1</text>
+<text class="f-pn" x="384.5" y="226.0" text-anchor="middle">1-2</text>
+<text class="f-pn" x="484.0" y="226.3" text-anchor="middle">2-1</text>
+<text class="f-pn" x="582.7" y="226.8" text-anchor="middle">2-2</text>
+<text class="f-pn" x="673.8" y="227.2" text-anchor="middle">3-1</text>
+<text class="f-pn" x="284.7" y="325.4" text-anchor="middle">1-3</text>
+<text class="f-pn" x="384.2" y="325.3" text-anchor="middle">1-4</text>
+<text class="f-pn" x="482.9" y="325.4" text-anchor="middle">2-3</text>
+<text class="f-pn" x="580.8" y="325.8" text-anchor="middle">2-4</text>
+<line class="d-new" x1="233.8" y1="20.0" x2="725.2" y2="20.0"/>
+<line class="d-new" x1="233.8" y1="15.0" x2="233.8" y2="25.0"/>
+<line class="d-new" x1="725.2" y1="15.0" x2="725.2" y2="25.0"/>
+<text class="d-new-t" x="479.5" y="14.0" text-anchor="middle">施工範囲 P8.49〜33.06　L=24.5m（平面図・詳細図）</text>
+<line class="d-bag" x1="329.2" y1="42.0" x2="725.2" y2="42.0"/>
+<line class="d-bag" x1="329.2" y1="37.0" x2="329.2" y2="47.0"/>
+<line class="d-bag" x1="725.2" y1="37.0" x2="725.2" y2="47.0"/>
+<text class="d-bag-t" x="527.2" y="57.0" text-anchor="middle">仮締切 大型土のう L=19.8m（P13.26〜33.06）</text>
+<line class="d-warn" x1="233.8" y1="132.0" x2="331.8" y2="132.0"/>
+<line class="d-warn" x1="233.8" y1="127.0" x2="233.8" y2="137.0"/>
+<line class="d-warn" x1="331.8" y1="127.0" x2="331.8" y2="137.0"/>
+<text class="d-warn-t" x="282.8" y="126.0" text-anchor="middle">締切の外 約4.9m</text>
+<text class="d-warn-t" x="544.6" y="350.0" text-anchor="middle">足場と2列目の重なり</text>
+<text class="d-warn-t" x="544.6" y="364.0" text-anchor="middle">天端で約1.8m・法尻で約2.5m</text>
+<text class="f-lb" x="544.6" y="524.0" text-anchor="middle">重機用足場 7.4×11.0m</text>
+<text class="f-lb" x="544.6" y="438.0" text-anchor="middle">25t吊ラフター</text>
+<text class="f-lb" x="188.0" y="114.0" text-anchor="middle">R=19m</text>
+<text class="f-lb" x="364.0" y="264.0" text-anchor="middle">妻の上端 4.95m</text>
+<text class="f-lb" x="564.0" y="102.0" text-anchor="middle">A部 L=16.5m</text>
+<text class="f-lb" x="296.0" y="102.0" text-anchor="end">B・C・D部</text>
+<line class="f-thin" x1="64.0" y1="558.0" x2="64.0" y2="570.0"/><text class="f-st" x="64.0" y="582.0" text-anchor="middle">P 0.00</text>
+<line class="f-thin" x1="233.8" y1="558.0" x2="233.8" y2="570.0"/><text class="f-st" x="233.8" y="582.0" text-anchor="middle">P 8.49</text>
+<line class="f-thin" x1="435.0" y1="558.0" x2="435.0" y2="570.0"/><text class="f-st" x="435.0" y="582.0" text-anchor="middle">P 18.55</text>
+<line class="f-thin" x1="634.0" y1="558.0" x2="634.0" y2="570.0"/><text class="f-st" x="634.0" y="582.0" text-anchor="middle">P 28.50</text>
+<line class="f-thin" x1="725.2" y1="558.0" x2="725.2" y2="570.0"/><text class="f-st" x="725.2" y="582.0" text-anchor="middle">P 33.06</text>
+<text class="f-lb" x="10.0" y="92.0">海側</text><text class="f-lb" x="10.0" y="538.0">陸側</text>
+</svg></div>
+      <figcaption>平面の重ね図（上が海側）。赤が施工範囲、濃い灰色が大型土のう、橙がクレーンと作業半径、橙の網かけが食い違いの場所。平面図（1:200）と仮設工図（1:400）・数量算出図（1:500）を、版の角11点で位置合わせしました（ずれ 6mm 以内）。</figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="figscroll"><svg viewBox="0 0 815 359" role="img" aria-label="足場を通る断面（P24付近）">
+<polygon class="f-gr" points="271.1,310.0 264.3,271.4 661.8,142.9 661.8,124.1 765.2,109.8 765.2,145.9 778.7,145.9 778.7,96.1 815.4,96.1 815.4,310.0"/>
+<polygon class="f-st2" points="261.3,253.7 264.4,271.5 661.8,142.9 661.8,124.1"/>
+<polygon class="f-toe" points="232.2,241.8 259.2,241.8 271.1,310.0 232.2,310.0"/>
+<polygon class="f-ex" points="527.3,155.1 661.8,111.6 773.8,96.1 773.8,133.5 768.4,133.5 768.4,109.4 661.8,124.1 527.3,167.6"/>
+<polygon class="f-new" points="259.2,241.8 527.3,155.1 527.3,167.6 261.3,253.7"/>
+<line class="f-thin2" x1="393.7" y1="198.3" x2="393.7" y2="210.8"/>
+<line class="f-thin" x1="0" y1="310.0" x2="271.1" y2="310.0"/>
+<line class="f-tide" x1="0.0" y1="142.6" x2="565.9" y2="142.6"/>
+<line class="f-tide" x1="0.0" y1="186.0" x2="431.7" y2="186.0"/>
+<line class="f-tide" x1="0.0" y1="217.0" x2="335.9" y2="217.0"/>
+<line class="f-tide" x1="0.0" y1="223.2" x2="316.7" y2="223.2"/>
+<text class="f-tt" x="2.7" y="138.6">H.H.W.L +1.30</text><text class="f-tt" x="2.7" y="182.0">H.W.L +0.60</text>
+<text class="f-tt" x="2.7" y="214.0">M.L.W.L +0.10</text><text class="f-tt" x="2.7" y="234.2">L.W.L ±0.00</text>
+<polygon class="f-plat" points="459.0,177.2 476.8,96.1 773.8,96.1 661.8,111.6"/>
+<polygon class="f-warn" points="459.0,177.2 527.3,155.1 527.3,167.6 459.0,189.7"/>
+<rect class="f-bag" x="112.6" y="242.4" width="28.5" height="67.0"/>
+<rect class="f-bag" x="142.3" y="242.4" width="28.5" height="67.0"/>
+<rect class="f-bag" x="174.7" y="236.2" width="28.5" height="67.0"/>
+<rect class="f-bag" x="127.5" y="174.2" width="28.5" height="67.0"/>
+<rect class="f-bag" x="159.9" y="168.0" width="28.5" height="67.0"/>
+<rect class="f-crane2" x="502.7" y="15.5" width="199.3" height="46.5"/>
+<rect class="f-crane2" x="506.5" y="60.8" width="6" height="34.1"/>
+<rect class="f-crane2" x="692.2" y="60.8" width="6" height="34.1"/>
+<circle class="f-dot" cx="545.4" cy="55.8" r="16.7"/>
+<circle class="f-dot" cx="661.5" cy="55.8" r="16.7"/>
+<line class="f-crane3" x1="637.2" y1="18.6" x2="380.7" y2="0"/>
+<text class="f-lb" x="642.6" y="11.2">25t吊ラフター（模式）</text>
+<line class="d-warn" x1="459.0" y1="177.2" x2="459.0" y2="270.1"/><text class="d-warn-t" x="454.0" y="282.1" text-anchor="end">足場の法尻 8.40m</text>
+<line class="d-warn" x1="527.3" y1="155.1" x2="527.3" y2="270.1"/><text class="d-warn-t" x="532.3" y="282.1" text-anchor="start">2列目の上端 10.93m</text>
+<text class="f-lb" x="157.9" y="323.6" text-anchor="middle">仮締切 A部</text>
+<text class="f-lb" x="591.3" y="122.8" text-anchor="middle">重機用足場（天端 +2.05）</text>
+<line class="f-thin" x1="232.2" y1="315.0" x2="232.2" y2="323.6"/><text class="f-st" x="232.2" y="334.6" text-anchor="middle">0</text>
+<line class="f-thin" x1="259.2" y1="315.0" x2="259.2" y2="323.6"/><text class="f-st" x="259.2" y="334.6" text-anchor="middle">1.00</text>
+<line class="f-thin" x1="393.7" y1="315.0" x2="393.7" y2="323.6"/><text class="f-st" x="393.7" y="334.6" text-anchor="middle">5.98</text>
+<line class="f-thin" x1="527.3" y1="315.0" x2="527.3" y2="323.6"/><text class="f-st" x="527.3" y="334.6" text-anchor="middle">10.93</text>
+<line class="f-thin" x1="661.8" y1="315.0" x2="661.8" y2="323.6"/><text class="f-st" x="661.8" y="334.6" text-anchor="middle">15.91</text>
+<line class="f-thin" x1="773.8" y1="315.0" x2="773.8" y2="323.6"/><text class="f-st" x="773.8" y="334.6" text-anchor="middle">20.06</text>
+<text class="f-st" x="812.7" y="348.6" text-anchor="end">前面からの距離 (m)</text>
+<text class="f-el" x="245.7" y="236.8" text-anchor="middle">−0.30</text><text class="f-el" x="661.8" y="105.6" text-anchor="middle">+1.80</text><text class="f-el" x="785.7" y="90.1" text-anchor="middle">+2.05</text><text class="f-el" x="251.6" y="300.7" text-anchor="middle">−1.40</text>
+</svg></div>
+      <figcaption>足場を通る断面（P24付近）。高さ方向を約2.3倍に強調しています。足場の法尻（8.40m）から2列目の上端（10.93m）までが重なります。</figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="figscroll"><svg viewBox="0 0 815 359" role="img" aria-label="仮締切の妻（B部、P15.6〜16.7）の断面">
+<polygon class="f-gr" points="271.1,310.0 264.3,271.4 661.8,142.9 661.8,124.1 765.2,109.8 765.2,145.9 778.7,145.9 778.7,96.1 815.4,96.1 815.4,310.0"/>
+<polygon class="f-st2" points="261.3,253.7 264.4,271.5 661.8,142.9 661.8,124.1"/>
+<polygon class="f-toe" points="232.2,241.8 259.2,241.8 271.1,310.0 232.2,310.0"/>
+<polygon class="f-ex" points="527.3,155.1 661.8,111.6 773.8,96.1 773.8,133.5 768.4,133.5 768.4,109.4 661.8,124.1 527.3,167.6"/>
+<polygon class="f-new" points="259.2,241.8 527.3,155.1 527.3,167.6 261.3,253.7"/>
+<line class="f-thin2" x1="393.7" y1="198.3" x2="393.7" y2="210.8"/>
+<line class="f-thin" x1="0" y1="310.0" x2="271.1" y2="310.0"/>
+<line class="f-tide" x1="0.0" y1="142.6" x2="565.9" y2="142.6"/>
+<line class="f-tide" x1="0.0" y1="186.0" x2="431.7" y2="186.0"/>
+<line class="f-tide" x1="0.0" y1="217.0" x2="335.9" y2="217.0"/>
+<line class="f-tide" x1="0.0" y1="223.2" x2="316.7" y2="223.2"/>
+<text class="f-tt" x="2.7" y="138.6">H.H.W.L +1.30</text><text class="f-tt" x="2.7" y="182.0">H.W.L +0.60</text>
+<text class="f-tt" x="2.7" y="214.0">M.L.W.L +0.10</text><text class="f-tt" x="2.7" y="234.2">L.W.L ±0.00</text>
+<rect class="f-bag" x="143.7" y="242.4" width="28.5" height="67.0"/>
+<rect class="f-bag" x="173.4" y="242.4" width="28.5" height="67.0"/>
+<rect class="f-bag" x="203.1" y="242.4" width="28.5" height="67.0"/>
+<rect class="f-bag" x="158.5" y="174.2" width="28.5" height="67.0"/>
+<rect class="f-bag" x="188.2" y="174.2" width="28.5" height="67.0"/>
+<rect class="f-bag" x="217.9" y="174.2" width="28.5" height="67.0"/>
+<rect class="f-bag" x="247.7" y="174.2" width="28.5" height="67.0"/>
+<rect class="f-bag" x="277.4" y="168.6" width="28.5" height="67.0"/>
+<rect class="f-bag" x="307.1" y="159.3" width="28.5" height="66.4"/>
+<rect class="f-bag" x="336.8" y="149.4" width="28.5" height="67.0"/>
+<polygon class="f-out" points="365.9,207.3 365.9,186.0 431.7,186.0"/>
+<line class="d-warn" x1="365.9" y1="207.3" x2="365.9" y2="97.0"/><text class="d-warn-t" x="365.9" y="93.0" text-anchor="middle">妻の上端 4.95m（地盤 +0.26）</text>
+<line class="d-warn" x1="431.7" y1="186.0" x2="431.7" y2="131.1"/><text class="d-warn-t" x="436.7" y="127.1" text-anchor="start">H.W.L の水際 7.4m</text>
+<text class="f-lb" x="569.7" y="52.7" text-anchor="middle">+0.26 を超える潮位では、妻の陸側（4.95〜7.4m）から締切の内側へ水が回る</text>
+<line class="f-thin" x1="232.2" y1="315.0" x2="232.2" y2="323.6"/><text class="f-st" x="232.2" y="334.6" text-anchor="middle">0</text>
+<line class="f-thin" x1="259.2" y1="315.0" x2="259.2" y2="323.6"/><text class="f-st" x="259.2" y="334.6" text-anchor="middle">1.00</text>
+<line class="f-thin" x1="393.7" y1="315.0" x2="393.7" y2="323.6"/><text class="f-st" x="393.7" y="334.6" text-anchor="middle">5.98</text>
+<line class="f-thin" x1="527.3" y1="315.0" x2="527.3" y2="323.6"/><text class="f-st" x="527.3" y="334.6" text-anchor="middle">10.93</text>
+<line class="f-thin" x1="661.8" y1="315.0" x2="661.8" y2="323.6"/><text class="f-st" x="661.8" y="334.6" text-anchor="middle">15.91</text>
+<line class="f-thin" x1="773.8" y1="315.0" x2="773.8" y2="323.6"/><text class="f-st" x="773.8" y="334.6" text-anchor="middle">20.06</text>
+<text class="f-st" x="812.7" y="348.6" text-anchor="end">前面からの距離 (m)</text>
+<text class="f-el" x="245.7" y="236.8" text-anchor="middle">−0.30</text><text class="f-el" x="661.8" y="105.6" text-anchor="middle">+1.80</text><text class="f-el" x="785.7" y="90.1" text-anchor="middle">+2.05</text><text class="f-el" x="251.6" y="300.7" text-anchor="middle">−1.40</text>
+</svg></div>
+      <figcaption>仮締切の妻（B部）の断面。高さ方向を約2.3倍に強調しています。</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>施工手順</h2>
+    <p class="lead">図面の仮締切の位置で施工できる No.3・No.4 スパンを第1区、仮締切を盛り替えて施工する No.2 スパンを第2区としました。区割りと盛替えは図面に記載がなく、この案での仮定です。</p>
+    <ol class="steps" id="steps"></ol>
+  </section>
+
+  <section>
+    <h2>工程表</h2>
+    <p class="lead">着手日・休日・稼働率は仮の値です。各作業の日数を書き換えると、工程が引き直されます。</p>
+    <div class="ctl">
+      <label>着手日（仮）<input type="date" id="start" value="2026-10-19"></label>
+      <label>休日<select id="rest"><option value="satsun">土曜・日曜</option><option value="sun">日曜のみ</option></select></label>
+      <label class="ck"><input type="checkbox" id="hol" checked> 祝日を休む</label>
+      <label class="ck"><input type="checkbox" id="ny" checked> 年末年始（12/29〜1/3）を休む</label>
+      <label>海上・潮待ち作業の稼働率（仮）<span class="rate"><input type="range" id="rate" min="40" max="100" step="5" value="70"><span class="num" id="rateV">70%</span></span></label>
+    </div>
+    <div class="sum" id="sum"></div>
+    <ul class="warns" id="warns"></ul>
+    <p class="legend"><span><i style="background:var(--land)"></i>陸上作業</span><span><i style="background:var(--sea-bar)"></i>海上・潮待ち作業（稼働率で延びる）</span><span><i style="background:repeating-linear-gradient(135deg,var(--cure) 0 6px,transparent 6px 9px);outline:1.5px solid var(--cure)"></i>養生（暦日）</span><span><i style="background:var(--span);height:6px"></i>水替（常時排水）</span><span><i style="background:var(--off);outline:1px solid var(--line)"></i>休日</span></p>
+    <div class="gwrap"><div class="gantt" id="gantt"></div></div>
+    <ul class="notes">
+      <li>日数は概算です。標準歩掛や協力会社の実績に置き換えてください。</li>
+      <li>稼働率は、海上・潮待ち作業の稼働日のうち実際に作業できる日の割合です。70% なら10日のうち3日を待ちとして数えます。</li>
+      <li>養生は暦日で数え、休日も進みます。養生日数は気温とセメントの種類で決めてください。</li>
+      <li>祝日は 2026年10月〜2027年12月の分を入れてあります。</li>
+      <li>工程表の数量は図面からの拾いです。数量計算書が届いたら照合してください。</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $ = s => document.querySelector(s);
+/* 作業の一覧。t: land=陸上 / sea=海上・潮待ち / cure=養生（暦日）。d は概算日数 */
+const TASKS = [
+ {g:'準備', n:'準備工・起工測量・関係者との調整', q:'現況の版割りと滑り材の位置を確認。漁協・利用者と休止範囲を調整', t:'land', d:3, nt:'船揚場を使えない範囲と期間を先に決める。'},
+ {g:'仮設', n:'重機用足場の設置', q:'大型土のう 67袋、敷鉄板 8枚（1.524×6.096m）', t:'land', d:2, nt:'図面の位置では足場が2列目の版（2-3・2-4）に約1.8mかぶる。先に2列目を打ち替えるか、足場の位置を見直す（参考図）。', key:'plat'},
+ {g:'仮設', n:'仮締切の設置', q:'大型土のう 水中54袋・陸上42袋、遮水シート 106.2m²（4.5×23.6m）', t:'sea', d:3, nt:'図面の位置は P13.26〜33.06（L=19.8m）。25tラフターの作業半径 R=19m でほぼ一杯。潮位の低い時間帯に据える。', key:'cofIn'},
+ {g:'仮設', n:'締切内の排水・水替の開始', q:'初期湛水 約104m³、φ150mmポンプ1台。以後は常時排水', t:'sea', d:1, nt:'排水先の濁り対策。妻側は地盤 +0.26 までなので、それより高い潮位では水が回る。', key:'pump'},
+ {g:'第1区（No.3・No.4スパン：版 2-1・2-2・3-1・2-3・2-4）', n:'滑り材の撤去・張コンクリート取壊し', q:'滑り材 約32本、取壊し t=20cm 約118m²（横断図の平均断面で約24m³）、殻の積込・運搬', t:'sea', d:3, nt:'切込砕石（t=30cm）は残す。先端止壁と隣の既設版を傷めない。環（P19.0・23.1）の扱いを確認。'},
+ {g:'第1区（No.3・No.4スパン：版 2-1・2-2・3-1・2-3・2-4）', n:'基礎栗石均し', q:'約118m²', t:'sea', d:1, nt:'砕石面の不陸をならす。'},
+ {g:'第1区（No.3・No.4スパン：版 2-1・2-2・3-1・2-3・2-4）', n:'型枠・伸縮目地・鉄網の設置', q:'型枠 約4.9m²、伸縮目地 約12.0m²（樹脂発泡体 t=10mm）、鉄網 108.2m²（SD295 D6 150×150）', t:'sea', d:2, nt:'鉄網は版の縁から10cm。型枠を立てたまま長い休みに入らない。', key:'form1'},
+ {g:'第1区（No.3・No.4スパン：版 2-1・2-2・3-1・2-3・2-4）', n:'コンクリート打設', q:'C-5S t=20cm、117.7m²（約23.5m³）', t:'sea', d:1, nt:'勾配は約1:7。潮が上がる前に仕上げまで終える。', key:'pour1'},
+ {g:'第1区（No.3・No.4スパン：版 2-1・2-2・3-1・2-3・2-4）', n:'養生', q:'暦日で数える', t:'cure', d:7, nt:'海水に洗われない状態を保ち、水替を止めない。寒い時期は保温する。', key:'cure1'},
+ {g:'第1区（No.3・No.4スパン：版 2-1・2-2・3-1・2-3・2-4）', n:'滑り材の設置', q:'約32本（L=2.5m）', t:'sea', d:2, nt:'間隔が図面で違う（標準断面図 1.49m、横断図 1.40〜1.50m）。材質と固定方法は図面に記載なし。'},
+ {g:'仮締切の盛替え（図面に記載なし・仮定）', n:'仮締切を No.2 スパン側へ盛り替える', q:'P8.5〜18.6 を囲う位置へ。数量は未定', t:'sea', d:2, nt:'図面の仮締切は No.2 スパンを囲えていないため、仮に入れた作業。方法と数量は発注者と協議する。不要なら日数を 0 にする。', key:'shift'},
+ {g:'第2区（No.2スパン：版 1-1・1-2・1-3・1-4）', n:'滑り材の撤去・張コンクリート取壊し', q:'滑り材 約28本、取壊し t=20cm 約99m²（約20m³）、殻の積込・運搬', t:'sea', d:3, nt:'横断図に No.2 スパンの取壊し断面がない。数量の扱いを確認。環（P12.3・15.2）。'},
+ {g:'第2区（No.2スパン：版 1-1・1-2・1-3・1-4）', n:'基礎栗石均し', q:'約99m²', t:'sea', d:1, nt:''},
+ {g:'第2区（No.2スパン：版 1-1・1-2・1-3・1-4）', n:'型枠・伸縮目地・鉄網の設置', q:'型枠 約2.0m²、伸縮目地 約8.2m²、鉄網 90.4m²', t:'sea', d:2, nt:'', key:'form2'},
+ {g:'第2区（No.2スパン：版 1-1・1-2・1-3・1-4）', n:'コンクリート打設', q:'C-5S t=20cm、98.8m²（約19.8m³）', t:'sea', d:1, nt:'', key:'pour2'},
+ {g:'第2区（No.2スパン：版 1-1・1-2・1-3・1-4）', n:'養生', q:'暦日で数える', t:'cure', d:7, nt:'', key:'cure2'},
+ {g:'第2区（No.2スパン：版 1-1・1-2・1-3・1-4）', n:'滑り材の設置', q:'約28本（L=2.5m）', t:'sea', d:2, nt:''},
+ {g:'撤去・片付け', n:'仮締切の撤去', q:'大型土のう 96袋、遮水シート', t:'sea', d:2, nt:'撤去にもクレーンと足場が要る。足場は最後まで残す。', key:'cofOut'},
+ {g:'撤去・片付け', n:'重機用足場の撤去', q:'大型土のう 67袋、敷鉄板 8枚', t:'land', d:1, nt:'足場の下の版と滑り材に傷がないか確認する。'},
+ {g:'撤去・片付け', n:'跡片付け・出来形の確認', q:'版の寸法・高さ、滑り材の位置', t:'land', d:2, nt:''}
+];
+const TYPE = {land:'陸上', sea:'海上・潮待ち', cure:'養生'};
+
+/* 施工手順の一覧 */
+(function(){
+  const ol = $('#steps'); let g = null;
+  TASKS.forEach((t, i) => {
+    if(t.g !== g){ g = t.g; const h = document.createElement('li'); h.className = 'grp'; h.textContent = g; ol.appendChild(h); }
+    const li = document.createElement('li'); li.className = 'st';
+    const no = document.createElement('span'); no.className = 'no'; no.textContent = String(i+1).padStart(2,'0');
+    const nm = document.createElement('span'); nm.className = 'nm'; nm.append(t.n);
+    const tag = document.createElement('span'); tag.className = 'tag ' + t.t; tag.textContent = TYPE[t.t]; nm.append(tag);
+    const q = document.createElement('span'); q.className = 'q'; q.textContent = t.q;
+    li.append(no, nm, q);
+    if(t.nt){ const nt = document.createElement('span'); nt.className = 'nt'; nt.textContent = '留意点：' + t.nt; li.append(nt); }
+    ol.appendChild(li);
+  });
+})();
+
+/* 暦 */
+const HOL = ['2026-10-12','2026-11-03','2026-11-23','2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-22','2027-04-29','2027-05-03','2027-05-04','2027-05-05','2027-07-19','2027-08-11','2027-09-20','2027-09-23','2027-10-11','2027-11-03','2027-11-23'];
+const DAY = 86400000;
+const parse = s => { const a = s.split('-').map(Number); return new Date(Date.UTC(a[0], a[1]-1, a[2])); };
+const iso = d => d.toISOString().slice(0,10);
+const add = (d, n) => new Date(d.getTime() + n*DAY);
+const md = d => (d.getUTCMonth()+1) + '/' + d.getUTCDate();
+const WD = ['日','月','火','水','木','金','土'];
+function isOff(d, o){
+  const w = d.getUTCDay(); if(w === 0) return true; if(o.rest === 'satsun' && w === 6) return true;
+  if(o.hol && HOL.indexOf(iso(d)) >= 0) return true;
+  if(o.ny){ const m = d.getUTCMonth()+1, dd = d.getUTCDate(); if((m === 12 && dd >= 29) || (m === 1 && dd <= 3)) return true; }
+  return false;
+}
+/* 工程の計算。前の作業が終わってから次を始める。海上・潮待ちは稼働率に応じて待ちの日が入る */
+function schedule(o){
+  let cur = parse(o.start), acc = 1 - o.rate; const out = [];
+  TASKS.forEach(t => {
+    const d = Math.max(0, Number(t.d) || 0);
+    if(d === 0){ out.push({t, s:null, e:null}); return; }
+    let s, e;
+    if(t.t === 'cure'){ s = cur; e = add(cur, Math.ceil(d)-1); cur = add(e, 1); }
+    else {
+      let rem = d, guard = 0;
+      while(isOff(cur, o)) cur = add(cur, 1);
+      s = cur;
+      while(rem > 1e-9 && guard++ < 3000){
+        if(!isOff(cur, o)){
+          if(t.t === 'sea'){ acc += o.rate; if(acc >= 1-1e-9){ acc -= 1; rem -= 1; } }
+          else rem -= 1;
+        }
+        e = cur; cur = add(cur, 1);
+      }
+    }
+    out.push({t, s, e});
+  });
+  return out;
+}
+function longBreaks(a, b, o){ // a〜b の間にある3日以上の連休
+  const res = []; let run = 0, st = null;
+  for(let d = a; d <= b; d = add(d, 1)){
+    if(isOff(d, o)){ if(!run) st = d; run++; } else { if(run >= 3) res.push([st, add(d,-1), run]); run = 0; }
+  }
+  if(run >= 3) res.push([st, b, run]); return res;
+}
+const inWinter = d => { const m = d.getUTCMonth()+1; return m === 12 || m <= 3; };
+const inRough = d => { const m = d.getUTCMonth()+1; return m >= 11 || m <= 3; };
+
+function render(){
+  const o = {start:$('#start').value || '2026-10-19', rest:$('#rest').value, hol:$('#hol').checked, ny:$('#ny').checked, rate:Number($('#rate').value)/100};
+  $('#rateV').textContent = Math.round(o.rate*100) + '%';
+  const sc = schedule(o), done = sc.filter(r => r.s);
+  const first = done.length ? done[0].s : parse(o.start), last = done.length ? done[done.length-1].e : first;
+  const by = k => sc.find(r => r.t.key === k);
+  /* まとめ */
+  const cal = Math.round((last-first)/DAY)+1; let work = 0; for(let d = first; d <= last; d = add(d,1)) if(!isOff(d,o)) work++;
+  const sum = $('#sum'); sum.textContent = '';
+  [['着手', iso(first)+'（'+WD[first.getUTCDay()]+'）'], ['完了', iso(last)+'（'+WD[last.getUTCDay()]+'）'], ['暦日', cal+'日'], ['うち稼働日', work+'日']].forEach(kv => { const s = document.createElement('span'); const b = document.createElement('b'); b.textContent = kv[1]; s.append(kv[0]+' ', b); sum.append(s); });
+  /* 注意 */
+  const W = [], warn = (txt, big) => W.push([txt, big]);
+  warn('図面どおりの仮設配置では、仮締切が No.2 スパンを囲えず、重機用足場が 2-3・2-4 に約1.8mかぶります。この工程は「仮締切を盛り替える」と仮定した並びです。足場の下の部分をいつ打ち替えるかは決めていません。', true);
+  [['form1','pour1','cure1','第1区'],['form2','pour2','cure2','第2区']].forEach(k => {
+    const f = by(k[0]), p = by(k[1]), c = by(k[2]);
+    if(f && f.s && p && p.e){
+      longBreaks(f.s, p.e, o).forEach(b => warn(k[3]+'：型枠・鉄網を組んでから打設までの間に '+md(b[0])+'〜'+md(b[1])+' の'+b[2]+'連休が入ります。型枠を立てたまま休みに入る並びです。'));
+    }
+    if(p && p.s && c && c.e && (inWinter(p.s) || inWinter(c.e))) warn(k[3]+'：打設（'+md(p.s)+'）と養生（〜'+md(c.e)+'）が 12〜3月にかかります。寒中コンクリートの対策（保温・給熱、養生日数の延長）を見込んでください。');
+  });
+  const ci = by('cofIn'), co = by('cofOut');
+  if(ci && ci.s && co && co.e){
+    const ny = longBreaks(ci.s, co.e, o).filter(b => b[2] >= 5);
+    ny.forEach(b => warn('仮締切を置いたまま '+md(b[0])+'〜'+md(b[1])+' の'+b[2]+'連休をまたぎます。無人の間の時化と水替の停止に備えてください。'));
+    let rough = false; for(let d = ci.s; d <= co.e; d = add(d,1)) if(inRough(d)){ rough = true; break; }
+    if(rough) warn('海上・潮待ち作業が 11〜3月にかかります。冬の時化で稼働率が下がる時期です。稼働率の値を見直してください。');
+  }
+  if(last > parse(first.getUTCMonth() >= 3 ? (first.getUTCFullYear()+1)+'-03-31' : first.getUTCFullYear()+'-03-31')) warn('完了が年度末（3/31）を越えます。工事名に「補正明許」とあるので、工期末を契約図書で確認してください。');
+  const wl = $('#warns'); wl.textContent = ''; W.forEach(w => { const li = document.createElement('li'); if(w[1]) li.className = 'big'; li.textContent = w[0]; wl.appendChild(li); });
+  /* バーチャート */
+  const G = $('#gantt'), narrow = window.innerWidth < 700;
+  const c0 = add(first, -((first.getUTCDay()+6)%7)), c1 = add(last, 9), nd = Math.round((c1-c0)/DAY)+1;
+  const namew = Math.min(330, Math.max(150, window.innerWidth*0.36)), room = (G.parentNode.clientWidth || 900) - namew - 2;
+  const dw = Math.max(narrow ? 9 : 6.5, Math.min(16, Math.floor(room/nd*10)/10)), x = d => Math.round((d-c0)/DAY)*dw; const act = document.activeElement, actId = act && act.id; G.textContent = '';
+  const cell = (cls) => { const e = document.createElement('div'); e.className = cls; return e; };
+  const h1 = cell('c nmc hd'); h1.textContent = '作業と日数'; const h2 = cell('c hd ch'); h2.style.width = (nd*dw)+'px';
+  for(let d = c0; d <= c1; d = add(d,1)){
+    if(d.getUTCDate() === 1 || d.getTime() === c0.getTime()){ const m = cell('mon'); m.style.left = x(d)+'px'; m.textContent = d.getUTCFullYear()+'年'+(d.getUTCMonth()+1)+'月'; h2.appendChild(m); }
+    if(d.getUTCDay() === 1){ const e = cell('dy'); e.style.left = (x(d)+dw/2)+'px'; e.textContent = d.getUTCDate(); h2.appendChild(e); }
+  }
+  G.append(h1, h2);
+  let g = null;
+  sc.forEach((r, i) => {
+    if(r.t.g !== g){ g = r.t.g; const gr = cell('grow'); const sp = document.createElement('span'); sp.textContent = g; gr.appendChild(sp); G.appendChild(gr); }
+    const nm = cell('c nmc'), tx = cell('t'); tx.textContent = (i+1)+'. '+r.t.n; const sm = document.createElement('small'); sm.textContent = TYPE[r.t.t]; tx.appendChild(sm);
+    const inp = document.createElement('input'); inp.type = 'number'; inp.min = '0'; inp.max = '60'; inp.step = '1'; inp.value = r.t.d; inp.id = 'd'+i; inp.setAttribute('aria-label', r.t.n+' の日数');
+    inp.addEventListener('change', () => { r.t.d = Math.max(0, Math.min(60, Number(inp.value)||0)); render(); });
+    const u = document.createElement('span'); u.className = 'u'; u.textContent = r.t.t === 'cure' ? '暦日' : '日';
+    nm.append(tx, inp, u);
+    const ch = cell('c ch'); ch.style.width = (nd*dw)+'px';
+    if(r.s){
+      const b = cell('bar '+r.t.t); b.style.left = x(r.s)+'px'; b.style.width = Math.max(3, x(r.e)-x(r.s)+dw-1)+'px'; b.title = r.t.n+'　'+md(r.s)+'〜'+md(r.e); ch.appendChild(b);
+      const l = cell('bl'); l.style.left = (x(r.e)+dw)+'px'; l.textContent = md(r.s) + (r.e > r.s ? '〜'+md(r.e) : ''); ch.appendChild(l);
+    } else { const l = cell('bl'); l.style.left = '4px'; l.textContent = '日数 0（行わない）'; ch.appendChild(l); }
+    G.append(nm, ch);
+    if(r.t.key === 'pump' && r.s && co && co.s){
+      const nm2 = cell('c nmc'), t2 = cell('t'); t2.textContent = '水替（常時排水）'; const s2 = document.createElement('small'); s2.textContent = '締切内の排水開始から仮締切の撤去まで'; t2.appendChild(s2); nm2.appendChild(t2);
+      const ch2 = cell('c ch'); ch2.style.width = (nd*dw)+'px'; const e2 = add(co.s, -1), b2 = cell('bar span'); b2.style.left = x(r.s)+'px'; b2.style.width = Math.max(dw, x(e2)-x(r.s)+dw-1)+'px'; ch2.appendChild(b2);
+      const l2 = cell('bl'); l2.style.left = (x(e2)+dw)+'px'; l2.textContent = (Math.round((e2-r.s)/DAY)+1)+'日間'; ch2.appendChild(l2);
+      G.append(nm2, ch2);
+    }
+  });
+  const sh = cell('shade'); sh.style.width = (nd*dw)+'px';
+  for(let d = c0; d <= c1; d = add(d,1)){
+    if(isOff(d,o)){ const s = document.createElement('i'); s.style.left = x(d)+'px'; s.style.width = dw+'px'; sh.appendChild(s); }
+    if(d.getUTCDate() === 1){ const b = document.createElement('b'); b.style.left = x(d)+'px'; sh.appendChild(b); }
+  }
+  G.appendChild(sh);
+  if(actId){ const el = document.getElementById(actId); if(el && el !== document.activeElement) el.focus(); }
+  window.__sc = sc.map(r => [r.t.n, r.s && iso(r.s), r.e && iso(r.e)]);
+}
+['start','rest','hol','ny'].forEach(id => $('#'+id).addEventListener('change', render));
+$('#rate').addEventListener('input', render);
+let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
+render();
+})();
+</script>
+
+</body></html>

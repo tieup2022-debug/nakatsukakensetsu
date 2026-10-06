@@ -9,8 +9,10 @@ class Genba3dTest extends TestCase
     public function test_guest_is_sent_to_login(): void
     {
         $this->get(route('genba3d.index'))->assertRedirect(route('login'));
-        $this->get(route('genba3d.show', ['site' => 'asahi-funaageba']))->assertRedirect(route('login'));
-        $this->get(route('genba3d.model', ['site' => 'asahi-funaageba']))->assertRedirect(route('login'));
+
+        foreach (['genba3d.show', 'genba3d.model', 'genba3d.schedule', 'genba3d.schedule.page'] as $name) {
+            $this->get(route($name, ['site' => 'asahi-funaageba']))->assertRedirect(route('login'));
+        }
     }
 
     public function test_index_opens_the_first_site(): void
@@ -42,14 +44,53 @@ class Genba3dTest extends TestCase
         }
     }
 
+    public function test_every_site_serves_its_schedule_as_html(): void
+    {
+        foreach (config('genba3d.sites') as $slug => $site) {
+            $this->assertFileExists(resource_path('genba3d/'.$site['schedule_file']));
+
+            $response = $this->withSession(['login_user_id' => 1])
+                ->get(route('genba3d.schedule.page', ['site' => $slug]));
+
+            $response->assertOk();
+            $response->assertHeader('Content-Type', 'text/html; charset=UTF-8');
+            $response->assertHeader('X-Frame-Options', 'SAMEORIGIN');
+            $response->assertSee('<html lang="ja" data-theme="light">', false);
+            $response->assertSee('工程表');
+        }
+    }
+
+    public function test_site_without_a_schedule_has_no_schedule_page(): void
+    {
+        $sites = config('genba3d.sites');
+        $slug = array_key_first($sites);
+        unset($sites[$slug]['schedule_file']);
+        config(['genba3d.sites' => $sites]);
+
+        $this->withSession(['login_user_id' => 1])
+            ->get(route('genba3d.schedule', ['site' => $slug]))
+            ->assertNotFound();
+        $this->withSession(['login_user_id' => 1])
+            ->get(route('genba3d.schedule.page', ['site' => $slug]))
+            ->assertNotFound();
+
+        $page = $this->view('genba3d.show', [
+            'sites' => $sites,
+            'currentSlug' => $slug,
+            'current' => $sites[$slug],
+            'tab' => 'model',
+        ]);
+        $page->assertSee('3Dモデル');
+        $page->assertDontSee('施工手順と工程表');
+    }
+
     public function test_unknown_site_is_not_found(): void
     {
-        $this->withSession(['login_user_id' => 1])
-            ->get(route('genba3d.show', ['site' => 'no-such-site']))
-            ->assertNotFound();
-        $this->withSession(['login_user_id' => 1])
-            ->get(route('genba3d.model', ['site' => 'no-such-site']))
-            ->assertNotFound();
+        foreach (['genba3d.show', 'genba3d.model', 'genba3d.schedule', 'genba3d.schedule.page'] as $name) {
+            $this->withSession(['login_user_id' => 1])
+                ->get(route($name, ['site' => 'no-such-site']))
+                ->assertNotFound();
+        }
     }
 
     public function test_menu_and_page_list_all_sites(): void
@@ -74,10 +115,30 @@ class Genba3dTest extends TestCase
             'sites' => $sites,
             'currentSlug' => $current,
             'current' => $sites[$current],
+            'tab' => 'model',
         ]);
         foreach ($sites as $site) {
             $page->assertSee($site['name']);
         }
-        $page->assertSee(route('genba3d.model', ['site' => $current]), false);
+        $page->assertSee('src="'.route('genba3d.model', ['site' => $current]).'"', false);
+        $page->assertSee(route('genba3d.schedule', ['site' => $current]), false);
+    }
+
+    public function test_schedule_tab_embeds_the_schedule_and_keeps_the_tab_across_sites(): void
+    {
+        $sites = config('genba3d.sites');
+        $current = array_key_first($sites);
+
+        $page = $this->view('genba3d.show', [
+            'sites' => $sites,
+            'currentSlug' => $current,
+            'current' => $sites[$current],
+            'tab' => 'schedule',
+        ]);
+
+        $page->assertSee('src="'.route('genba3d.schedule.page', ['site' => $current]).'"', false);
+        foreach (array_keys($sites) as $slug) {
+            $page->assertSee('href="'.route('genba3d.schedule', ['site' => $slug]).'"', false);
+        }
     }
 }

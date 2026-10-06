@@ -1,0 +1,267 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>大沢漁港海岸 護岸工 工程表</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;600&display=swap">
+<style>
+/* 条件 → バーチャート → 注意 → 施工手順 → 数量 → 確認事項、の順に上から読む1カラム。 */
+:root {
+  --bg: #f2f4f5; --panel: #ffffff; --ink: #17232e; --muted: #5b6b78; --line: #d3dae0; --accent: #c2313a;
+  --land: #56789a; --sea: #17889a; --cure: #c79a1e; --off: #e7ebee; --warn: #8a5a00; --warn-soft: #fff3d6; --info-soft: #e6eef5;
+  --sans: "IBM Plex Sans JP", "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f161c; --panel: #17212a; --ink: #e5ecf1; --muted: #93a3b0; --line: #2a3945; --accent: #ff8f8f;
+  --land: #7fa3c7; --sea: #3fb6c8; --cure: #e0b84a; --off: #1e2a34; --warn: #ffcf70; --warn-soft: #3a2f14; --info-soft: #1c2a36; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f161c; --panel: #17212a; --ink: #e5ecf1; --muted: #93a3b0; --line: #2a3945; --accent: #ff8f8f;
+  --land: #7fa3c7; --sea: #3fb6c8; --cure: #e0b84a; --off: #1e2a34; --warn: #ffcf70; --warn-soft: #3a2f14; --info-soft: #1c2a36; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.7 }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 18px 48px; display: flex; flex-direction: column; gap: 20px }
+header { border-bottom: 2px solid var(--ink); padding-bottom: 10px }
+.eyebrow { font-size: 12px; color: var(--muted); letter-spacing: .04em }
+h1 { font-size: 22px; font-weight: 600; margin: 0; line-height: 1.3; text-wrap: balance }
+h2 { font-size: 17px; font-weight: 600; margin: 0 0 8px; text-wrap: balance }
+p { margin: 0 } .lead { color: var(--muted); max-width: 70ch }
+.card { background: var(--panel); border: 1px solid var(--line); padding: 14px 16px; min-width: 0 }
+.flag { background: var(--warn-soft); color: var(--warn); border-left: 3px solid var(--warn); padding: 8px 12px }
+.cond { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 12px 20px; align-items: end }
+.cond label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); min-width: 0 }
+.cond .inline { flex-direction: row; align-items: center; gap: 7px; color: var(--ink); font-size: 14px }
+input, select { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 5px 7px; max-width: 100% }
+input[type=range] { padding: 0; accent-color: var(--accent) } input[type=checkbox] { accent-color: var(--accent) }
+input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.sum { display: flex; flex-wrap: wrap; gap: 6px 28px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line) }
+.sum div { display: flex; flex-direction: column } .sum span { font-size: 11px; color: var(--muted) } .sum b { font-family: var(--mono); font-weight: 500; font-size: 18px }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12px; margin-bottom: 8px }
+.legend i { display: inline-block; width: 22px; height: 10px; margin-right: 6px; vertical-align: middle }
+.b-land { background: var(--land) } .b-sea { background: var(--sea) }
+.b-cure { background: repeating-linear-gradient(135deg, var(--cure) 0 4px, transparent 4px 7px); outline: 1px solid var(--cure); outline-offset: -1px }
+.b-off { background: var(--off); outline: 1px solid var(--line); outline-offset: -1px }
+.gantt { overflow-x: auto; border: 1px solid var(--line); --lw: 318px; --dw: 8px }
+.gin { position: relative; width: max-content; min-width: 100% }
+.grow { display: grid; grid-template-columns: var(--lw) auto; border-bottom: 1px solid var(--line) }
+.grow:last-child { border-bottom: 0 }
+.glab { position: sticky; left: 0; z-index: 3; background: var(--panel); border-right: 1px solid var(--line); padding: 4px 8px; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 2px 8px; align-items: center; min-width: 0 }
+.glab .no { font-family: var(--mono); color: var(--muted); font-size: 12px }
+.glab .nm { min-width: 0; line-height: 1.35 } .glab .dt { grid-column: 2 / 4; font-family: var(--mono); font-size: 11px; color: var(--muted) }
+.glab .dd { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); white-space: nowrap }
+.glab input { width: 52px; padding: 2px 4px; font-family: var(--mono); text-align: right }
+.chip { font-size: 10.5px; padding: 0 5px; border: 1px solid currentColor; border-radius: 2px; margin-left: 6px; white-space: nowrap }
+.chip.land { color: var(--land) } .chip.sea { color: var(--sea) } .chip.cure { color: var(--cure) }
+.gtrk { position: relative; min-height: 46px }
+.ghead .glab { font-size: 12px; color: var(--muted); display: flex; align-items: flex-end; padding-bottom: 4px }
+.ghead .gtrk { min-height: 40px }
+.mon { position: absolute; top: 2px; font-size: 12px; font-weight: 600; border-left: 1px solid var(--muted); padding-left: 4px; height: 100% }
+.wk { position: absolute; bottom: 2px; font-family: var(--mono); font-size: 10px; color: var(--muted); transform: translateX(2px) }
+.offs { position: absolute; top: 0; bottom: 0; left: var(--lw); pointer-events: none; z-index: 0 }
+.offs i { position: absolute; top: 0; bottom: 0; width: var(--dw); background: var(--off) }
+.bar { position: absolute; top: 50%; height: 16px; transform: translateY(-50%); z-index: 1; border-radius: 1px }
+.warns { display: grid; gap: 8px } .warns .info { background: var(--info-soft); border-left: 3px solid var(--land); padding: 8px 12px }
+ol.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: st }
+ol.steps li { counter-increment: st; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 0 10px; border-top: 1px solid var(--line); padding-top: 10px }
+ol.steps li::before { content: counter(st); font-family: var(--mono); font-size: 18px; color: var(--accent); grid-row: 1 / 4 }
+ol.steps h3 { font-size: 15px; font-weight: 600; margin: 0 } ol.steps p { max-width: 80ch }
+.q { font-family: var(--mono); font-size: 12.5px } .k { color: var(--muted); font-size: 12px; margin-right: 6px }
+.tbl { overflow-x: auto } table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums }
+th, td { text-align: left; padding: 5px 12px 5px 0; border-bottom: 1px solid var(--line); vertical-align: top }
+th { font-size: 11px; color: var(--muted); font-weight: 500 } td.n { font-family: var(--mono); white-space: nowrap } td:first-child { min-width: 11em }
+ul.chk { margin: 0; padding-left: 1.2em; display: grid; gap: 8px } ul.chk li { max-width: 86ch }
+@media (max-width: 640px) { .gantt { --lw: 178px } .glab { grid-template-columns: 16px minmax(0, 1fr); } .glab .dd { grid-column: 2 } .glab .dt { grid-column: 2 } h1 { font-size: 19px } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">大沢朝日漁港（朝日地区）外 機能保全工事外（補正明許）外</div>
+    <h1>大沢漁港海岸 護岸工 工程表</h1>
+  </header>
+
+  <p class="flag">日数はすべて概算の仮の値です。標準歩掛や協力会社の実績に置き換えてください。着手日と海上作業の稼働率も仮に置いています。数量計算書がフォルダに無かったため、数量は図面（横断図の数量表と寸法）から拾った目安です。</p>
+
+  <section class="card">
+    <h2>条件</h2>
+    <div class="cond">
+      <label>着手日（仮）<input type="date" id="start" value="2026-11-02"></label>
+      <label>休日<select id="hol"><option value="satsun">土日休み</option><option value="sun">日曜のみ休み</option></select></label>
+      <label class="inline"><input type="checkbox" id="ny" checked>年末年始（12/29〜1/3）を休む</label>
+      <label>海上・潮待ち作業の稼働率（仮）<span class="inline"><input type="range" id="rate" min="30" max="100" step="5" value="60"><b id="ratev" style="font-family:var(--mono);font-weight:500">60%</b></span></label>
+    </div>
+    <div class="sum">
+      <div><span>完了見込み</span><b id="s_end">—</b></div><div><span>暦日数</span><b id="s_cal">—</b></div><div><span>作業日（養生を除く）</span><b id="s_work">—</b></div><div><span>うち波・潮待ちの見込み</span><b id="s_wait">—</b></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>バーチャート</h2>
+    <div class="legend"><span><i class="b-land"></i>陸上作業</span><span><i class="b-sea"></i>海上・潮待ち作業（稼働率で日数を割り増し）</span><span><i class="b-cure"></i>養生（暦日で数える）</span><span><i class="b-off"></i>休日</span></div>
+    <div class="gantt" id="gantt"><div class="gin" id="gin"></div></div>
+    <p class="lead" style="margin-top:6px">各行の「日」を書き換えると引き直します。海上・潮待ち作業は「実働日数 ÷ 稼働率」で延ばしています。</p>
+  </section>
+
+  <section>
+    <h2>この並びで気をつけること</h2>
+    <div class="warns" id="warns"></div>
+  </section>
+
+  <section class="card">
+    <h2>施工手順</h2>
+    <ol class="steps">
+      <li><h3>準備・測量、敷鉄板、クレーン搬入</h3><p class="q"><span class="k">数量</span>起工測量、敷鉄板、65t吊クローラクレーン（作業半径22.0m）</p><p><span class="k">留意点</span>クレーン位置は参考図。履帯の端から施工端（SP10.39）まで0.64mしかなく、その先は床掘で約5.3mの段差になる。地耐力と既設の壁の安定を確かめてから据える。</p></li>
+      <li><h3>既設消波ブロックの撤去・仮置き</h3><p class="q"><span class="k">数量</span>三柱Ⅱ型5t型 約213空m³（SP5付近〜16.8）</p><p><span class="k">留意点</span>据え直すので傷めない。仮置き場所を先に決める。敷鉄板で既設水叩きを養生する。波の高い日は吊らない。</p></li>
+      <li><h3>旧斜路の中の撤去</h3><p class="q"><span class="k">数量</span>大型土のう40個、方塊ブロック（1.86t）18個、合掌ブロック4t 24個</p><p><span class="k">留意点</span>方塊と合掌ブロックの処分先・流用先を確認する。</p></li>
+      <li><h3>旧斜路の側壁・先端止壁の取壊し</h3><p class="q"><span class="k">数量</span>概算 約86m³（左側壁 約74、先端止壁 約7、右側前方 約4）</p><p><span class="k">留意点</span>土中に埋まっていて、撤去参考図の形は「想定」。掘り出した形で数量を取り直す。先端は+0.78m以下なので干潮に合わせる。殻と濁りを海へ出さない。</p></li>
+      <li><h3>床掘</h3><p class="q"><span class="k">数量</span>土砂 陸上 約415m³・水中 約53m³、岩盤（人力）約35m³</p><p><span class="k">留意点</span>底は−0.9m（終点側と打止工の陸側は−0.4m）で L.W.L より低い。潮待ちになる。既設護岸と道路護岸の際を掘るので、既設の変状を見ながら進める。</p></li>
+      <li><h3>水中コンクリート（C-9S）と間詰コンクリート（C-9）</h3><p class="q"><span class="k">数量</span>護岸 約32.4m³、打止工 約46m³、間詰 約6.2m³、H形鋼 H100×100 L=1.0m 25本、止水板（水平）護岸 約10.4m＋打止工 12.95m</p><p><span class="k">留意点</span>天端が+0.6mで H.W.L と同じ高さ。型枠から打設まで潮待ち。H形鋼と止水板を打継目に建て込んでから打つ。</p></li>
+      <li><h3>本体コンクリート（C-5PS）</h3><p class="q"><span class="k">数量</span>護岸本体 約27.0m³、打止工 約64m³（2ブロック）、水抜きパイプφ50 護岸13本・打止工7本、止水板 後施工タイプ 5.36m＋5.40m・鉛直 3.90m</p><p><span class="k">留意点</span>波返しの鉄筋②は本体に1.0m埋め込む。本体を打つ前に建て込む。足場は海側が単管傾斜、陸側が枠組み。</p></li>
+      <li><h3>波返コンクリート（C-5PS）</h3><p class="q"><span class="k">数量</span>約10.4m³、鉄筋D19 852.70kg（①②③各35本、④20本）</p><p><span class="k">留意点</span>前面はR=2.00mの曲面型枠。かぶりは配筋図の拡大図（芯かぶり表示）で確認する。</p></li>
+      <li><h3>脱型・足場の解体</h3><p class="q"><span class="k">数量</span>足場 護岸の両面（高さ4.40m）</p><p><span class="k">留意点</span>養生日数を確保してから外す。</p></li>
+      <li><h3>埋戻し・盛土・敷均し</h3><p class="q"><span class="k">数量</span>埋戻し 陸上 約223m³・水中 約19m³、盛土 約158m³、敷均し 陸上 約144m³・水中 約25m³</p><p><span class="k">留意点</span>護岸より陸側は転圧する。海側は転圧しない敷均し（横断図の注記）。防砂目地板を先に取り付ける。</p></li>
+      <li><h3>消波ブロックの据付（流用材・再設置）</h3><p class="q"><span class="k">数量</span>約393空m³、天端+4.7m・2個並べ2.70m・勾配1:4/3</p><p><span class="k">留意点</span>仮設工参考図の注記どおり、新設水叩きを打つ前に済ませる（再設置時の敷鉄板は計上されていない）。起点側の法尻は旋回中心から21.8mで、作業半径22.0mいっぱい。</p></li>
+      <li><h3>基礎砕石・止壁・水叩きコンクリート</h3><p class="q"><span class="k">数量</span>基礎砕石 約5.1m³、止壁（C-5S）約1.5m³、水叩きコンクリート 約5.3m³（上面26.60m²）</p><p><span class="k">留意点</span>中間に施工目地（目地材は不要）。勾配5.6%。</p></li>
+      <li><h3>出来形測量・片付け・仮設撤去</h3><p class="q"><span class="k">数量</span>—</p><p><span class="k">留意点</span>クレーンと敷鉄板の搬出。</p></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2>図面から拾った数量</h2>
+    <div class="tbl"><table>
+      <tr><th>項目</th><th>数量</th><th>出どころ</th></tr>
+      <tr><td>土砂床掘り</td><td class="n">陸上 415 m³／水中 53 m³</td><td>横断図(1)〜(13)の数量表を平均断面法で集計</td></tr>
+      <tr><td>岩盤床掘り（人力）</td><td class="n">35 m³</td><td>同上</td></tr>
+      <tr><td>間詰コンクリート（C-9）</td><td class="n">6.2 m³</td><td>同上</td></tr>
+      <tr><td>埋戻し</td><td class="n">陸上 223 m³／水中 19 m³</td><td>同上</td></tr>
+      <tr><td>敷均し</td><td class="n">陸上 144 m³／水中 25 m³</td><td>同上</td></tr>
+      <tr><td>盛土</td><td class="n">158 m³</td><td>同上</td></tr>
+      <tr><td>消波ブロック</td><td class="n">据付 393 空m³／撤去 213 空m³</td><td>同上（個数は数量計算書で確認）</td></tr>
+      <tr><td>護岸 水中コンクリート（C-9S）</td><td class="n">32.4 m³</td><td>側枠14.74m²×幅2.20m（堤体工詳細図）</td></tr>
+      <tr><td>護岸 本体／波返し（C-5PS）</td><td class="n">27.0 m³／10.4 m³</td><td>断面2.60m²・1.00m²×10.39m（堤体工詳細図）</td></tr>
+      <tr><td>打止工 水中コンクリート（C-9S）</td><td class="n">約46 m³</td><td>A断面3.90m²・B断面3.15m²（打止工構造図）</td></tr>
+      <tr><td>打止工 本体（C-5PS）</td><td class="n">約64 m³</td><td>断面5.10m²×12.55m（打止工構造図）</td></tr>
+      <tr><td>水叩き／基礎砕石／止壁</td><td class="n">5.3／5.1／1.5 m³</td><td>天端被覆工参考図</td></tr>
+      <tr><td>鉄筋 D19</td><td class="n">852.70 kg</td><td>波返工配筋図の鉄筋重量表</td></tr>
+      <tr><td>H形鋼 H100×100×6×8 L=1.0m</td><td class="n">25 本</td><td>護岸11本＋打止工14本（図から数えた）</td></tr>
+      <tr><td>旧斜路の取壊し</td><td class="n">約86 m³</td><td>斜路工撤去参考図の断面積から概算（形状は想定）</td></tr>
+    </table></div>
+  </section>
+
+  <section class="card">
+    <h2>発注者に確認したい点</h2>
+    <ul class="chk">
+      <li><b>数量計算書</b>：フォルダに入っていない。上の数量と照らすために入手したい。</li>
+      <li><b>クレーンの位置</b>：履帯の端から施工端まで0.64m、床掘底（−0.4m）までの段差は約5.3m。旧斜路の右側の壁と既設護岸の端部がこの荷重に耐えるか。仮設工は参考図なので、位置を変えられるか。</li>
+      <li><b>横断図(6)(7)の側壁工の高さ</b>：SP1.31・1.51・1.6 の場所打コンクリート天端が、図上で+2.97・+2.30・+2.00m。縦断図と打止工構造図の法面（天端SP0.50から1:0.3）で計算すると+2.30・+1.63・+1.33mで、約0.67m（測点で0.20m）ずれている。</li>
+      <li><b>堤体工詳細図の側面図</b>：水中コンクリートに SP2.40 の縦線がある。打止工の基礎幅は平面図・構造図とも2.60m。上の0.20mのずれと同じ幅なので、変更前の線が残っていないか。</li>
+      <li><b>斜路工撤去参考図</b>：縦断図のC点は「+4.00」、C断面図は「+4.60」（図形も+4.60）。B断面は「+2.16」の表記に対し図形は+2.07m（A=2.14m²は図形の値）。</li>
+      <li><b>横断図(4) SP−0.44</b>：ブロック天端が+4.7と書かれているが、縦断図の1:4/3の勾配では約+4.37m（隣の SP−0.50 は+4.33）。据付の断面積23.2も SP0.00 と同じ値。</li>
+      <li><b>打止工の型枠面積</b>：陸側 A=55.37m² は高さ4.40mの投影面積。法面（斜長4.59m）で数えると約57.8m²。数量計算書がどちらで数えているか。</li>
+      <li><b>濁りの対策</b>：図面に汚濁防止膜の記載はない。取壊しと床掘での扱い。</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function () {
+'use strict';
+const T = [
+  { n: '準備・測量、敷鉄板、クレーン搬入', t: 'land', d: 5, p: [] },
+  { n: '既設消波ブロックの撤去・仮置き', t: 'sea', d: 3, p: [0] },
+  { n: '旧斜路の中の撤去（土のう・方塊・合掌）', t: 'land', d: 2, p: [1] },
+  { n: '旧斜路の側壁・先端止壁の取壊し', t: 'sea', d: 6, p: [2] },
+  { n: '床掘（土砂・岩盤）', t: 'sea', d: 6, p: [3] },
+  { n: '水中コンの型枠・H形鋼・止水板', t: 'sea', d: 4, p: [4] },
+  { n: '水中コン・間詰コンの打設', t: 'sea', d: 2, p: [5], conc: 1 },
+  { n: '養生（水中コン）', t: 'cure', d: 5, p: [6] },
+  { n: '足場の組立', t: 'land', d: 2, p: [7] },
+  { n: '本体の型枠・目地材・水抜きパイプ', t: 'land', d: 7, p: [8] },
+  { n: '本体コンの打設（護岸・打止工）', t: 'land', d: 2, p: [9], conc: 1 },
+  { n: '養生（本体）', t: 'cure', d: 7, p: [10] },
+  { n: '波返しの鉄筋組立・型枠', t: 'land', d: 4, p: [10] },
+  { n: '波返コンの打設', t: 'land', d: 1, p: [12], conc: 1 },
+  { n: '養生（波返し）', t: 'cure', d: 7, p: [13] },
+  { n: '脱型・足場の解体', t: 'land', d: 3, p: [11, 14] },
+  { n: '埋戻し・盛土・敷均し', t: 'land', d: 5, p: [15] },
+  { n: '消波ブロックの据付（流用材・再設置）', t: 'sea', d: 5, p: [16] },
+  { n: '基礎砕石・止壁', t: 'land', d: 2, p: [17] },
+  { n: '水叩きコンの打設', t: 'land', d: 1, p: [18], conc: 1 },
+  { n: '養生（水叩き）', t: 'cure', d: 5, p: [19] },
+  { n: '出来形測量・片付け・仮設撤去', t: 'land', d: 3, p: [20] }
+];
+const FORMS = [[5, 7, '水中コンクリート'], [9, 15, '本体・波返し'], [18, 20, '水叩き']]; // 型枠を立ててから外すまで
+const TYPE = { land: '陸上', sea: '海上・潮待ち', cure: '養生' };
+const DAY = 86400000, WD = '日月火水木金土';
+const $ = id => document.getElementById(id);
+const cfg = () => ({ start: $('start').value, sat: $('hol').value === 'satsun', ny: $('ny').checked, rate: +$('rate').value / 100 });
+const fmt = d => (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '（' + WD[d.getUTCDay()] + '）';
+const fmtY = d => d.getUTCFullYear() + '/' + (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '（' + WD[d.getUTCDay()] + '）';
+function isNY(d) { const m = d.getUTCMonth() + 1, x = d.getUTCDate(); return (m === 12 && x >= 29) || (m === 1 && x <= 3); }
+function isOff(d, c) { const w = d.getUTCDay(); return w === 0 || (c.sat && w === 6) || (c.ny && isNY(d)); }
+function schedule(c) {
+  const p0 = c.start.split('-').map(Number); let t0 = Date.UTC(p0[0], p0[1] - 1, p0[2]);
+  if (!isFinite(t0)) t0 = Date.UTC(2026, 10, 2);
+  const R = [];
+  T.forEach((k, i) => {
+    let s = t0; for (const j of k.p) s = Math.max(s, R[j].e + DAY);
+    let e, need = k.d, wait = 0;
+    if (k.t === 'cure') e = s + (k.d - 1) * DAY;
+    else {
+      if (k.t === 'sea') { need = Math.ceil(k.d / c.rate); wait = need - k.d; }
+      while (isOff(new Date(s), c)) s += DAY;
+      e = s; let n = 1; while (n < need) { e += DAY; if (!isOff(new Date(e), c)) n++; }
+    }
+    R.push({ s, e, need, wait });
+  });
+  return { t0, R };
+}
+function draw() {
+  const c = cfg(); $('ratev').textContent = Math.round(c.rate * 100) + '%';
+  const { t0, R } = schedule(c);
+  const tEnd = Math.max.apply(null, R.map(r => r.e)), N = Math.round((tEnd - t0) / DAY) + 4;
+  const g = $('gin'), gs = getComputedStyle($('gantt')), lw = parseFloat(gs.getPropertyValue('--lw')) || 318;
+  const dw = Math.max(5, Math.min(11, Math.floor(($('gantt').clientWidth - lw - 2) / N))); $('gantt').style.setProperty('--dw', dw + 'px');
+  const X = t => Math.round((t - t0) / DAY) * dw;
+  let h = '<div class="offs" style="width:' + N * dw + 'px">';
+  for (let i = 0; i < N; i++) if (isOff(new Date(t0 + i * DAY), c)) h += '<i style="left:' + i * dw + 'px"></i>';
+  h += '</div><div class="grow ghead"><div class="glab">作業（日数は書き換えられます）</div><div class="gtrk" style="width:' + N * dw + 'px">';
+  for (let i = 0; i < N; i++) {
+    const d = new Date(t0 + i * DAY);
+    if (i === 0 || d.getUTCDate() === 1) h += '<span class="mon" style="left:' + i * dw + 'px">' + (i === 0 || d.getUTCMonth() === 0 ? d.getUTCFullYear() + '年' : '') + (d.getUTCMonth() + 1) + '月</span>';
+    if (d.getUTCDay() === 1) h += '<span class="wk" style="left:' + i * dw + 'px">' + d.getUTCDate() + '</span>';
+  }
+  h += '</div></div>';
+  T.forEach((k, i) => {
+    const r = R[i], unit = k.t === 'cure' ? '暦日' : '日';
+    h += '<div class="grow"><div class="glab"><span class="no">' + (i + 1) + '</span><span class="nm">' + k.n + '<span class="chip ' + k.t + '">' + TYPE[k.t] + '</span></span>' +
+      '<span class="dd"><input type="number" id="d' + i + '" min="1" max="90" value="' + k.d + '" aria-label="' + k.n + ' の日数">' + unit + '</span>' +
+      '<span class="dt">' + fmt(new Date(r.s)) + '〜' + fmt(new Date(r.e)) + (r.wait ? '　待ち込みで' + r.need + '日' : '') + '</span></div>' +
+      '<div class="gtrk" style="width:' + N * dw + 'px"><span class="bar b-' + k.t + '" style="left:' + X(r.s) + 'px;width:' + (X(r.e) - X(r.s) + dw) + 'px" title="' + k.n + ' ' + fmt(new Date(r.s)) + '〜' + fmt(new Date(r.e)) + '"></span></div></div>';
+  });
+  const act = document.activeElement && document.activeElement.id;
+  g.innerHTML = h;
+  if (act && /^d\d+$/.test(act) && $(act)) $(act).focus();
+  // まとめ
+  let work = 0, wait = 0; T.forEach((k, i) => { if (k.t !== 'cure') { work += k.d; wait += R[i].wait; } });
+  $('s_end').textContent = fmtY(new Date(tEnd)); $('s_cal').textContent = (Math.round((tEnd - t0) / DAY) + 1) + '日';
+  $('s_work').textContent = work + '日'; $('s_wait').textContent = wait + '日';
+  // 注意
+  const W = [], inWin = (s, e, f) => { for (let t = s; t <= e; t += DAY) if (f(new Date(t))) return true; return false; };
+  for (const [a, b, name] of FORMS) if (inWin(R[a].s, R[b].e, isNY)) W.push(['w', '<b>' + name + 'の型枠を立てたまま年末年始をまたぎます。</b>' + fmt(new Date(R[a].s)) + '〜' + fmt(new Date(R[b].e)) + ' が型枠の期間です。休み前に打設と脱型を終えるか、休み明けに組み始める並びに変えてください。']);
+  const cold = d => { const m = d.getUTCMonth() + 1; return m === 12 || m <= 3; };
+  const cc = T.map((k, i) => k.conc && inWin(R[i].s, R[i].e, cold) ? k.n : null).filter(Boolean);
+  if (cc.length) W.push(['w', '<b>12〜3月の打設があります（' + cc.join('、') + '）。</b>寒中コンクリートとして、保温・給熱養生と養生日数の延長を見込んでください。養生の日数はいま標準的な仮の値です。']);
+  const winter = d => { const m = d.getUTCMonth() + 1; return m === 12 || m <= 2; };
+  const ws = T.map((k, i) => k.t === 'sea' && inWin(R[i].s, R[i].e, winter) ? k.n : null).filter(Boolean);
+  if (ws.length) W.push(['w', '<b>12〜2月に海上・潮待ち作業が入っています（' + ws.join('、') + '）。</b>冬の波で稼働率がいまの設定（' + Math.round(c.rate * 100) + '%）より下がることがあります。']);
+  W.push(['i', '消波ブロックの再設置は、仮設工参考図の注記に合わせて水叩きコンクリートの前に置いています。順番を入れ替えると、新設水叩きの養生（敷鉄板）が別に要ります。']);
+  W.push(['i', '水中コンクリートの天端は+0.6mで H.W.L と同じ高さ、床掘底は−0.9mで L.W.L より低い位置です。型枠・打設は干潮の時間帯に合わせるため、潮汐表で日を決め直してください。']);
+  W.push(['i', '波返しの鉄筋②は本体コンクリートに1.0m埋め込みます。本体の型枠の期間に建て込みを入れてください。']);
+  $('warns').innerHTML = W.map(w => '<p class="' + (w[0] === 'w' ? 'flag' : 'info') + '">' + w[1] + '</p>').join('');
+}
+$('gin').addEventListener('change', e => { const m = /^d(\d+)$/.exec(e.target.id || ''); if (!m) return; const v = Math.max(1, Math.min(90, Math.round(+e.target.value || 1))); T[+m[1]].d = v; draw(); });
+for (const id of ['start', 'hol', 'ny']) $(id).addEventListener('change', draw);
+$('rate').addEventListener('input', draw);
+window.addEventListener('resize', draw);
+draw();
+window.__sched = { T, schedule, cfg };
+})();
+</script>
+
+</body></html>

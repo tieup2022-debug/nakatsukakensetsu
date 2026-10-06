@@ -1,0 +1,388 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>東護岸 施工工程表</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a working schedule sheet. Settings and key dates on top, the bar chart as the centrepiece, then the step-by-step procedure and the points to confirm. */
+:root{
+  --bg:#EEF1F2; --panel:#F8FAFA; --ink:#1C2A33; --muted:#5A6A74; --line:#CBD4D9; --chip:#E3E9EC; --off:#E1E7EA;
+  --accent:#C2302A; --warn-bg:#FBEFD9; --warn-line:#D9A441;
+  --s-sea:#2a78d6; --s-land:#eb6834; --s-cure:#1baf7a;
+  --font-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A; --off:#1D2830;
+  --accent:#F0766E; --warn-bg:#2E2717; --warn-line:#A57E2E;
+  --s-sea:#3987e5; --s-land:#d95926; --s-cure:#199e70;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A; --off:#1D2830;
+  --accent:#F0766E; --warn-bg:#2E2717; --warn-line:#A57E2E;
+  --s-sea:#3987e5; --s-land:#d95926; --s-cure:#199e70;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.65}
+.page{max-width:1240px;margin:0 auto;padding-inline:20px;padding-block:24px 56px;display:flex;flex-direction:column;gap:28px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+h1{font-size:22px;font-weight:700;margin:0;letter-spacing:.02em;text-wrap:balance;line-height:1.35}
+h2{font-size:16px;font-weight:700;margin:0;text-wrap:balance}
+.eyebrow{margin:0;font-size:12px;color:var(--muted);letter-spacing:.06em}
+.lead{margin:0;max-width:46em;color:var(--muted)}
+header.top{display:flex;flex-direction:column;gap:6px}
+section{display:flex;flex-direction:column;gap:12px;min-width:0}
+
+.setup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;align-items:start}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 14px}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field label{font-size:12px;color:var(--muted)}
+.field input,.field select{border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:5px 8px;width:100%;min-width:0}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:5px 12px;cursor:pointer;font-size:13px;align-self:flex-start}
+.btn:hover{border-color:var(--muted)}
+.small{font-size:12px;color:var(--muted);margin:0}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{display:flex;flex-direction:column;gap:1px;min-width:0}
+.stat span{font-size:12px;color:var(--muted)}
+.stat b{font-size:19px;font-weight:500;font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.02em;overflow-wrap:anywhere}
+.miles{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:2px 18px;font-size:13px;border-top:1px solid var(--line);padding-top:10px}
+.miles div{display:flex;justify-content:space-between;gap:8px}
+.miles dt{color:var(--muted)}
+.miles dd{margin:0}
+#alert{color:var(--ink);background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:3px;padding:7px 10px}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.key{display:inline-block;width:22px;height:10px;border-radius:3px}
+.k-sea{background:var(--s-sea)} .k-land{background:var(--s-land)}
+.k-cure,.bar.cure{background:repeating-linear-gradient(135deg,var(--s-cure) 0 4px,color-mix(in srgb,var(--s-cure) 45%,var(--panel)) 4px 7px)}
+.k-off{background:var(--off);border:1px solid var(--line)}
+
+.gwrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:var(--panel)}
+table.gantt{border-collapse:separate;border-spacing:0;font-size:12.5px}
+.gantt th,.gantt td{border-bottom:1px solid var(--line);padding:0 8px;height:36px;white-space:nowrap;text-align:left;font-weight:400;vertical-align:middle}
+.gantt thead th{height:44px;font-size:11.5px;color:var(--muted);font-weight:500;vertical-align:bottom;padding-bottom:5px}
+.gantt .c-task{position:sticky;left:0;z-index:2;background:var(--panel);border-right:1px solid var(--line);width:268px;min-width:268px;max-width:268px;white-space:normal;line-height:1.3;padding-block:4px}
+.gantt .c-task b{font-weight:500;display:block}
+.gantt .c-task small{color:var(--muted);font-size:11px;display:block}
+.gantt .c-d{text-align:right}
+.gantt input.days{width:46px;text-align:right;border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:2px 5px;font-family:var(--font-data)}
+.gantt .unit{font-size:11px;color:var(--muted);margin-left:3px;display:inline-block;width:2em;text-align:left}
+.gantt tr.grp th,.gantt tr.grp td{height:28px;background:var(--chip)}
+.gantt tr.grp .c-task{background:var(--chip);font-weight:700;font-size:12px;letter-spacing:.06em}
+.gantt td.tl,.gantt th.tl{padding:0;position:relative;background-image:var(--wk),var(--offbg);background-repeat:no-repeat}
+.gantt th.tl{vertical-align:top}
+.tl .mon,.tl .wk{position:absolute;white-space:nowrap;font-family:var(--font-data);font-size:11px}
+.tl .mon{top:5px;font-weight:500;color:var(--ink);font-family:var(--font-ui);font-size:12px}
+.tl .wk{bottom:5px;color:var(--muted)}
+.bar{position:absolute;top:11px;height:14px;border-radius:4px;cursor:default}
+.bar.sea{background:var(--s-sea)} .bar.land{background:var(--s-land)}
+.span{position:absolute;top:12px;height:4px;border-radius:2px;background:var(--muted);opacity:.7}
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--panel);border-radius:4px;padding:7px 10px;font-size:12px;line-height:1.5;max-width:280px}
+#tip b{display:block;font-weight:700}
+
+ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;counter-reset:st}
+ol.steps li{counter-increment:st;display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 12px;padding:14px 0;border-top:1px solid var(--line)}
+ol.steps li::before{content:counter(st);font-family:var(--font-data);font-size:15px;color:var(--accent);font-weight:500;grid-row:1 / span 3;padding-top:1px}
+ol.steps h3{margin:0;font-size:14.5px;font-weight:700;grid-column:2}
+ol.steps p{margin:0;grid-column:2;max-width:52em}
+ol.steps p.q{font-size:12.5px;color:var(--muted)}
+ol.steps p.pt{font-size:13px}
+ol.steps p.pt::before{content:"留意点　";color:var(--accent);font-weight:700;font-size:12px}
+
+.warn{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.warn h3{margin:0;font-size:14px;font-weight:700}
+.warn p{margin:0;max-width:56em}
+ul.notes{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;max-width:58em}
+.twrap{overflow-x:auto}
+table.q{border-collapse:collapse;font-size:13px;min-width:520px}
+table.q th,table.q td{border-bottom:1px solid var(--line);padding:5px 14px 5px 0;text-align:left;vertical-align:top}
+table.q th{font-size:12px;color:var(--muted);font-weight:500}
+table.q td.r{text-align:right;white-space:nowrap}
+
+@media (max-width:760px){
+  .page{padding-inline:16px}
+  .setup{grid-template-columns:minmax(0,1fr)}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gantt .c-task{width:168px;min-width:168px;max-width:168px}
+  ol.steps li{grid-template-columns:24px minmax(0,1fr)}
+}
+</style>
+
+<div class="page">
+  <header class="top">
+    <p class="eyebrow">令和8年度　大沢朝日漁港（朝日地区）外機能保全工事外（補正明許）外</p>
+    <h1>東護岸　<span style="white-space:nowrap">SP 0.00〜24.98</span>　施工工程表（案）</h1>
+    <p class="lead">数量計算書と設計図から組んだ、考えられる施工手順と工程です。日数は概算なので、表の中の数字を書き換えると工程が引き直されます。</p>
+  </header>
+
+  <section class="setup" aria-label="条件と結果">
+    <div class="box">
+      <h2>条件</h2>
+      <div class="fields">
+        <div class="field"><label for="start">着手日（仮）</label><input type="date" id="start"></div>
+        <div class="field"><label for="rest">休日</label><select id="rest"><option value="satsun">土日休み（4週8休）</option><option value="sun">日曜のみ休み</option></select></div>
+        <div class="field"><label for="rate">海上作業の稼働率</label><select id="rate"><option value="1">100%（待機なし）</option><option value="0.8">80%</option><option value="0.7">70%</option><option value="0.6">60%</option><option value="0.5">50%</option></select></div>
+      </div>
+      <p class="small">稼働率は、波や潮で作業できない日を見込む割合です。海上・潮待ちの作業だけに掛かります。年末年始（12/29〜1/3）は休み、祝日は稼働日として計算しています。</p>
+      <button class="btn" id="reset" type="button">日数と条件を初期値に戻す</button>
+    </div>
+    <div class="box">
+      <h2>この条件での見込み</h2>
+      <div class="stats">
+        <div class="stat"><span>完了見込み</span><b id="s-end">—</b></div>
+        <div class="stat"><span>全体の暦日数</span><b id="s-cal">—</b></div>
+        <div class="stat"><span>うち稼働日</span><b id="s-work">—</b></div>
+      </div>
+      <dl class="miles" id="miles"></dl>
+      <p class="small" id="alert" hidden></p>
+    </div>
+  </section>
+
+  <section aria-label="工程表">
+    <h2>工程表</h2>
+    <div class="legend" aria-label="凡例">
+      <span><i class="key k-sea"></i>海上・潮待ち作業（稼働率が掛かる）</span>
+      <span><i class="key k-land"></i>陸上作業</span>
+      <span><i class="key k-cure"></i>養生（暦日）</span>
+      <span><i class="key k-off"></i>休日</span>
+    </div>
+    <div class="gwrap" id="gwrap" tabindex="0" aria-label="工程表（横にスクロールできます）"><table class="gantt" id="gantt"></table></div>
+    <p class="small">バーにカーソルを合わせると期間が出ます。同じ行の「開始」「終了」にも日付があります。</p>
+  </section>
+
+  <section aria-label="施工手順">
+    <h2>施工手順</h2>
+    <ol class="steps">
+      <li><h3>準備（着工前測量・現況調査・協議）</h3>
+        <p>護岸前面の岩盤高と、既設護岸の欠損部の位置・大きさを潜水で確認し、設計の断面と照らし合わせます。船揚場を工事用道路に使う期間は、漁協・漁港管理者と先に調整します。</p>
+        <p class="pt">継鉄筋（+0.30）と上部工（+0.60〜+1.20）は潮待ち作業です。潮汐表から干潮の時間帯を拾い、作業日を先に当てておきます。</p></li>
+      <li><h3>工事用道路（船揚場A部）</h3>
+        <p>切込砕石で不陸整正し、敷鉄板を敷き、海側の縁に土のうを積みます。</p>
+        <p class="q num">不陸整正 309m²（切込砕石0〜80mm級、厚さ19cm）／敷鉄板 149m²（16枚）／土のう 501袋</p>
+        <p class="pt">道路の範囲に既設の滑り材5個と係船環7か所があります（工事用道路数量算出図）。傷めないよう養生します。</p></li>
+      <li><h3>重機用足場（盛土）</h3>
+        <p>胸壁の背後に購入土を盛り、天端を胸壁と同じ+2.5にそろえて敷鉄板を敷きます。0.8m³級バックホウと25t吊ラフテレーンクレーンの作業床になります。</p>
+        <p class="q num">盛土 208m³（通常部143.1＋隅角部38.9＋スロープ部25.8、搬入14.6km）／敷鉄板 130m²（14枚）／天端幅2.80m、法勾配1:1.5、スロープ15%</p></li>
+      <li><h3>汚濁防止膜と足場の設置</h3>
+        <p>床掘りの前に、護岸前面から3.0m沖に汚濁防止膜を張ります。あわせて海側に足場を掛けます。</p>
+        <p class="q num">汚濁防止膜 L=32.89m、膜高1.0m（図面より）／足場 25m</p></li>
+      <li><h3>床掘（海上地盤改良工）</h3>
+        <p>岩盤を幅1.5m・深さ0.5mで掘ります。上の20cmは足場上のバックホウで機械床掘、下の30cmは人力床掘です。掘ったずりはクレーンで揚げて搬出します。</p>
+        <p class="q num">陸上機械床掘（水中・軟岩）5m³／人力床掘（水中・軟岩）8m³／揚土土捨 8m³／土砂運搬 13m³（4.3km）</p>
+        <p class="pt">人力床掘は水中作業で進みが遅く、波の影響を強く受けます。工程全体の山場です。</p></li>
+      <li><h3>岩盤と既設コンクリートの掻均し</h3>
+        <p>床掘りしない幅0.35mの岩盤面と、既設護岸の前面（H.W.L +0.60以下）を掻き均し、付着物を落とします。</p>
+        <p class="q num">岩盤掻均し 9m²（0.35m×24.98m）／既設コンクリート掻均し 33m²</p></li>
+      <li><h3>継鉄筋</h3>
+        <p>既設護岸に削孔し、D25を既設側へ0.40m差し込んで定着します。残り0.90mが水中コンクリートに入ります。</p>
+        <p class="q num">SD345 D25、L=1.3m、30本（1ブロック6本）、高さ+0.30</p>
+        <p class="pt">L.W.L ±0.00とH.W.L +0.60の間の高さです。干潮に合わせて作業します。</p></li>
+      <li><h3>型枠・漏洩防止材・H形鋼の建込み</h3>
+        <p>腹付型枠を組み、岩盤とのすき間に漏洩防止材（織布）を張ります。H形鋼は天端から0.5m突き出す位置で固定します。</p>
+        <p class="q num">型枠 60m²（側面44.96＋妻面14.94）／漏洩防止材 34m²／H形鋼 H-100×100×6×8、L=1.0m、30本</p>
+        <p class="pt">型枠を海に立てておく期間を短くするため、第1区（No.1〜3）と第2区（No.4〜5）に分けて、建込みから打設までを続けて行う想定です。</p></li>
+      <li><h3>水中コンクリート（C-9S）</h3>
+        <p>ケーシングを使い、筒先をコンクリートの中に入れたまま連続して打ち上げます。</p>
+        <p class="q num">33m³（通常部29.98＋欠損部2.75）　第1区 約20m³、第2区 約13m³</p>
+        <p class="pt">天端+0.60はH.W.Lと同じ高さです。天端の仕上げは干潮に合わせます。</p></li>
+      <li><h3>養生・脱型・間詰コンクリート（C-9）</h3>
+        <p>養生のあと型枠を外し、床掘りの港外側に残った溝を間詰コンクリートで埋めます。</p>
+        <p class="q num">間詰コンクリート 6m³（両端の回り込みを含む）</p></li>
+      <li><h3>上部工（C-5S）</h3>
+        <p>水中コンクリート天端の打継面を処理し、伸縮目地と型枠を付けて、上部コンクリートを打ちます。既設護岸の上部欠損部も同時に埋めます。</p>
+        <p class="q num">型枠 17m²／支保 2m（潮待ち）／伸縮目地 1m²（樹脂発泡体 t=10mm）／コンクリート 8m³（通常部5.0＋欠損部2.5）</p>
+        <p class="pt">設計の日当たり打設量が5m³未満なので、2回に分けます。冬期で耐寒材を使う配合です。打設後は保温養生をします。</p></li>
+      <li><h3>撤去・片付け</h3>
+        <p>足場、汚濁防止膜、重機用足場、工事用道路の順に撤去し、出来形を測定します。</p>
+        <p class="q num">盛土 208m³ 搬出（4.3km）／敷鉄板 30枚 返納（44.8km）／土のう袋 0.02t（廃プラスチック、51.7km）</p></li>
+    </ol>
+  </section>
+
+  <section aria-label="確認しておきたい点">
+    <h2>確認しておきたい点</h2>
+    <div class="warn">
+      <h3>コンクリートの数量が、同じ表の型枠面積と合いません</h3>
+      <p>水中コンクリート工の数量算出表では、コンクリートの断面積が全測点で1.2m²です。同じ表の型枠妻面積（コンクリートの断面と同じ形）は2.34〜2.64m²で、こちらで計算すると約62m³になります。計上されている33m³のほぼ2倍です。</p>
+      <p>上部コンクリート（0.2m²に対し、0.50×0.60=0.30m²）、間詰コンクリート、床掘（0.2・0.3m²に対し、本体工詳細平面図の注記は0.36・0.48m²）も同じ傾向です。生コンの手配量と打設回数に関わるので、発注者に確認してください。この工程表は数量計算書の値のままで組んでいます。</p>
+    </div>
+    <ul class="notes">
+      <li>日数は私の概算です。標準歩掛や協力会社の実績に置き換えてください。</li>
+      <li>稼働率の初期値70%は仮の値です。冬期の港外側なので、過去の実績で見直してください。</li>
+      <li>2区に分ける打設は私の想定です。数量計算書は型枠妻面を6面計上しているので、ブロックごとに打ち継ぐ前提とは矛盾しません。</li>
+      <li>汚濁防止膜（L=32.89m）は図面にありますが、数量計算書に項目がありません。継鉄筋D32（L=1.6m）も標準断面図にだけあります。工程には汚濁防止膜だけ入れています。</li>
+      <li>交通誘導警備員は24人日の計上です。資材の搬入出と生コン打設の日に当てる想定です。</li>
+      <li>作業班は、潜水・海上の班と陸上の班が別に動ける前提です。第1区の上部工と第2区の型枠が重なります。</li>
+    </ul>
+  </section>
+
+  <section aria-label="数量">
+    <h2>数量計算書の主な数量</h2>
+    <div class="twrap"><table class="q">
+      <thead><tr><th>工種</th><th>細目</th><th>規格</th><th>数量</th></tr></thead>
+      <tbody>
+        <tr><td>床掘工</td><td>陸上機械床掘</td><td>軟岩</td><td class="r num">5 m³</td></tr>
+        <tr><td></td><td>人力床掘</td><td>軟岩</td><td class="r num">8 m³</td></tr>
+        <tr><td>揚土土捨工</td><td>揚土土捨／土砂運搬</td><td>運搬距離4.3km</td><td class="r num">8 m³／13 m³</td></tr>
+        <tr><td>水中コンクリート工</td><td>岩盤等掻均し（人力／既設コンクリート）</td><td></td><td class="r num">9 m²／33 m²</td></tr>
+        <tr><td></td><td>継鉄筋</td><td>SD345 D25、L=1.3m</td><td class="r num">30 本</td></tr>
+        <tr><td></td><td>足場</td><td></td><td class="r num">25 m</td></tr>
+        <tr><td></td><td>型枠（腹付）</td><td>側面＋妻面</td><td class="r num">60 m²</td></tr>
+        <tr><td></td><td>漏洩防止材</td><td>織布、1260N/3cm以上</td><td class="r num">34 m²</td></tr>
+        <tr><td></td><td>水中コンクリート（冬期）</td><td>C-9S</td><td class="r num">33 m³</td></tr>
+        <tr><td></td><td>間詰コンクリート（冬期）</td><td>C-9</td><td class="r num">6 m³</td></tr>
+        <tr><td></td><td>H形鋼</td><td>SS400 H100×100×6×8、L=1.0m</td><td class="r num">30 本</td></tr>
+        <tr><td>上部コンクリート工</td><td>支保（潮待ち）／型枠／伸縮目地</td><td></td><td class="r num">2 m／17 m²／1 m²</td></tr>
+        <tr><td></td><td>コンクリート（冬期）</td><td>C-5S、耐寒材使用</td><td class="r num">8 m³</td></tr>
+        <tr><td>工事用道路工</td><td>不陸整正／敷鉄板／土のう</td><td>切込砕石0〜80mm級、t=19cm</td><td class="r num">309 m²／149 m²／501 袋</td></tr>
+        <tr><td>重機用足場工</td><td>盛土（購入土）／敷鉄板</td><td></td><td class="r num">208 m³／130 m²</td></tr>
+        <tr><td>安全対策</td><td>交通誘導警備員</td><td></td><td class="r num">24 人日</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+(function(){
+"use strict";
+let DW=13; const KEY="higashi-gogan-kotei-v1";
+const GROUPS={pre:"準備工",temp:"仮設工",exc:"海上地盤改良工（床掘工）",body:"本体工（水中コンクリート工）",top:"上部工",out:"撤去・片付け"};
+// type: sea = 海上・潮待ち（稼働率が掛かる） / land = 陸上 / cure = 養生（暦日）
+const TASKS=[
+ {id:1, g:"pre", n:"着工前測量・現況調査・施工計画", q:"岩盤高、欠損部、潮汐の確認", d:5,t:"land",pre:[]},
+ {id:2, g:"temp",n:"工事用道路（不陸整正・敷鉄板・土のう）", q:"309m²／16枚／501袋", d:4,t:"land",pre:[1]},
+ {id:3, g:"temp",n:"重機用足場（盛土・敷鉄板）", q:"盛土208m³／14枚", d:4,t:"land",pre:[2]},
+ {id:4, g:"temp",n:"汚濁防止膜 設置", q:"L=32.89m", d:1,t:"sea",pre:[3]},
+ {id:5, g:"temp",n:"足場 設置", q:"25m", d:2,t:"sea",pre:[3]},
+ {id:6, g:"exc", n:"陸上機械床掘（水中・軟岩）", q:"5m³", d:2,t:"sea",pre:[4]},
+ {id:7, g:"exc", n:"人力床掘・揚土土捨・土砂運搬", q:"人力8m³／運搬13m³", d:8,t:"sea",pre:[6]},
+ {id:8, g:"body",n:"岩盤・既設コンクリート掻均し", q:"9m²／33m²", d:3,t:"sea",pre:[7,5]},
+ {id:9, g:"body",n:"継鉄筋 D25 削孔・定着", q:"30本", d:2,t:"sea",pre:[8]},
+ {id:10,g:"body",n:"第1区 型枠・漏洩防止材・H形鋼", q:"No.1〜3　型枠約37m²／H形鋼18本", d:4,t:"sea",pre:[9]},
+ {id:11,g:"body",n:"第1区 水中コンクリート打設", q:"C-9S 約20m³", d:1,t:"sea",pre:[10],ms:"水中コンクリート打設（第1区）"},
+ {id:12,g:"body",n:"第1区 養生", q:"", d:5,t:"cure",pre:[11]},
+ {id:13,g:"body",n:"第1区 脱型", q:"", d:1,t:"sea",pre:[12]},
+ {id:14,g:"body",n:"第2区 型枠・漏洩防止材・H形鋼", q:"No.4〜5　型枠約23m²／H形鋼12本", d:3,t:"sea",pre:[11]},
+ {id:15,g:"body",n:"第2区 水中コンクリート打設", q:"C-9S 約13m³", d:1,t:"sea",pre:[14],ms:"水中コンクリート打設（第2区）"},
+ {id:16,g:"body",n:"第2区 養生", q:"", d:5,t:"cure",pre:[15]},
+ {id:17,g:"body",n:"第2区 脱型", q:"", d:1,t:"sea",pre:[16]},
+ {id:18,g:"body",n:"間詰コンクリート打設", q:"C-9 6m³", d:1,t:"sea",pre:[13,17]},
+ {id:19,g:"top", n:"第1区 打継面処理・目地・型枠・支保", q:"型枠約10m²", d:2,t:"sea",pre:[13]},
+ {id:20,g:"top", n:"第1区 上部コンクリート打設", q:"C-5S 約4.5m³", d:1,t:"sea",pre:[19],ms:"上部コンクリート打設（第1区）"},
+ {id:21,g:"top", n:"第2区 打継面処理・目地・型枠", q:"型枠約7m²", d:2,t:"sea",pre:[17,20]},
+ {id:22,g:"top", n:"第2区 上部コンクリート打設", q:"C-5S 約3.0m³", d:1,t:"sea",pre:[21],ms:"上部コンクリート打設（第2区）"},
+ {id:23,g:"top", n:"上部コンクリート 保温養生", q:"", d:7,t:"cure",pre:[22]},
+ {id:24,g:"top", n:"上部型枠 脱型", q:"17m²", d:1,t:"sea",pre:[23]},
+ {id:25,g:"out", n:"足場・汚濁防止膜 撤去", q:"", d:1,t:"sea",pre:[24,18]},
+ {id:26,g:"out", n:"重機用足場 撤去（敷鉄板・盛土搬出）", q:"盛土208m³／14枚", d:3,t:"land",pre:[25]},
+ {id:27,g:"out", n:"工事用道路 撤去（敷鉄板・土のう）", q:"16枚／501袋", d:3,t:"land",pre:[26]},
+ {id:28,g:"out", n:"出来形測定・後片付け", q:"", d:2,t:"land",pre:[27]}
+];
+const DEF={start:"2026-11-09",rest:"satsun",rate:"0.7"};
+const state={start:DEF.start,rest:DEF.rest,rate:DEF.rate,days:{}};
+TASKS.forEach(t=>state.days[t.id]=t.d);
+try{ const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s){ if(/^\d{4}-\d\d-\d\d$/.test(s.start||""))state.start=s.start; if(s.rest==="sun"||s.rest==="satsun")state.rest=s.rest; if(["1","0.8","0.7","0.6","0.5"].includes(s.rate))state.rate=s.rate;
+  if(s.days)TASKS.forEach(t=>{const v=parseInt(s.days[t.id],10); if(v>=1&&v<=120)state.days[t.id]=v;}); } }catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}};
+
+const $=id=>document.getElementById(id);
+const WD=["日","月","火","水","木","金","土"];
+const base=()=>{const p=state.start.split("-").map(Number);return Date.UTC(p[0],p[1]-1,p[2]);};
+const dt=i=>new Date(base()+i*864e5);
+const md=i=>{const d=dt(i);return (d.getUTCMonth()+1)+"/"+d.getUTCDate();};
+const mdw=i=>md(i)+"（"+WD[dt(i).getUTCDay()]+"）";
+const ymd=i=>{const d=dt(i);return d.getUTCFullYear()+"年"+(d.getUTCMonth()+1)+"月"+d.getUTCDate()+"日";};
+function isWork(i){const d=dt(i),w=d.getUTCDay(),m=d.getUTCMonth()+1,day=d.getUTCDate();
+  if(w===0)return false; if(state.rest==="satsun"&&w===6)return false; if((m===12&&day>=29)||(m===1&&day<=3))return false; return true;}
+
+function schedule(){
+  const r={}, rate=parseFloat(state.rate);
+  TASKS.forEach(t=>{
+    let es=0; t.pre.forEach(p=>{es=Math.max(es,r[p].end+1);});
+    const d=state.days[t.id]; let start,end,need=d;
+    if(t.t==="cure"){start=es;end=es+d-1;}
+    else{ need=t.t==="sea"?Math.ceil(d/rate-1e-9):d; let i=es; while(!isWork(i))i++; start=i; let c=0;
+      for(;;){ if(isWork(i)){c++; if(c>=need)break;} i++; } end=i; }
+    r[t.id]={start,end,need};
+  });
+  return r;
+}
+
+const table=$("gantt"); let rows={}, grows={}, headTl;
+function build(){
+  let h='<thead><tr><th class="c-task">作業</th><th class="c-d">実働日数</th><th>開始</th><th>終了</th><th class="tl" id="htl"></th></tr></thead><tbody>';
+  let g=null;
+  TASKS.forEach(t=>{
+    if(t.g!==g){g=t.g;h+='<tr class="grp"><th class="c-task" scope="rowgroup">'+GROUPS[g]+'</th><td></td><td></td><td></td><td class="tl" id="g-'+g+'"></td></tr>';}
+    h+='<tr><th class="c-task" scope="row"><b>'+t.n+'</b>'+(t.q?'<small class="num">'+t.q+'</small>':'')+'</th>'
+      +'<td class="c-d"><input class="days" type="number" min="1" max="120" step="1" id="d-'+t.id+'" value="'+state.days[t.id]+'" aria-label="'+t.n+' の日数"><span class="unit">'+(t.t==="cure"?"暦日":"日")+'</span></td>'
+      +'<td class="num" id="s-'+t.id+'"></td><td class="num" id="e-'+t.id+'"></td><td class="tl" id="t-'+t.id+'"><div class="bar '+t.t+'" id="b-'+t.id+'"></div></td></tr>';
+  });
+  table.innerHTML=h+'</tbody>';
+  headTl=$("htl");
+  TASKS.forEach(t=>{
+    $("d-"+t.id).addEventListener("change",e=>{let v=parseInt(e.target.value,10); if(!(v>=1))v=1; if(v>120)v=120; e.target.value=v; state.days[t.id]=v; save(); render();});
+    const b=$("b-"+t.id); b.addEventListener("pointerenter",e=>showTip(t,e)); b.addEventListener("pointermove",moveTip); b.addEventListener("pointerleave",hideTip);
+  });
+}
+let R={};
+function render(){
+  R=schedule();
+  const last=Math.max(...TASKS.map(t=>R[t.id].end)), N=last+4;
+  const lead=headTl.offsetLeft, avail=$("gwrap").clientWidth-lead-2;
+  DW=Math.max(6,Math.min(13,Math.floor(avail/N)));
+  const W=N*DW;
+  // off-day shading + week lines
+  let stops=["transparent 0"], i=0;
+  while(i<N){ if(!isWork(i)){let j=i; while(j<N&&!isWork(j))j++; stops.push("transparent "+i*DW+"px","var(--off) "+i*DW+"px","var(--off) "+j*DW+"px","transparent "+j*DW+"px"); i=j;} else i++; }
+  const dow0=dt(0).getUTCDay(), firstMon=(8-dow0)%7;
+  table.style.setProperty("--offbg","linear-gradient(to right,"+stops.join(",")+")");
+  table.style.setProperty("--wk","repeating-linear-gradient(to right,var(--line) 0 1px,transparent 1px "+7*DW+"px)");
+  table.querySelectorAll(".tl").forEach(c=>{c.style.width=W+"px";c.style.minWidth=W+"px";c.style.backgroundPosition=(firstMon*DW)+"px 0, 0 0";c.style.backgroundSize=(W-firstMon*DW)+"px 100%, "+W+"px 100%";});
+  // header labels
+  let hh="";
+  for(let k=0;k<N;k++){const d=dt(k); if(k===0||d.getUTCDate()===1){ if(N-k>3) hh+='<span class="mon" style="left:'+(k*DW+4)+'px">'+(k===0||d.getUTCMonth()===0?d.getUTCFullYear()+"年":"")+(d.getUTCMonth()+1)+'月</span>'; } }
+  for(let k=firstMon;k<N-2;k+=7) hh+='<span class="wk" style="left:'+(k*DW+3)+'px">'+md(k)+'</span>';
+  headTl.innerHTML=hh;
+  // bars
+  const span={};
+  TASKS.forEach(t=>{const r=R[t.id],b=$("b-"+t.id); b.style.left=(r.start*DW+1)+"px"; b.style.width=((r.end-r.start+1)*DW-2)+"px";
+    $("s-"+t.id).textContent=md(r.start); $("e-"+t.id).textContent=md(r.end);
+    const s=span[t.g]||(span[t.g]=[r.start,r.end]); s[0]=Math.min(s[0],r.start); s[1]=Math.max(s[1],r.end);});
+  Object.keys(span).forEach(g=>{$("g-"+g).innerHTML='<div class="span" style="left:'+(span[g][0]*DW+1)+'px;width:'+((span[g][1]-span[g][0]+1)*DW-2)+'px"></div>';});
+  // summary
+  let wk=0; for(let k=0;k<=last;k++) if(isWork(k)) wk++;
+  $("s-end").textContent=ymd(last); $("s-cal").textContent=(last+1)+"日"; $("s-work").textContent=wk+"日";
+  const ms=[["着手",0],["床掘 開始",R[6].start]].concat(TASKS.filter(t=>t.ms).map(t=>[t.ms,R[t.id].start]),[["仮設撤去 開始",R[26].start]]);
+  checkYearEnd();
+  $("miles").innerHTML=ms.map(m=>'<div><dt>'+m[0]+'</dt><dd class="num">'+mdw(m[1])+'</dd></div>').join("");
+}
+function checkYearEnd(){
+  const hol=k=>{const d=dt(k),m=d.getUTCMonth()+1,day=d.getUTCDate();return (m===12&&day>=29)||(m===1&&day<=3);};
+  const hit=[["第1区",10,11],["第2区",14,15]].filter(c=>{for(let k=R[c[1]].start;k<=R[c[2]].end;k++) if(hol(k)) return true; return false;}).map(c=>c[0]);
+  const a=$("alert"); a.hidden=!hit.length;
+  if(hit.length) a.textContent=hit.join("・")+"の型枠建込みから水中コンクリート打設までが年末年始をまたぎます。型枠を海に立てたまま休みに入らないよう、着手日か日数を調整してください。";
+}
+const tip=$("tip");
+function showTip(t,e){const r=R[t.id],cal=r.end-r.start+1;
+  tip.innerHTML='<b>'+t.n+'</b>'+mdw(r.start)+' 〜 '+mdw(r.end)+'<br>'+(t.t==="cure"?"養生 "+cal+"暦日":"実働 "+state.days[t.id]+"日"+(t.t==="sea"&&r.need>state.days[t.id]?"（待機込み "+r.need+"日）":"")+"、暦日 "+cal+"日");
+  tip.hidden=false; moveTip(e);}
+function moveTip(e){const w=tip.offsetWidth,h=tip.offsetHeight; let x=e.clientX+14,y=e.clientY+16; if(x+w>window.innerWidth-8)x=e.clientX-w-10; if(x<8)x=8; if(y+h>window.innerHeight-8)y=e.clientY-h-12; tip.style.left=x+"px"; tip.style.top=y+"px";}
+function hideTip(){tip.hidden=true;}
+$("gwrap").addEventListener("scroll",hideTip);
+
+function syncInputs(){ $("start").value=state.start; $("rest").value=state.rest; $("rate").value=state.rate; TASKS.forEach(t=>{$("d-"+t.id).value=state.days[t.id];}); }
+$("start").addEventListener("change",e=>{ if(/^\d{4}-\d\d-\d\d$/.test(e.target.value)){state.start=e.target.value;save();render();} else e.target.value=state.start; });
+$("rest").addEventListener("change",e=>{state.rest=e.target.value;save();render();});
+$("rate").addEventListener("change",e=>{state.rate=e.target.value;save();render();});
+$("reset").addEventListener("click",()=>{state.start=DEF.start;state.rest=DEF.rest;state.rate=DEF.rate;TASKS.forEach(t=>state.days[t.id]=t.d);save();syncInputs();render();});
+
+build(); syncInputs(); render();
+let lastW=0; new ResizeObserver(()=>{const w=$("gwrap").clientWidth; if(w!==lastW){lastW=w;render();}}).observe($("gwrap"));
+})();
+</script>
+
+</body></html>
