@@ -1,0 +1,642 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>吉岡 -4.5m岸壁 3D</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one-screen viewer. 3D stage fills the left, a narrow instrument panel sits on the right; on phones the stage stacks above the panel. */
+:root{
+  --bg:#EEF1F2; --panel:#F8FAFA; --ink:#1C2A33; --muted:#5A6A74; --line:#CBD4D9; --chip:#E3E9EC;
+  --accent:#C2302A; --accent-ink:#FFFFFF;
+  --scene:#E2E9EC;
+  --c-exist:#B9BEC1; --c-body:#A3ABB0; --c-ground:#CFC5A5; --c-seabed:#9A8F6E; --c-sea:#A9CADA;
+  --c-new:#E0625F; --c-pave:#F2A9A2; --c-base:#C9A66B; --c-frost:#A98B5B; --c-fill:#DCCB9F; --c-wall:#B8322C;
+  --c-fender:#2B2F33; --c-bollard:#2F6FB5; --c-curb:#E8B923; --c-metal:#8FA0AA; --c-ladder:#E07B1F; --c-drain:#1479B8; --c-grate:#4A545B;
+  --c-joint:#D81B78; --c-pipe:#7A3FB5; --c-block:#E0625F; --c-block2:#B8322C; --c-slide:#7A3FB5; --c-steel:#6B7780; --c-stone:#9C9684; --c-survey:#1C2A33;
+  --c-edge:#2A343B;
+  --font-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A;
+  --accent:#F0766E; --accent-ink:#1A0E0D;
+  --scene:#0D1418;
+  --c-exist:#7F878C; --c-body:#687177; --c-ground:#6A6551; --c-seabed:#57503C; --c-sea:#27485A;
+  --c-new:#E8736F; --c-pave:#C98A85; --c-base:#A9884F; --c-frost:#8A7045; --c-fill:#8A7F5E; --c-wall:#F0766E;
+  --c-fender:#454C53; --c-bollard:#6AA3E6; --c-curb:#F0BE1E; --c-metal:#AEBBC3; --c-ladder:#F2A25E; --c-drain:#5CB6EE; --c-grate:#2B3338;
+  --c-joint:#F26BAE; --c-pipe:#B892F2; --c-block:#E8736F; --c-block2:#F0766E; --c-slide:#B892F2; --c-steel:#93A0A8; --c-stone:#7C776A; --c-survey:#E3E9EC;
+  --c-edge:#0A0F12;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A;
+  --accent:#F0766E; --accent-ink:#1A0E0D;
+  --scene:#0D1418;
+  --c-exist:#7F878C; --c-body:#687177; --c-ground:#6A6551; --c-seabed:#57503C; --c-sea:#27485A;
+  --c-new:#E8736F; --c-pave:#C98A85; --c-base:#A9884F; --c-frost:#8A7045; --c-fill:#8A7F5E; --c-wall:#F0766E;
+  --c-fender:#454C53; --c-bollard:#6AA3E6; --c-curb:#F0BE1E; --c-metal:#AEBBC3; --c-ladder:#F2A25E; --c-drain:#5CB6EE; --c-grate:#2B3338;
+  --c-joint:#F26BAE; --c-pipe:#B892F2; --c-block:#E8736F; --c-block2:#F0766E; --c-slide:#B892F2; --c-steel:#93A0A8; --c-stone:#7C776A; --c-survey:#E3E9EC;
+  --c-edge:#0A0F12;
+  color-scheme:dark }
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.55;display:flex;flex-direction:column;overflow:hidden}
+*{box-sizing:border-box}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+header.bar{display:flex;align-items:baseline;gap:8px 16px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header.bar h1{font-size:16px;font-weight:700;margin:0;letter-spacing:.02em;text-wrap:balance}
+header.bar p{margin:0;color:var(--muted);font-size:12px}
+
+main{flex:1;min-height:0;display:flex}
+.stage{position:relative;flex:1;min-width:0;min-height:0;background:var(--scene)}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.views{position:absolute;top:12px;left:16px;right:16px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.views button{pointer-events:auto}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:3px;padding:5px 10px;font-size:12.5px;font-weight:500;cursor:pointer;line-height:1.3}
+.btn:hover{border-color:var(--muted)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.dir{position:absolute;left:16px;bottom:14px;margin:0;font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:4px 8px;pointer-events:none}
+.hint{position:absolute;right:16px;bottom:14px;margin:0;max-width:calc(100% - 390px);font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:4px 8px;pointer-events:none;text-align:right}
+.nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+aside.panel{width:340px;flex:none;border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;overscroll-behavior:contain}
+.sec{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.sec h2{margin:0;font-size:11.5px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.info h3{margin:0;font-size:15px;font-weight:700}
+.info p{margin:0;font-size:13px}
+.info .src{color:var(--muted);font-size:12px}
+.swatch{display:inline-block;width:11px;height:11px;border-radius:2px;flex:none;border:1px solid var(--line)}
+.layers{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.layers label{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px;min-width:0}
+.layers label span.t{min-width:0}
+.layers small{color:var(--muted);font-size:11.5px}
+.grp{font-size:11.5px;color:var(--muted);margin-top:6px}
+input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);flex:none;margin:0}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chips .btn{padding:3px 7px;font-size:12px}
+.read{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0;font-size:12.5px}
+.read dt{color:var(--muted)}
+.read dd{margin:0;text-align:right}
+.works{display:grid;grid-template-columns:1fr;gap:5px}
+.works .btn{text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.works .btn span.w{display:flex;align-items:center;gap:8px;min-width:0}
+.works .btn span.q{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.works .btn[aria-pressed="true"] span.q{color:inherit;opacity:.8}
+details summary{cursor:pointer;font-size:11.5px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+details ul{margin:10px 0 0;padding-left:1.2em;font-size:12.5px;display:flex;flex-direction:column;gap:5px}
+.toggle{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500}
+
+@media (max-width:820px){
+  body{overflow:auto}
+  main{flex-direction:column;flex:none}
+  .stage{height:56vh;min-height:300px;flex:none}
+  aside.panel{width:auto;border-left:0;border-top:1px solid var(--line);overflow:visible}
+  .hint{display:none}
+}
+</style>
+
+<header class="bar">
+  <h1>吉岡漁港 -4.5m岸壁（A部・B部）</h1>
+  <p>吉岡漁港機能保全工事（補正明許）外 ／ 2次元の設計図（令和8年3月）から組み立てた3Dモデル</p>
+</header>
+
+<main>
+  <div class="stage" id="stage">
+    <canvas id="gl" aria-label="-4.5m岸壁の3Dモデル。ドラッグで回転できます"></canvas>
+    <div class="views" id="views" role="group" aria-label="視点"></div>
+    <p class="dir">手前が -4.5m泊地（海）、奥が陸。角から左へ B部、手前へ A部</p>
+    <p class="hint">ドラッグで回転・ホイールで拡大・右ドラッグで移動。クリックで説明</p>
+  </div>
+
+  <aside class="panel">
+    <section class="sec info" aria-live="polite">
+      <h2>選択中の部材</h2>
+      <h3 id="info-name">部材をクリックしてください</h3>
+      <p id="info-body"></p>
+      <p class="src" id="info-src"></p>
+    </section>
+
+    <section class="sec">
+      <h2>工種から探す</h2>
+      <div class="works" id="works" role="group" aria-label="工種"></div>
+    </section>
+
+    <section class="sec">
+      <h2>断面を切る</h2>
+      <label class="toggle"><input type="checkbox" id="cut-on"> 岸壁を切って断面を見る</label>
+      <div class="chips" role="group" aria-label="切る岸壁">
+        <button type="button" class="btn" id="mode-A" aria-pressed="false">A部を切る</button>
+        <button type="button" class="btn" id="mode-B" aria-pressed="true">B部を切る</button>
+      </div>
+      <input type="range" id="cut-s" min="0" max="150" step="0.1" value="42" aria-label="切る位置（測点）">
+      <div class="chips" id="cut-chips" role="group" aria-label="代表の断面"></div>
+      <dl class="read">
+        <dt>切る位置</dt><dd class="num" id="r-pos">—</dd>
+        <dt>スパン</dt><dd id="r-span">—</dd>
+        <dt>扱い</dt><dd id="r-work">—</dd>
+        <dt>上部コンクリートの断面</dt><dd class="num" id="r-up">—</dd>
+        <dt>前面の地盤高</dt><dd class="num" id="r-bed">—</dd>
+      </dl>
+    </section>
+
+    <section class="sec">
+      <h2>表示するもの</h2>
+      <ul class="layers" id="layers"></ul>
+      <label class="toggle"><input type="checkbox" id="xray"> コンクリートを半透明にする</label>
+    </section>
+
+    <section class="sec">
+      <h2>潮位</h2>
+      <div class="chips" id="tide-chips" role="group" aria-label="潮位"></div>
+      <p style="margin:0;font-size:12.5px;color:var(--muted)">上部コンクリートの下端は A部 +1.2m、B部 +0.9m。満潮（H.W.L +1.1m）ではB部の型枠の下が水に浸かります。</p>
+    </section>
+
+    <section class="sec">
+      <details>
+        <summary>このモデルの作り方と注意</summary>
+        <ul>
+          <li>2次元の図面（平面図・縦断図・標準断面図）から組み立てたモデルです。3Dの設計データはフォルダにありません。</li>
+          <li>全数量は標準断面×延長の簡略算出で、契約後に現地を測って確定すると特記仕様書にあります。</li>
+          <li>A部とB部の角は直角として描いています（平面図では数度ずれています）。A部の SP 98.73 を B部の前面に合わせました。</li>
+          <li>B部は全長207.8mのうち SP 0〜150 までを描き、その先（今回の対象外）は省いています。</li>
+          <li>既設の岸壁本体と背後の地盤は標準断面図の形をそのまま延ばしたものです。A部の SP 0〜58.5（R7施工済み）も同じ形としています。</li>
+          <li>海底は縦断図の地盤高を岸壁の前に写し、沖へ向かって計画水深 -4.5m に近づけた目安です。</li>
+          <li>防舷材・車止め・係船柱の位置は平面図と縦断図の寸法から置きました。車止めの3mと2mの並べ方は詳細図の例に合わせた目安です。</li>
+          <li>水抜きパイプ（24本）は約3m間隔で並べた目安です。伸縮目地の線も目安です。</li>
+          <li>鉄網、アンカーボルト、埋込栓、支保工、型枠は描いていません。</li>
+          <li>標識灯と浮標灯は位置図とメーカー図だけなので、3Dには入れていません（「工種から探す」に説明があります）。</li>
+          <li>参考図の押印がある図面（B部標準断面図、詳細図、撤去工説明図など）は、施工方法を指定するものではありません。</li>
+        </ul>
+      </details>
+    </section>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+"use strict";
+/* ================= shared viewer core ================= */
+const $=id=>document.getElementById(id);
+const stage=$("stage"), canvas=$("gl");
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fm=(v,d)=>v.toFixed(d===undefined?1:d);
+const state={cut:false,s:0,xray:false,vis:{}};
+let INFO={}, DEFAULT_INFO=["部材をクリックしてください","",""], LAYERS=[], WORKS=[], VIEWS=[], PRI={};
+function showInfo(key,extra){
+  if(!key||!INFO[key]){$("info-name").textContent=DEFAULT_INFO[0];$("info-body").textContent=DEFAULT_INFO[1];$("info-src").textContent="";return;}
+  const inf=INFO[key]; $("info-name").textContent=inf.n; $("info-body").textContent=inf.b+(extra?" ／ "+extra:""); $("info-src").textContent="出典："+inf.s;
+}
+let renderer;
+try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true}); }
+catch(e){ const d=document.createElement("div");d.className="nogl";d.textContent="この環境では3D表示（WebGL）が使えません。別のブラウザで開いてください。";stage.appendChild(d);return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(38,1,0.2,3000);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true; controls.dampingFactor=0.12; controls.maxPolarAngle=Math.PI*0.97; controls.minDistance=0.8; controls.maxDistance=900;
+scene.add(new THREE.HemisphereLight(0xffffff,0x7c838a,0.62));
+const sun=new THREE.DirectionalLight(0xffffff,0.48); sun.position.set(-70,120,-90); scene.add(sun);
+const fill=new THREE.DirectionalLight(0xffffff,0.14); fill.position.set(90,50,80); scene.add(fill);
+const cutPlane=new THREE.Plane(new THREE.Vector3(1,0,0),0);
+renderer.localClippingEnabled=true;
+let root=null, capGroup=null, groups={}, pick=[], selected=null, nearLabels=[], edgeMat;
+
+class Tris{
+  constructor(){this.p=[];}
+  tri(a,b,c){this.p.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z);}
+  quad(a,b,c,d){this.tri(a,b,c);this.tri(a,c,d);}
+  geom(){const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(this.p,3));g.computeVertexNormals();return g;}
+}
+function mat(token,o){
+  o=o||{};
+  const m=new THREE.MeshLambertMaterial({color:new THREE.Color(css(token)),side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:o.po===undefined?1:o.po,polygonOffsetUnits:o.po===undefined?1:o.po});
+  if(o.opacity!==undefined&&o.opacity<1){m.transparent=true;m.opacity=o.opacity;m.depthWrite=false;}
+  return m;
+}
+function solid(grp,geom,material,info,extra,edges){
+  const mesh=new THREE.Mesh(geom,material); mesh.userData.info=info; mesh.userData.extra=extra||""; grp.add(mesh); pick.push(mesh);
+  if(edges!==false){const l=new THREE.LineSegments(new THREE.EdgesGeometry(geom,28),edgeMat); grp.add(l);}
+  return mesh;
+}
+function label(text,pos,o){
+  o=o||{};
+  const pad=10,fs=30,cv=document.createElement("canvas"),c=cv.getContext("2d");
+  const font="500 "+fs+"px "+(o.mono?'"IBM Plex Mono",ui-monospace,Menlo,monospace':'"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif');
+  c.font=font; const w=Math.ceil(c.measureText(text).width)+pad*2,h=fs+pad*1.4;
+  cv.width=w;cv.height=h; c.font=font;
+  c.fillStyle=o.bg||css("--panel"); c.globalAlpha=0.92; c.fillRect(0,0,w,h); c.globalAlpha=1;
+  c.strokeStyle=o.fg||css("--line"); c.lineWidth=2; c.strokeRect(1,1,w-2,h-2);
+  c.fillStyle=o.fg||css("--ink"); c.textBaseline="middle"; c.fillText(text,pad,h/2+1);
+  const tx=new THREE.CanvasTexture(cv); tx.minFilter=THREE.LinearFilter;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:!!o.depth,sizeAttenuation:false,transparent:true}));
+  const k=(o.size||0.022); sp.scale.set(k*w/h,k,1); sp.position.copy(pos); sp.renderOrder=10; return sp;
+}
+function near(sp,dist){sp.userData.near=dist;nearLabels.push(sp);return sp;}
+function dispose(o){o.traverse(c=>{if(c.geometry)c.geometry.dispose();if(c.material){(Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{if(m.map)m.map.dispose();m.dispose();});}});}
+function lineOf(pts,color,o){o=o||{};const g=new THREE.BufferGeometry().setFromPoints(pts);
+  const m=o.dash?new THREE.LineDashedMaterial({color:new THREE.Color(color),dashSize:o.dash,gapSize:o.dash*0.6}):new THREE.LineBasicMaterial({color:new THREE.Color(color)});
+  const l=new THREE.Line(g,m); if(o.dash)l.computeLineDistances(); return l;}
+/* a polygon [[u,v],…] pushed from station a to b; map(s,u,v) gives the 3D point */
+function prism(poly,a,b,map){
+  const T=new Tris(), A=poly.map(p=>map(a,p[0],p[1])), B=poly.map(p=>map(b,p[0],p[1])), n=poly.length;
+  for(let i=0;i<n;i++){const k=(i+1)%n;T.quad(A[i],B[i],B[k],A[k]);}
+  THREE.ShapeUtils.triangulateShape(poly.map(p=>new THREE.Vector2(p[0],p[1])),[]).forEach(t=>{T.tri(A[t[0]],A[t[1]],A[t[2]]);T.tri(B[t[0]],B[t[1]],B[t[2]]);});
+  return T.geom();
+}
+/* same number of points at every station */
+function loft(sts,fn,map){
+  const T=new Tris(), polys=sts.map(fn), R=polys.map((pl,i)=>pl.map(p=>map(sts[i],p[0],p[1])));
+  for(let i=0;i<R.length-1;i++){const A=R[i],B=R[i+1],n=A.length;for(let j=0;j<n;j++){const k=(j+1)%n;T.quad(A[j],B[j],B[k],A[k]);}}
+  [0,R.length-1].forEach(e=>THREE.ShapeUtils.triangulateShape(polys[e].map(p=>new THREE.Vector2(p[0],p[1])),[]).forEach(t=>T.tri(R[e][t[0]],R[e][t[1]],R[e][t[2]])));
+  return T.geom();
+}
+const rect=(u0,u1,v0,v1)=>[[u0,v0],[u1,v0],[u1,v1],[u0,v1]];
+/* a flat polygon in the cutting plane: poly in (u,v), place(u,v) gives the 3D point */
+function capPoly(poly,place,token,info,extra){
+  if(poly.length<3)return;
+  const g=new THREE.ShapeGeometry(new THREE.Shape(poly.map(p=>new THREE.Vector2(p[0],p[1])))), pa=g.attributes.position;
+  for(let i=0;i<pa.count;i++){const q=place(pa.getX(i),pa.getY(i));pa.setXYZ(i,q.x,q.y,q.z);}
+  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:new THREE.Color(css(token)),side:THREE.DoubleSide})); m.userData.info=info; m.userData.extra=extra||""; capGroup.add(m); pick.push(m);
+  capGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(poly.concat([poly[0]]).map(p=>place(p[0],p[1]))),new THREE.LineBasicMaterial({color:new THREE.Color(css("--c-edge"))})));
+}
+function setView(pos,tgt){
+  const a=camera.aspect, k=Math.max(1,1.25/a), t=new THREE.Vector3(tgt[0],tgt[1],tgt[2]), p=new THREE.Vector3(pos[0],pos[1],pos[2]);
+  p.sub(t).multiplyScalar(k).add(t); camera.position.copy(p); controls.target.copy(t); controls.update();
+  const b=$("view-sec"); if(b)b.setAttribute("aria-pressed","false");
+}
+const secOn=()=>{const b=$("view-sec");return !!b&&b.getAttribute("aria-pressed")==="true";};
+let SITE={build(){},cut(){},readout(){},pickExtra(){return null;},labelOk(){return true;},keep(){return true;}};
+
+/* ================= site ================= */
+/* -4.5m岸壁（A部・B部）
+   world: X = B部の測点（SP）方向、Y = B部の前面から陸側、z = 標高。
+   A部は X=0 の線を前面にして Y のマイナス側（B部から見て海側）へ延び、A部のSP 98.73 が B部の前面（Y=0）に当たる。 */
+const M=(X,Y,z)=>new THREE.Vector3(X,z,Y);
+const A_END=98.73, mapB=(s,d,z)=>M(s,d,z), mapA=(s,d,z)=>M(-d,s-A_END,z);
+const TIDES=[["L.W.L ±0.0",0],["M.L.W.L +0.3",0.3],["H.W.L +1.1",1.1],["H.H.W.L +1.8",1.8]];
+state.mode="B"; state.s=42; state.tide=0.3;
+const A_R8=[58.51,98.73], A_DRAIN_END=100.46, A_PAVE_END=104.58, A_CORNER=104.73;
+const B_R8=[[30.05,80.00],[100.04,119.94]], B_PAVE=[[29.97,80.00],[100.02,120.22]], B_LEN=150.02;
+const A_JOINT=[0,8.5,18.5,28.5,38.5,48.5,58.51,68.5,78.5,88.5,98.73];
+const B_SPAN=[[11,0,10.08],[12,10.08,20.03],[13,20.03,30.05],[14,30.05,40.00],[15,40.00,50.00],[16,50.00,59.95],[17,59.95,70.02],[18,70.02,80.00],[19,80.00,90.02],[20,90.02,100.04],[21,100.04,110.18],[22,110.18,119.94],[23,119.94,129.80],[24,129.80,139.85],[25,139.85,150.02]];
+const B_N=[15,17,22];                       // 数量計算書で普通ポルトランド（加熱費あり）に入っている延長のスパン
+const GA=[[0,-2.8],[8.5,-3.7],[18.5,-3.8],[28.5,-3.8],[38.5,-3.0],[48.5,-3.9],[58.5,-3.6],[68.5,-3.3],[78.5,-3.2],[88.5,-3.5],[98.73,-2.5]];
+const GB=[[0,-2.8],[10,-3.3],[20,-3.8],[30.05,-3.5],[40,-3.5],[50,-3.5],[60,-3.5],[70,-3.6],[80,-3.3],[90,-3.5],[100.04,-3.6],[110,-4.0],[119.94,-3.8],[129.8,-4.0],[140,-3.7],[150.02,-3.7]];
+const interp=(T,s)=>{if(s<=T[0][0])return T[0][1];for(let i=1;i<T.length;i++)if(s<=T[i][0]){const a=T[i-1],b=T[i];return a[1]+(b[1]-a[1])*(s-a[0])/(b[0]-a[0]);}return T[T.length-1][1];};
+const within=(R,s)=>R.some(r=>s>=r[0]-1e-6&&s<=r[1]+1e-6);
+const inA=s=>s>=A_R8[0]-1e-6&&s<=A_R8[1]+1e-6, inB=s=>within(B_R8,s), inBp=s=>within(B_PAVE,s);
+const spanB=s=>B_SPAN.find(p=>s<=p[2]+1e-9)||B_SPAN[B_SPAN.length-1];
+const spanA=s=>{for(let i=1;i<A_JOINT.length;i++)if(s<=A_JOINT[i]+1e-9)return [A_JOINT[i-1],A_JOINT[i]];return [A_END,A_CORNER];};
+
+/* bollards, fenders, kerbs: stations along each part */
+const A_BOL=[63.51,73.51,83.51,93.51], B_BOL=[35,45,55,65,75,105.15,115.25];
+const A_BOL_OLD=[3.4,13.4,23.4,33.4,43.4,53.4];
+const A_FEN=[0,1,2,3,4,5,6,7].map(i=>61.01+5*i);
+const A_FEN_OLD=[]; for(let i=0;i<12;i++)A_FEN_OLD.push(1.03+5*i);
+const LADDER=32.30+12*45.7/15;
+const B_FEN=[]; for(let i=0;i<16;i++){ if(i!==12)B_FEN.push(32.30+i*45.7/15); } for(let i=0;i<7;i++)B_FEN.push(102.0+3*i);
+const A_KERB=[[59.31,3]]; A_BOL.slice(0,3).forEach(b=>A_KERB.push([b+0.7,3],[b+4.0,2],[b+6.3,3])); A_KERB.push([94.21,2],[96.51,2]);
+const B_KERB=[[29.0,2],[31.3,3]]; [35,45,55,65].forEach(b=>B_KERB.push([b+0.7,b===65?2.5:3],[b+4.0,2],[b+6.3,3])); B_KERB.push([75.7,3],[79.0,2],[99.14,2],[101.44,3],[105.85,3],[109.15,2],[111.45,3],[115.95,3],[119.25,2]);
+
+/* cross-sections: (distance from the quay face, elevation) */
+const UP_A=[[0,1.2],[0.58,1.2],[0.58,0.95],[0.98,0.95],[0.98,1.2],[0.70,1.9],[0,1.9]];
+const UP_B=[[0,0.9],[0.60,0.9],[0.60,0.7],[1.10,0.7],[1.10,0.9],[0.70,1.9],[0,1.9]];
+const BASE_A=[[0.70,1.9],[1.90,1.9],[1.90,1.2],[0.98,1.2]], BASE_B=[[0.70,1.9],[1.90,1.9],[1.90,0.9],[1.10,0.9]];
+const FEN=[[0,1.80],[-0.05,1.80],[-0.20,1.56],[-0.20,0.06],[-0.03,0.01],[0,0.01]];
+function partsA(s){
+  const n=inA(s), corner=s>A_END, P=[], add=(k,poly,c,i,l)=>P.push({k,poly,c,i,l});
+  add("body",[[0,-4.0],[0.8,-4.0],[1.16,-2.82],[3.2,-2.82],[3.2,1.2],[0.98,1.2],[0.98,0.95],[0.58,0.95],[0.58,1.2],[0,1.2]],"--c-body","bodyA","exist");
+  add("fill",[[3.2,-2.82],[11,-2.82],[11,2.3],[6.4,2.03],[6.0,2.0],[6.0,1.6],[5.8,1.6],[5.8,1.5],[2.3,1.4],[2.3,1.54],[1.9,1.54],[1.9,1.4],[0.90,1.4],[0.98,1.2],[3.2,1.2]],"--c-ground","ground","ground");
+  if(s>A_PAVE_END){ add("old",[[0,1.2],[0.98,1.2],[0.90,1.4],[1.9,1.4],[1.9,1.54],[2.3,1.54],[2.3,1.4],[5.8,1.5],[5.8,1.6],[6.0,1.6],[6.0,2.0],[0,1.9]],"--c-exist","oldA","exist"); return P; }
+  const pv=n||corner;                                             // 舗装・排水は SP 100.46、終点部は 104.58 まで
+  add("up",UP_A,n?"--c-new":"--c-exist",n?"upA":corner?"oldA":"r7",n?"up":"exist");
+  add("paveS",[[0.70,1.9],[1.90,1.9],[1.90,1.7],[0.78,1.7]],pv?"--c-pave":"--c-exist",pv?"paveA":"r7",pv?"pave":"exist");
+  add("baseS",[[0.78,1.7],[1.90,1.7],[1.90,1.4],[0.90,1.4]],pv?"--c-base":"--c-exist",pv?"baseA":"r7",pv?"base":"exist");
+  if(s<=A_DRAIN_END) add("trough",[[1.90,1.9],[1.95,1.9],[1.95,1.60],[2.25,1.60],[2.25,1.9],[2.30,1.9],[2.30,1.54],[1.90,1.54]],pv?"--c-drain":"--c-exist",pv?"trough":"r7",pv?"drain":"exist");
+  else add("paveC",[[1.90,1.9],[2.30,1.9],[2.30,1.54],[1.90,1.54]],"--c-pave","paveA","pave");
+  add("paveL",[[2.30,1.9],[5.80,2.0],[5.80,1.8],[2.30,1.7]],pv?"--c-pave":"--c-exist",pv?"paveA":"r7",pv?"pave":"exist");
+  add("baseL",[[2.30,1.7],[5.80,1.8],[5.80,1.5],[2.30,1.4]],pv?"--c-base":"--c-exist",pv?"baseA":"r7",pv?"base":"exist");
+  add("wall",[[5.80,2.0],[6.00,2.0],[6.00,1.6],[5.80,1.6]],pv?"--c-wall":"--c-exist",pv?"wall":"r7",pv?"pave":"exist");
+  return P;
+}
+function partsB(s){
+  const n=inB(s), pv=inBp(s), P=[], add=(k,poly,c,i,l)=>P.push({k,poly,c,i,l});
+  add("body",[[0,-4.5],[3.1,-4.5],[3.1,0.9],[1.10,0.9],[1.10,0.7],[0.60,0.7],[0.60,0.9],[0,0.9]],"--c-body","bodyB","exist");
+  add("fill",[[3.1,-4.5],[3.6,-4.5],[4.35,-2.0],[9.5,-2.0],[9.5,2.0],[6.0,2.0],[6.0,1.4],[5.8,1.4],[5.8,1.7],[2.77,1.64],[2.62,1.34],[2.40,0.9],[3.1,0.9]],"--c-ground","ground","ground");
+  add("up",UP_B,n?"--c-new":"--c-exist",n?"upB":"oldB",n?"up":"exist");
+  add("wall",[[5.80,2.0],[6.00,2.0],[6.00,1.4],[5.80,1.4]],"--c-exist","wallB","exist");
+  if(pv){
+    add("pave",[[0.70,1.9],[5.80,2.0],[5.80,1.8],[0.78,1.7]],"--c-pave","paveB","pave");
+    add("baseEx",[[0.78,1.7],[2.82,1.74],[2.72,1.54],[0.86,1.5]],"--c-base","baseB","base");
+    add("frost",[[0.86,1.5],[2.72,1.54],[2.62,1.34],[0.94,1.3]],"--c-frost","frost","base");
+    add("back",[[0.94,1.3],[2.62,1.34],[2.40,0.9],[1.10,0.9]],"--c-fill","backfill","base");
+    add("baseOut",[[2.82,1.74],[5.80,1.80],[5.80,1.70],[2.77,1.64]],"--c-base","baseB2","base");
+  }else{
+    add("oldPave",[[0.70,1.9],[5.80,2.0],[5.80,1.8],[0.78,1.7]],"--c-exist","oldB","exist");
+    add("oldFill",[[0.78,1.7],[5.80,1.8],[5.80,1.7],[2.77,1.64],[2.62,1.34],[2.40,0.9],[1.10,0.9]],"--c-ground","ground","ground");
+  }
+  return P;
+}
+const cementB=no=>B_N.includes(no)?"普通ポルトランド（加熱費を計上）":"高炉セメントB種";
+
+INFO={
+  upA:{n:"上部コンクリート（A部・取壊し→打設）",b:"岸壁の天端の縁を作っているコンクリートです。古いものを取り壊して打ち直します。A部は SP 58.5〜98.7 の40.2m。断面は天端幅0.70m・高さ0.70mの台形に、0.40×0.25mのほぞが付き、1m当たり約0.69m³。数量は 30.0m³（係船柱基礎4か所の2.4m³を含む）、型枠 68.6m²、支保 40.2m、伸縮目地 3.4m²。配合は C-5S（18-5-40）で、数量総括表は高炉セメントB種です。下端が +1.2m・ほぞの底が +0.95m で、満潮（H.W.L +1.1m）に近いので、支保は潮待ち作業で計上されています。",s:"-4.5m岸壁A 標準断面図・A部平面図・数量計算書（A）・工事数量総括表"},
+  upB:{n:"上部コンクリート（B部・取壊し→打設）",b:"B部は SP 30.05〜80.00（49.95m）と SP 100.04〜119.94（19.90m）の計69.85m。断面は天端幅0.70m・高さ1.00mの台形に、0.50×0.20mのほぞが付き、1m当たり約1.00m³。下端は +0.9m、ほぞの底は +0.7m で H.W.L +1.1m より低く、支保・型枠・コンクリート打設とも潮待ち作業です。数量は高炉B種 43.2m³（延長 9.95×2＋9.98＋10.14m の4スパン分）と、普通ポルトランド 32.2m³（10.00＋10.07＋9.76m の3スパン分、生コン加熱費あり）。型枠 169.7m²、支保 69.8m、伸縮目地 9.0m²。",s:"-4.5m岸壁B部 標準断面図（参考図）・B部平面図・縦断図・数量計算書（B）・工事数量総括表"},
+  bolbase:{n:"係船柱の基礎",b:"係船柱を据える所だけ、上部コンクリートを陸側へ張り出します。長さ0.80m。A部は上幅1.20m・下幅0.92m・高さ0.70m（4か所で2.37m³）、B部は上幅1.20m・下幅0.80m・高さ1.00m（7か所。高炉B種4個・普通ポルトランド3個）。",s:"コーナー金具・車止め詳細図（参考図）・数量計算書（A）（B）"},
+  bollard:{n:"係船柱（撤去して流用）",b:"直柱 SC-1、5t型、φ180mm、L=1.00m。上部コンクリートを壊す前に外して保管し、打設のときに据え直します。A部4基（10m間隔）、B部7基の計11基。質疑応答の回答で、塗装は行わない（0m²）とされています。",s:"A部・B部平面図・標準断面図・数量計算書・質疑応答"},
+  fenderA:{n:"防舷材（A部・新材）",b:"漁港型 200H×1500L。5.0m間隔で8基。古いものを外し、埋込栓（M24のアンカー6本）を新しく打って取り付けます。上端 +1.80m、下端はほぼ L.W.L。撤去・取付とも潮待ち作業で、16t吊のラフテレーンクレーンを使う計上です。",s:"A部平面図・縦断図・防舷材・タラップ詳細図（参考図）・数量計算書（A）"},
+  fenderB:{n:"防舷材（B部）",b:"約3m間隔。SP 32.3〜78.0 に15基（16か所のうち1か所は防衝材タラップ）、SP 102〜120 に7基の計22基。数量計算書と工事数量総括表は 250H×1400L（V型）で22基です。B部の標準断面図の注記は「漁港型（200H×1500L）」、B部平面図の注記は「防舷材14基、タラップ1基」と「7基」で、規格と数が資料で違います。",s:"B部平面図・縦断図・標準断面図・撤去工説明図・数量計算書（B）・工事数量総括表"},
+  ladder:{n:"防衝材タラップ（撤去して再使用）",b:"150H×1900L＋補助梯子600L。B部の SP 68.9 付近に1基。外して保管し、埋込栓（M18×8本）と手摺り（φ22×1200mm）を新しくして付け直します。ここの車止めは長さ2.5mです。",s:"防舷材・タラップ詳細図（参考図）・B部平面図・数量計算書（B）"},
+  kerb:{n:"車止め（新材・樹脂製）",b:"高さ150×幅150mm、反射鋲付き。M27のケミカルアンカー（SUS304）で留めます。係船柱の所は1.4m、そのほかは0.3mあけて、3.0mと2.0mを交互に並べます。数量総括表は 3.0m 20本・2.5m 1本・2.0m 15本。図面を数えると A部は 3m 7本・2m 5本、B部は 3m 13本・2.5m 1本・2m 9本で、A部の2mが数量計算書（6本）より1本少なくなります。並べ方は詳細図の例に合わせた目安です。",s:"コーナー金具・車止め詳細図（参考図）・A部縦断図・B部平面図・撤去工説明図・数量計算書"},
+  metal:{n:"縁金物（新材・アルミ）",b:"岸壁の角を守るアルミのアングル（100×100）。J型アンカーボルトで留めます。A部 40.2m、B部 69.8m の計110m。古いものは廃棄（B部で約0.3t）。",s:"コーナー金具・車止め詳細図（参考図）・数量計算書"},
+  weep:{n:"水抜きパイプ（B部）",b:"上部コンクリートを貫く塩ビ管 VUφ50、長さ約1.0〜1.1m、パットフィルター付き。約3m間隔で24本。位置と高さは目安です。",s:"B部標準断面図・数量計算書（B）・工事数量総括表"},
+  paveA:{n:"舗装コンクリート（A部・取壊し→打設）",b:"厚さ0.20m、C-5S、鉄網 φ6・150×150。排水溝の海側が幅1.2m、陸側が幅3.4〜3.5m、延長41.95m、角の終点部が約21m²で、計208.6m²。型枠 7.3m²、伸縮目地 39.0m²。",s:"A標準断面図・伸縮目地配置図（参考図）・数量計算書（A）"},
+  paveB:{n:"舗装コンクリート（B部・取壊し→打設）",b:"厚さ0.20m、C-5S、鉄網 φ6・150×150。幅約5.1m、SP 29.97〜80.00（50.03m）と SP 100.02〜120.22（20.20m）に袖部を足して 365m²。型枠 12.4m²、伸縮目地 49.3m²。舗装版切断は13mです。",s:"B部標準断面図（参考図）・B部平面図・数量計算書（B）"},
+  baseA:{n:"路盤（A部・再生骨材0〜40mm、厚さ0.30m）",b:"古い切込砕石を取り、新しい材料を敷いて転圧します。排水溝の海側 41.1m²、陸側と終点部 167.8m² で計208.9m²。人力での敷均し・転圧の計上です。",s:"A標準断面図・数量計算書（A）"},
+  baseB:{n:"上層路盤（B部・掘削した所、0〜40mm、厚さ0.20m）",b:"上部コンクリートを打つために掘った幅約2mの所に敷きます。137.5m²。",s:"B部標準断面図（掘削部分拡大図）・数量計算書（B）"},
+  baseB2:{n:"上層路盤（B部・掘削しない所、補充厚0.10m）",b:"舗装版を壊したあと、路面を整えて0.1m補充します。幅約3.0m、209.3m²。",s:"B部標準断面図・数量計算書（B）"},
+  frost:{n:"凍上抑制層（B部・0〜80mm、厚さ0.20m）",b:"掘削した所の下層路盤です。124.0m²。",s:"B部標準断面図・数量計算書（B）"},
+  backfill:{n:"埋戻し（B部の掘削部）",b:"上部コンクリートの背面を +0.9m まで掘り（床掘 1m当たり1.37m²、計95.8m³）、打設のあと埋め戻します（1m当たり0.63m²、計43.8m³）。残りの52.0m³は福島町の土捨場（片道9.5km）へ運びます。",s:"B部標準断面図（掘削部分拡大図）・数量計算書（B）・特記仕様書"},
+  trough:{n:"排水溝（A部・U型側溝300、新材）",b:"古い U型トラフ300×400 を外し、U300B（長さ2m、1個264kg）を据えます。延長41.95m（計上42m）、グレーチングの蓋 42枚。床掘は海側0.52m²/m・陸側0.20m²/m。",s:"A標準断面図・撤去工標準断面図（参考図）・数量計算書（A）"},
+  wall:{n:"止壁（A部・撤去→打設）",b:"舗装の陸側の縁を止めるコンクリート。幅0.20m・高さ0.40m、C-5S。延長51.3m（背面46.07m＋終点の折返し5.25m）。数量総括表は51m。数量計算書の規格欄は「0.20×0.50」で、図面と総括表の高さ40cmと違います。",s:"A標準断面図・伸縮目地配置図（参考図）・数量計算書（A）・工事数量総括表"},
+  wallB:{n:"止壁（B部・既設）",b:"B部の止壁は今回さわりません。舗装との間に伸縮目地（14.05m²）を入れます。",s:"B部標準断面図・数量計算書（B）"},
+  joint:{n:"伸縮目地",b:"樹脂発泡体、厚さ10mm。上部コンクリートはスパンの境、舗装は約5mごとと、排水溝・止壁・上部コンクリートとの境に入れます。上部工 A部3.4m²・B部9.0m²、舗装 A部39.0m²・B部49.3m²。線の位置は目安です。",s:"伸縮目地配置図（参考図）・数量計算書"},
+  r7:{n:"A部の SP 0〜58.5（R7に施工済み）",b:"図面に「R7 A部 L=58.5m」とある区間です。今回の対象ではありません。形は今回の区間と同じとして描いています。",s:"A部平面図・縦断図"},
+  oldA:{n:"A部とB部の角（既設）",b:"A部の終わり（SP 98.73）から先は、B部の幅6.0mの中です。今回は、この角に舗装の終点部（約21m²）と止壁の折返しを作ります。",s:"A部平面図・伸縮目地配置図（参考図）"},
+  oldB:{n:"B部の今回さわらない区間（既設）",b:"SP 0〜30.05、80.00〜100.04、119.94 から先。上部コンクリートと舗装はそのままです。SP 150 から先（全長207.8m）は描いていません。",s:"B部平面図・縦断図"},
+  bodyA:{n:"岸壁の本体（A部・水中コンクリート、既設）",b:"S53年の水中コンクリート。前面は -4.0m まで、上は幅3.2m。今回はさわりません。",s:"A標準断面図"},
+  bodyB:{n:"岸壁の本体（B部・水中コンクリート、既設）",b:"S58年の水中コンクリート。底は -4.5m、底幅3.1m。今回はさわりません。",s:"B部標準断面図（参考図）"},
+  ground:{n:"背後の埋立土（既設）",b:"岸壁の裏の地盤です。形は標準断面図の範囲だけを描いています。",s:"標準断面図"},
+  seabed:{n:"海底（地盤線）",b:"縦断図の地盤高（-2.5〜-4.0m）を、岸壁の前に写した目安です。計画水深は -4.5m。",s:"A部・B部縦断図"},
+  sea:{n:"海面",b:"潮位は切り替えられます。H.H.W.L +1.8、H.W.L +1.1、M.L.W.L +0.3、L.W.L ±0.0。",s:"計画平面図（潮位図）"},
+  remove:{n:"構造物の取壊し・撤去",b:"上部コンクリート・係船柱基礎・止壁・車止め・古い排水溝の取壊しが 119m³（A部42.0＋B部76.8）、舗装版破砕が 567m²（A部208.6＋B部358）。コンクリート殻は 533.8t（A部192.5＋B部341.3）。防舷材30基はゴム屑として処分（総括表7m³、運搬距離100km）。係船柱11基とタラップ1基は再使用、縁金物と古い排水溝の蓋など1.7tは現場発生品として運びます。",s:"撤去工説明図（参考図）・撤去工標準断面図（参考図）・数量計算書・工事数量総括表"},
+  light:{n:"標識灯・浮標灯（3Dには入れていません）",b:"南防波堤の先端付近の標識灯（3m段付ポール型、LED灯ろう・充電式制御器・アンカーボルト）を付け替え、港口の浮標灯（スパーブイ本体とエンドシャックル）を取り替えます。浮標灯の灯具ユニットと25tの沈錘は既存を使います。作業船の回航1回が計上されています。スパーブイ本体は概算単価で、契約後に変更されます。位置は計画平面図の印だけで、詳しい図面はフォルダにありません。",s:"計画平面図・メーカー図（標識灯・スパーブイ）・工事数量総括表・特記仕様書"}
+};
+DEFAULT_INFO=["部材をクリックしてください","赤い所が今回の工事です。A部40.2mとB部69.8m（49.95m＋19.90m）で、岸壁の上部コンクリートと舗装を壊して打ち直し、防舷材・車止め・縁金物を新しくします。係船柱とタラップは外して使い直します。灰色は既設です。",""];
+LAYERS=[
+  {id:"up",t:"上部コンクリート",sub:"110m",c:"--c-new",on:true,grp:"今回の工事"},
+  {id:"pave",t:"舗装コンクリート・止壁",sub:"574m²",c:"--c-pave",on:true},
+  {id:"base",t:"路盤・埋戻し",sub:"",c:"--c-base",on:true},
+  {id:"drain",t:"排水溝（A部）・水抜きパイプ",sub:"42m",c:"--c-drain",on:true},
+  {id:"fender",t:"防舷材・タラップ",sub:"30基・1基",c:"--c-fender",on:true},
+  {id:"bollard",t:"係船柱（流用）",sub:"11基",c:"--c-bollard",on:true},
+  {id:"kerb",t:"車止め・縁金物",sub:"36本・110m",c:"--c-curb",on:true},
+  {id:"joint",t:"伸縮目地",sub:"",c:"--c-joint",on:true},
+  {id:"exist",t:"既設の岸壁",sub:"",c:"--c-exist",on:true,grp:"まわり"},
+  {id:"ground",t:"背後の地盤",sub:"",c:"--c-ground",on:true},
+  {id:"sea",t:"海面と海底",sub:"",c:"--c-sea",on:true},
+  {id:"label",t:"区間と測点のラベル",sub:"",c:"--panel",on:true}
+];
+WORKS=[
+  {id:"up",inf:"upA",t:"上部コンクリート（A部）",q:"40.2m・30m³",c:"--c-new",v:[[34,13,-78],[-2,0.5,-20]]},
+  {id:"up",inf:"upB",t:"上部コンクリート（B部）",q:"69.8m・75m³",c:"--c-new",v:[[62,16,-58],[66,0.5,2]]},
+  {id:"pave",inf:"paveB",t:"舗装コンクリート",q:"A 209m²・B 365m²",c:"--c-pave",v:[[52,34,40],[56,1,3]]},
+  {id:"fender",inf:"fenderB",t:"防舷材",q:"A 8基・B 22基",c:"--c-fender",v:[[50,5,-22],[58,1,0]]},
+  {id:"bollard",t:"係船柱（流用）",q:"11基",c:"--c-bollard",v:[[40,5,9],[46,2,1.2]]},
+  {id:"kerb",t:"車止め・縁金物",q:"36本・110m",c:"--c-curb",v:[[58,4,-7],[66,1.8,0.5]]},
+  {id:"drain",inf:"trough",t:"排水溝（A部）",q:"42m",c:"--c-drain",v:[[-14,9,-8],[-2.5,1.5,-22]]},
+  {id:null,inf:"remove",t:"取壊し・撤去",q:"119m³・567m²",c:"--c-exist",v:null},
+  {id:null,inf:"light",t:"標識灯・浮標灯",q:"各1個",c:"--c-metal",v:null}
+];
+PRI={bollard:0,kerb:1,metal:1,joint:2,weep:1,ladder:0,fenderA:1,fenderB:1,bolbase:3,sea:9,seabed:8};
+VIEWS=[
+  {id:"all",t:"全体",go:()=>setView([118,92,-150],[52,0,-22])},
+  {id:"a",t:"港内からA部",go:()=>setView([46,16,-92],[-3,0.5,-22])},
+  {id:"b",t:"港内からB部",go:()=>setView([70,20,-64],[72,0.5,3])},
+  {id:"top",t:"真上から",go:()=>setView([58,205,-27.9],[58,0,-28])},
+  {id:"deck",t:"岸壁の上から",go:()=>setView([27,5.2,7.5],[58,1.2,1.5])},
+  {id:"sec",t:"断面を正面から",go:()=>SITE.viewSec()}
+];
+
+SITE.build=function(){
+  const xo=state.xray?0.3:1, mats={}, mt=(tok,op)=>{const k=tok+"|"+(op||1);return mats[k]||(mats[k]=mat(tok,{opacity:op||1}));};
+  const tr=tok=>(tok==="--c-new"||tok==="--c-pave"||tok==="--c-exist")?xo:1;
+  /* strips */
+  const stA=[...new Set(A_JOINT.concat([A_DRAIN_END,A_PAVE_END,A_CORNER]))].sort((a,b)=>a-b);
+  for(let i=0;i<stA.length-1;i++){const a=stA[i],b=stA[i+1],m=(a+b)/2;
+    partsA(m).forEach(p=>solid(groups[p.l],prism(p.poly,a,b,mapA),mt(p.c,tr(p.c)),p.i,"A部 SP "+fm(a)+"〜"+fm(b),p.k!=="fill"));}
+  const sb=new Set([0,B_LEN]); B_SPAN.forEach(p=>{sb.add(p[1]);sb.add(p[2]);}); B_R8.concat(B_PAVE).forEach(r=>{sb.add(r[0]);sb.add(r[1]);});
+  const stB=[...sb].sort((a,b)=>a-b);
+  for(let i=0;i<stB.length-1;i++){const a=stB[i],b=stB[i+1]; if(b-a<0.01)continue; const m=(a+b)/2,sp=spanB(m);
+    partsB(m).forEach(p=>solid(groups[p.l],prism(p.poly,a,b,mapB),mt(p.c,tr(p.c)),p.i,"B部 スパンNo."+sp[0]+"（SP "+fm(sp[1],2)+"〜"+fm(sp[2],2)+"）"+(p.i==="upB"?"、"+cementB(sp[0]):""),p.k!=="fill"&&p.k!=="oldFill"));}
+  solid(groups.ground,prism([[0,-2.0],[11,-2.0],[11,2.3],[6.0,2.0],[0,2.0]],A_CORNER,A_CORNER+3.5,mapA),mt("--c-ground"),"ground","",false);
+  /* end of the paving at the corner: stop wall return */
+  solid(groups.pave,prism([[0.55,2.0],[6.0,2.0],[6.0,1.6],[0.55,1.6]],A_PAVE_END,A_CORNER,mapA),mt("--c-wall"),"wall","終点の折返し");
+  /* bollards and their bases, fenders, ladder, kerbs, edge angle */
+  const lam=tok=>new THREE.MeshLambertMaterial({color:new THREE.Color(css(tok)),side:THREE.DoubleSide});
+  const mBol=lam("--c-bollard"), mOld=lam("--c-exist");
+  const bollard=(map,s,material,extra,grp)=>{
+    const post=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.13,0.30,16),material); post.position.copy(map(s,1.5,2.05));
+    const head=new THREE.Mesh(new THREE.CylinderGeometry(0.21,0.16,0.10,16),material); head.position.copy(map(s,1.5,2.25));
+    [post,head].forEach(m=>{m.userData.info="bollard";m.userData.extra=extra;grp.add(m);pick.push(m);});
+  };
+  A_BOL.forEach((s,i)=>{solid(groups.up,prism(BASE_A,s-0.4,s+0.4,mapA),mt("--c-new",xo),"bolbase","A部 SP "+fm(s,2));bollard(mapA,s,mBol,"A部 "+(i+1)+"基目、SP "+fm(s,2),groups.bollard);});
+  B_BOL.forEach((s,i)=>{const sp=spanB(s);solid(groups.up,prism(BASE_B,s-0.4,s+0.4,mapB),mt("--c-new",xo),"bolbase","B部 SP "+fm(s,2)+"（スパンNo."+sp[0]+"）");bollard(mapB,s,mBol,"B部 "+(i+1)+"基目、SP "+fm(s,2),groups.bollard);});
+  A_BOL_OLD.forEach(s=>bollard(mapA,s,mOld,"R7に施工済みの区間",groups.exist));
+  const mFen=lam("--c-fender");
+  const fender=(map,s,info,extra,grp,material)=>{const m=new THREE.Mesh(prism(FEN,s-0.285,s+0.285,map),material||mFen);m.userData.info=info;m.userData.extra=extra;grp.add(m);pick.push(m);};
+  A_FEN.forEach((s,i)=>fender(mapA,s,"fenderA","A部 "+(i+1)+"基目、SP "+fm(s,2),groups.fender));
+  B_FEN.forEach((s,i)=>fender(mapB,s,"fenderB","B部 "+(i+1)+"基目、SP "+fm(s,2),groups.fender));
+  A_FEN_OLD.forEach(s=>fender(mapA,s,"r7","R7に施工済みの区間の防舷材",groups.exist,mOld));
+  { const mL=lam("--c-ladder"), g=groups.fender, s=LADDER;
+    const add=(geom)=>{const m=new THREE.Mesh(geom,mL);m.userData.info="ladder";m.userData.extra="B部 SP "+fm(s)+"付近";g.add(m);pick.push(m);};
+    [-0.325,0.175].forEach(o=>add(prism(rect(-0.15,0,-0.6,1.75),s+o,s+o+0.15,mapB)));
+    for(let z=1.45;z>=-0.5;z-=0.3)add(prism(rect(-0.11,-0.07,z-0.02,z+0.02),s-0.18,s+0.18,mapB));
+    add(prism(rect(0.05,0.09,1.9,2.25),s-0.17,s-0.13,mapB)); add(prism(rect(0.05,0.09,1.9,2.25),s+0.13,s+0.17,mapB)); add(prism(rect(0.05,0.09,2.21,2.25),s-0.17,s+0.17,mapB));
+    groups.fender.add(near(label("防衝材タラップ",mapB(s,-0.6,2.9),{size:0.017,fg:css("--c-ladder")}),70)); }
+  const mK=lam("--c-curb");
+  const kerb=(map,k,nm)=>{const m=new THREE.Mesh(prism(rect(0.10,0.25,1.9,2.05),k[0],k[0]+k[1],map),mK);m.userData.info="kerb";m.userData.extra=nm+" L="+fm(k[1])+"m（SP "+fm(k[0])+"〜"+fm(k[0]+k[1])+"）";groups.kerb.add(m);pick.push(m);};
+  A_KERB.forEach(k=>kerb(mapA,k,"A部")); B_KERB.forEach(k=>kerb(mapB,k,"B部"));
+  const mM=lam("--c-metal"), ANG=[[-0.012,1.80],[-0.012,1.912],[0.10,1.912],[0.10,1.90],[0,1.90],[0,1.80]];
+  [[mapA,A_R8[0],A_R8[1],"A部 40.2m"],[mapB,B_R8[0][0],B_R8[0][1],"B部 49.95m"],[mapB,B_R8[1][0],B_R8[1][1],"B部 19.90m"]].forEach(r=>{const m=new THREE.Mesh(prism(ANG,r[1],r[2],r[0]),mM);m.userData.info="metal";m.userData.extra=r[3];groups.kerb.add(m);pick.push(m);});
+  /* weep pipes on B, grating on the A trench */
+  { const mP=lam("--c-pipe"); let n=0;
+    B_R8.forEach(r=>{for(let s=r[0]+1.5;s<r[1]-0.2&&n<24;s+=3.04){const c=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,1.1,10),mP);c.rotation.x=Math.PI/2;c.position.copy(mapB(s,0.5,1.0));c.userData.info="weep";c.userData.extra="B部 SP "+fm(s)+"付近";groups.drain.add(c);pick.push(c);n++;}});
+    const mG=lam("--c-grate"), g=new THREE.Mesh(prism(rect(1.95,2.25,1.87,1.9),A_R8[0],A_DRAIN_END,mapA),mG); g.userData.info="trough"; g.userData.extra="グレーチングの蓋 42枚"; groups.drain.add(g); pick.push(g); }
+  /* joints */
+  { const col=css("--c-joint"), g=groups.joint, J=(map,s,d0,d1,z0,z1)=>g.add(lineOf([map(s,d0,z0+0.015),map(s,d1,z1+0.015)],col));
+    [58.51,68.5,78.5,88.5,98.73].forEach(s=>J(mapA,s,0,0.70,1.9,1.9));
+    for(let s=A_R8[0];s<=A_DRAIN_END+0.01;s+=5){J(mapA,s,0.70,1.90,1.9,1.9);J(mapA,s,2.30,5.80,1.9,2.0);}
+    [[0.70,A_R8[0],A_R8[1]],[1.90,A_R8[0],A_DRAIN_END],[2.30,A_R8[0],A_DRAIN_END]].forEach(r=>g.add(lineOf([mapA(r[1],r[0],1.915),mapA(r[2],r[0],1.915)],col)));
+    B_SPAN.forEach(p=>{[p[1],p[2]].forEach(s=>{if(inB(s))J(mapB,s,0,0.70,1.9,1.9);});});
+    B_PAVE.forEach(r=>{for(let s=r[0];s<=r[1]+0.01;s+=5)J(mapB,Math.min(s,r[1]),0.70,5.80,1.9,2.0); g.add(lineOf([mapB(r[0],0.70,1.915),mapB(r[1],0.70,1.915)],col)); g.add(lineOf([mapB(r[0],5.80,2.015),mapB(r[1],5.80,2.015)],col));});
+    const pk=new THREE.Mesh(prism(rect(0.68,0.72,1.9,1.92),B_R8[0][0],B_R8[0][1],mapB),new THREE.MeshBasicMaterial({color:new THREE.Color(col)})); pk.userData.info="joint"; pk.userData.extra=""; pk.userData.nohl=true; g.add(pk); pick.push(pk); }
+  /* sea and seabed */
+  { const T=new Tris(), zb=(X,Y)=>{const dA=Math.max(X,0.01),dB=Math.max(-Y,0.01),wA=dB/(dA+dB),z=interp(GA,Y+A_END)*wA+interp(GB,X)*(1-wA),k=Math.min(1,Math.max(0,(Math.min(dA,dB)-4)/14));return z+(-4.5-z)*k;};
+    const xs=[],ys=[]; for(let x=0;x<=B_LEN+1e-6;x+=B_LEN/30)xs.push(x); for(let y=-A_END;y<=1e-6;y+=A_END/20)ys.push(Math.min(0,y));
+    for(let i=0;i<xs.length-1;i++)for(let j=0;j<ys.length-1;j++)T.quad(M(xs[i],ys[j],zb(xs[i],ys[j])),M(xs[i+1],ys[j],zb(xs[i+1],ys[j])),M(xs[i+1],ys[j+1],zb(xs[i+1],ys[j+1])),M(xs[i],ys[j+1],zb(xs[i],ys[j+1])));
+    solid(groups.sea,T.geom(),mat("--c-seabed",{po:2}),"seabed","",false);
+    const sea=new THREE.Mesh(new THREE.PlaneGeometry(B_LEN,A_END),new THREE.MeshLambertMaterial({color:new THREE.Color(css("--c-sea")),transparent:true,opacity:0.62,depthWrite:false,side:THREE.DoubleSide}));
+    sea.rotation.x=-Math.PI/2; sea.position.copy(M(B_LEN/2,-A_END/2,state.tide)); sea.userData.info="sea"; sea.userData.extra="いまの表示：標高 "+(state.tide>0?"+":"±")+fm(state.tide)+"m"; sea.userData.nohl=true; sea.renderOrder=3; groups.sea.add(sea); pick.push(sea);
+    window.__zb=zb; }
+  /* labels */
+  { const g=groups.label, ac=css("--accent");
+    g.add(near(label("A部 今回 L=40.2m",mapA(78.6,-3.5,5.5),{fg:ac}),5000));
+    g.add(near(label("B部 今回 L=49.95m",mapB(55,-3.5,5.5),{fg:ac}),5000));
+    g.add(near(label("B部 今回 L=19.90m",mapB(110,-3.5,5.5),{fg:ac}),5000));
+    g.add(near(label("A部 R7施工済み L=58.5m",mapA(29,3,4.2),{size:0.018}),5000));
+    g.add(near(label("-4.5m泊地",M(58,-52,state.tide+0.6),{size:0.02}),5000));
+    g.add(near(label("← 南護岸・南防波堤",mapA(-4,3,3.4),{size:0.017}),5000));
+    g.add(near(label("B部は全長207.8m（この先は省略）→",mapB(B_LEN+2,3,3.4),{size:0.017}),5000));
+    B_SPAN.forEach(p=>g.add(near(label("No."+p[0],mapB((p[1]+p[2])/2,3.4,2.5),{mono:true,size:0.015}),75)));
+    [0,30.05,80,100.04,119.94].forEach(s=>g.add(near(label("SP "+fm(s,2),mapB(s,6.6,2.6),{mono:true,size:0.014}),95)));
+    [0,58.51,98.73].forEach(s=>g.add(near(label("SP "+fm(s,2),mapA(s,6.6,2.6),{mono:true,size:0.014}),95)));
+  }
+};
+
+/* ---------- section cut ---------- */
+const cY=()=>state.s-A_END;
+SITE.keep=p=>state.mode==="B"?p.x>=state.s-1e-3:p.z>=cY()-1e-3;
+SITE.snap=v=>v;
+SITE.readout=function(){
+  const s=state.s, A=state.mode==="A";
+  $("r-pos").textContent=(A?"A部":"B部")+" SP "+fm(s,1);
+  if(A){ const sp=spanA(s), n=inA(s);
+    $("r-span").textContent="SP "+fm(sp[0])+"〜"+fm(sp[1])+(s>A_END?"（B部との角）":"");
+    $("r-work").textContent=n?"今回の工事（R8）":s>A_END?(s<=A_PAVE_END?"舗装の終点部のみ今回":"対象外"):"R7に施工済み";
+    $("r-up").textContent=n?"0.69 m²（下端 +1.2、ほぞ +0.95）":"—";
+    $("r-bed").textContent=fm(interp(GA,Math.min(s,A_END)),1)+" m";
+  }else{ const sp=spanB(s), n=inB(s);
+    $("r-span").textContent="スパンNo."+sp[0]+"（SP "+fm(sp[1],2)+"〜"+fm(sp[2],2)+"）";
+    $("r-work").textContent=n?"今回の工事（R8）、"+cementB(sp[0]):"対象外（既設）";
+    $("r-up").textContent=n?"1.00 m²（下端 +0.9、ほぞ +0.7）":"—";
+    $("r-bed").textContent=fm(interp(GB,s),1)+" m";
+  }
+};
+SITE.cut=function(){
+  const s=state.s, A=state.mode==="A", place=A?((u,v)=>mapA(s,u,v)):((u,v)=>mapB(s,u,v));
+  if(A){cutPlane.normal.set(0,0,1);cutPlane.constant=-cY();}else{cutPlane.normal.set(1,0,0);cutPlane.constant=-s;}
+  (A?partsA(s):partsB(s)).forEach(p=>{ if(state.vis[p.l]) capPoly(p.poly,place,p.c,p.i,(A?"A部":"B部")+" SP "+fm(s)+" の断面"); });
+  if(state.vis.up&&(A?A_BOL:B_BOL).some(b=>Math.abs(b-s)<=0.4)) capPoly(A?BASE_A:BASE_B,place,"--c-new","bolbase",(A?"A部":"B部")+" SP "+fm(s)+" の断面");
+  if(state.vis.fender&&(A?inA(s):inB(s))) capPoly(FEN,place,"--c-fender",A?"fenderA":"fenderB","断面図と同じく、奥にあるものを重ねて描いています");
+  if(state.vis.kerb&&(A?inA(s):inB(s))) capPoly(rect(0.10,0.25,1.9,2.05),place,"--c-curb","kerb","断面図と同じく、奥にあるものを重ねて描いています");
+  const bed=A?interp(GA,Math.min(s,A_END)):interp(GB,s);
+  if(state.vis.sea&&(A?s<=A_END:true)){
+    capPoly([[-14,bed],[0,bed],[0,-5.2],[-14,-5.2]],place,"--c-seabed","seabed","地盤高 "+fm(bed)+"m");
+    if(state.tide>bed) capPoly([[-14,bed],[0,bed],[0,state.tide],[-14,state.tide]],place,"--c-sea","sea","いまの表示：標高 "+(state.tide>0?"+":"±")+fm(state.tide)+"m");
+    capGroup.add(lineOf([place(-14,state.tide),place(0,state.tide)],css("--c-drain")));
+  }
+  if(state.vis.label){
+    const L=(t,d,z,o)=>capGroup.add(label(t,place(d,z),Object.assign({size:0.019,mono:true},o||{})));
+    L("+1.9",-1.6,1.9); L("潮位 "+(state.tide>0?"+":"±")+fm(state.tide),-4.6,state.tide+0.5,{fg:css("--c-drain")}); L("地盤 "+fm(bed),-4.6,bed-0.6);
+    if(A){ if(s<=A_END){L("+1.2",1.9,0.75);L("-4.0",1.6,-4.5);} }else{L("+0.9",2.0,0.45);L("-4.5",1.6,-5.0);}
+    L((A?"A部":"B部")+" SP "+fm(s)+((A?inA(s):inB(s))?"（今回）":"（対象外）"),3,4.6,{fg:css("--accent"),size:0.026,mono:false});
+  }
+};
+SITE.viewSec=function(){
+  if(!state.cut){state.cut=true;$("cut-on").checked=true;updateCut();}
+  if(state.mode==="B") setView([state.s-24,0.2,2.6],[state.s,0.2,2.6]); else setView([-2.6,0.2,cY()-24],[-2.6,0.2,cY()]);
+  $("view-sec").setAttribute("aria-pressed","true");
+};
+SITE.home=()=>VIEWS[0].go();
+SITE.pickExtra=()=>null;
+function setMode(m,s){
+  state.mode=m; const sl=$("cut-s"); sl.min=0; sl.max=m==="A"?A_CORNER:B_LEN; sl.step=0.1; if(s!==undefined)state.s=s; state.s=Math.min(state.s,parseFloat(sl.max)); sl.value=state.s;
+  $("mode-A").setAttribute("aria-pressed",String(m==="A")); $("mode-B").setAttribute("aria-pressed",String(m==="B"));
+}
+(function(){
+  $("mode-A").addEventListener("click",()=>{setMode("A",80);updateCut();if(secOn())SITE.viewSec();});
+  $("mode-B").addEventListener("click",()=>{setMode("B",42);updateCut();if(secOn())SITE.viewSec();});
+  const ch=$("cut-chips");
+  [["A",63.2,"A部 係船柱"],["A",80,"A部 一般部"],["A",30,"A部 R7済み"],["B",42,"B部 No.15"],["B",LADDER-0.6,"B部 タラップ"],["B",64.7,"B部 係船柱"],["B",108,"B部 No.21"],["B",90,"B部 対象外"]].forEach(c=>{
+    const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=c[2];
+    b.addEventListener("click",()=>{setMode(c[0],c[1]);if(!state.cut){state.cut=true;$("cut-on").checked=true;}updateCut();if(secOn())SITE.viewSec();});
+    ch.appendChild(b);});
+  const td=$("tide-chips");
+  TIDES.forEach(t=>{const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=t[0];b.setAttribute("aria-pressed",String(t[1]===state.tide));
+    b.addEventListener("click",()=>{state.tide=t[1];[...td.children].forEach(c=>c.setAttribute("aria-pressed",String(c===b)));rebuild();});td.appendChild(b);});
+  setMode("B",42);
+})();
+
+/* ================= shared: panel, cut, picking, loop ================= */
+LAYERS.forEach(l=>state.vis[l.id]=l.on);
+showInfo(null);
+(function buildPanel(){
+  const ul=$("layers");
+  LAYERS.forEach(l=>{
+    if(l.grp){const g=document.createElement("li");g.className="grp";g.textContent=l.grp;ul.appendChild(g);}
+    const li=document.createElement("li");
+    li.innerHTML='<label><input type="checkbox" id="ly-'+l.id+'"'+(l.on?" checked":"")+'><span class="swatch" style="background:var('+l.c+')"></span><span class="t">'+l.t+(l.sub?' <small class="num">'+l.sub+'</small>':'')+'</span></label>';
+    ul.appendChild(li);
+    li.querySelector("input").addEventListener("change",e=>{state.vis[l.id]=e.target.checked;applyVis();updateCut();});
+  });
+  const wk=$("works");
+  WORKS.forEach((w,i)=>{
+    const b=document.createElement("button");b.type="button";b.className="btn";b.id="work-"+i;b.setAttribute("aria-pressed","false");
+    b.innerHTML='<span class="w"><span class="swatch" style="background:var('+w.c+')"></span>'+w.t+'</span><span class="q num">'+w.q+'</span>';
+    b.addEventListener("click",()=>{
+      (w.on||(w.id?[w.id]:[])).forEach(id=>{ if(!state.vis[id]){state.vis[id]=true;$("ly-"+id).checked=true;} }); applyVis();
+      if(w.v){ if(state.cut){state.cut=false;$("cut-on").checked=false;updateCut();} setView(w.v[0],w.v[1]); }
+      showInfo(w.inf||w.id);
+      [...wk.children].forEach(c=>c.setAttribute("aria-pressed",String(c===b)));
+    });
+    wk.appendChild(b);
+  });
+  const vw=$("views");
+  VIEWS.forEach(v=>{const b=document.createElement("button");b.type="button";b.className="btn";b.id="view-"+v.id;b.textContent=v.t;if(v.id==="sec")b.setAttribute("aria-pressed","false");b.addEventListener("click",v.go);vw.appendChild(b);});
+})();
+function rebuild(){
+  if(root){scene.remove(root);dispose(root);}
+  root=new THREE.Group(); scene.add(root); pick=[]; groups={}; selected=null; nearLabels=[];
+  LAYERS.forEach(l=>{groups[l.id]=new THREE.Group();root.add(groups[l.id]);});
+  capGroup=new THREE.Group(); root.add(capGroup);
+  renderer.setClearColor(new THREE.Color(css("--scene")),1);
+  edgeMat=new THREE.LineBasicMaterial({color:new THREE.Color(css("--c-edge")),transparent:true,opacity:0.5});
+  SITE.build();
+  applyVis(); updateCut();
+}
+function applyVis(){ LAYERS.forEach(l=>{groups[l.id].visible=state.vis[l.id];}); }
+function updateCut(){
+  if(!capGroup)return;
+  pick=pick.filter(m=>m.parent!==capGroup);
+  while(capGroup.children.length){const c=capGroup.children.pop();dispose(c);}
+  SITE.readout();
+  const planes=state.cut?[cutPlane]:null;
+  root.traverse(o=>{ if(o.material&&!o.isSprite&&o.parent!==capGroup&&(o.material.clippingPlanes?1:0)!==(planes?1:0)){o.material.clippingPlanes=planes;o.material.needsUpdate=true;} });
+  if(state.cut) SITE.cut();
+}
+$("cut-on").addEventListener("change",e=>{state.cut=e.target.checked;updateCut();});
+$("cut-s").addEventListener("input",e=>{state.s=SITE.snap?SITE.snap(parseFloat(e.target.value)):parseFloat(e.target.value);updateCut();if(secOn())SITE.viewSec();});
+$("xray").addEventListener("change",e=>{state.xray=e.target.checked;rebuild();});
+controls.addEventListener("start",()=>{const b=$("view-sec");if(b)b.setAttribute("aria-pressed","false");[...$("works").children].forEach(c=>c.setAttribute("aria-pressed","false"));});
+
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2(); let down=null;
+const shown=o=>{for(let p=o;p;p=p.parent)if(!p.visible)return false;return true;};
+canvas.addEventListener("pointerdown",e=>{down=[e.clientX,e.clientY];});
+canvas.addEventListener("pointerup",e=>{
+  if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
+  const r=canvas.getBoundingClientRect(); ptr.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1));
+  ray.setFromCamera(ptr,camera);
+  const hits=ray.intersectObjects(pick,false).filter(h=>shown(h.object)&&(!state.cut||h.object.parent===capGroup||SITE.keep(h.point)));
+  const pri=h=>{const v=PRI[h.object.userData.info];return v===undefined?5:v;};
+  let hit=hits[0]; if(hit) hits.forEach(h=>{ if(h.distance<=hits[0].distance+0.35&&pri(h)<pri(hit)) hit=h; });
+  if(selected){selected.material=selected.userData.base;selected=null;}
+  if(!hit){showInfo(null);return;}
+  const o=hit.object;
+  if(o.material.emissive&&!o.isInstancedMesh&&!o.userData.nohl){o.userData.base=o.material;o.material=o.material.clone();o.material.emissive=new THREE.Color(0x3a3a12);selected=o;}
+  showInfo(o.userData.info,SITE.pickExtra(o,hit)||o.userData.extra);
+});
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(stage);
+function tick(){
+  controls.update();
+  const cp=camera.position, front=state.cut&&secOn();
+  for(let i=0;i<nearLabels.length;i++){const sp=nearLabels[i],d=cp.distanceTo(sp.position);
+    sp.visible=!front&&d<sp.userData.near&&(!state.cut||SITE.keep(sp.position));}
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+const retheme=()=>rebuild();
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",retheme);
+new MutationObserver(retheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+resize(); rebuild(); SITE.home(); tick();
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>rebuild());
+window.__viewer={state,setView,updateCut,rebuild,applyVis,camera,controls,scene,SITE};
+})();
+</script>
+
+</body></html>
