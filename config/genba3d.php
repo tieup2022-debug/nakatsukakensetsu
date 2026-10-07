@@ -35,7 +35,7 @@ return [
         'r08-03' => ['name' => 'R08-03桧倉', 'sites' => []],
         'r08-04' => ['name' => 'R08-04軌道施設', 'sites' => []],
         'r08-06' => ['name' => 'R08-06桧倉維持', 'sites' => []],
-        'r08-08' => ['name' => 'R08-08滝ノ下', 'sites' => []],
+        'r08-08' => ['name' => 'R08-08滝ノ下', 'sites' => ['takinoshita-chisan']],
         'r08-11' => ['name' => 'R08-11吉岡', 'sites' => []],
         'r08-12' => ['name' => 'R08-12岩部線', 'sites' => []],
         'r08-14' => ['name' => 'R08-14豊浜', 'sites' => []],
@@ -77,6 +77,13 @@ return [
             'file' => 'fukushima-tunnel.html',
             'schedule_file' => 'fukushima-tunnel-kotei.html',
             'knowledge_file' => 'fukushima-tunnel.md',
+        ],
+        'takinoshita-chisan' => [
+            'name' => '滝ノ下覆道地先 緊急総合治山工事',
+            'summary' => '国道228号 滝ノ下覆道の山側の斜面。法切工804m³、暗渠工（パイプ72m・線状排水材178m）、現場打吹付法枠工2,182.8m²、客土注入マット1,624.5m²。',
+            'file' => 'takinoshita-chisan.html',
+            'schedule_file' => 'takinoshita-chisan-kotei.html',
+            'knowledge_file' => 'takinoshita-chisan.md',
         ],
     ],
 
