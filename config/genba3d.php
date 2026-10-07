@@ -38,7 +38,7 @@ return [
         'r08-08' => ['name' => 'R08-08滝ノ下', 'sites' => ['takinoshita-chisan']],
         'r08-11' => ['name' => 'R08-11吉岡', 'sites' => ['yoshioka-ganpeki', 'yoshioka-funaage', 'yoshioka-sokkou']],
         'r08-12' => ['name' => 'R08-12岩部線', 'sites' => []],
-        'r08-14' => ['name' => 'R08-14豊浜', 'sites' => []],
+        'r08-14' => ['name' => 'R08-14豊浜', 'sites' => ['toyohama-kyukeisha', 'toyohama-fukushimagawa']],
         'r08-16' => ['name' => 'R08-16大沢', 'sites' => ['asahi-funaageba', 'asahi-higashi-gogan', 'osawa-kaigan-gogan']],
     ],
 
@@ -105,6 +105,20 @@ return [
             'file' => 'yoshioka-sokkou.html',
             'schedule_file' => 'yoshioka-kotei.html',
             'knowledge_file' => 'yoshioka-sokkou.md',
+        ],
+        'toyohama-kyukeisha' => [
+            'name' => '福島豊浜 急傾斜地（土留柵工）',
+            'summary' => '福島町豊浜の急傾斜地。H形鋼杭の土留柵（2工区2段目、3工区2・3段目、4工区1・2段目）、土留横材54m、崩土防止横材57m、山腹水路59m、鋼製階段2基。相取工法（ジブクレーン）。',
+            'file' => 'toyohama-kyukeisha.html',
+            'schedule_file' => 'toyohama-kotei.html',
+            'knowledge_file' => 'toyohama-kyukeisha.md',
+        ],
+        'toyohama-fukushimagawa' => [
+            'name' => '福島川 管理用通路（転落防止柵）',
+            'summary' => '福島川右岸の管理用通路（SP393.80〜645.44）。転落防止柵 h=1.1m 167m・基礎ブロック87個、手摺 h=0.2m 77m・h=0.6m 6m、通路の土工。上流の河道掘削500m³と伐木は工程表に。',
+            'file' => 'toyohama-fukushimagawa.html',
+            'schedule_file' => 'toyohama-kotei.html',
+            'knowledge_file' => 'toyohama-fukushimagawa.md',
         ],
     ],
 

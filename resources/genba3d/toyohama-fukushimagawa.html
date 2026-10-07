@@ -1,0 +1,501 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>福島川 転落防止柵 3D</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one-screen viewer. 3D stage fills the left, a narrow instrument panel sits on the right; on phones the stage stacks above the panel. */
+:root{
+  --bg:#EEF1F2; --panel:#F8FAFA; --ink:#1C2A33; --muted:#5A6A74; --line:#CBD4D9; --chip:#E3E9EC;
+  --accent:#C2302A; --accent-ink:#FFFFFF;
+  --scene:#E2E9EC;
+  --c-terrain:#C9C6A6; --c-contour:#8E8A6A; --c-exist:#9CA3A8; --c-body:#7E878D; --c-ground:#C4BC98; --c-new:#D9453F; --c-panel:#EE8C84;
+  --c-rope:#7A3FB5; --c-drain:#1479B8; --c-masu:#0E5A8A; --c-stair:#E07B1F; --c-gate:#2E8B57; --c-crane:#E8B923; --c-ring:#B58A00; --c-guard:#D9730D;
+  --c-scaf:#5B6770; --c-blue:#1A4FD6; --c-base:#1C2A33; --c-secline:#4F5B63; --c-fill:#DCCB9F; --c-pave:#EE8C84; --c-wall:#B8322C; --c-stone:#9C9684; --c-sea:#A9CADA; --c-seabed:#9A8F6E; --c-grate:#4A545B; --c-steel:#6B7780;
+  --c-edge:#2A343B;
+  --font-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A;
+  --accent:#F0766E; --accent-ink:#1A0E0D;
+  --scene:#0D1418;
+  --c-terrain:#5F5D49; --c-contour:#A5A07E; --c-exist:#757E84; --c-body:#5E676D; --c-ground:#6A6551; --c-new:#EC6A63; --c-panel:#C98A85;
+  --c-rope:#B892F2; --c-drain:#5CB6EE; --c-masu:#8FD0F5; --c-stair:#F2A25E; --c-gate:#6DCB96; --c-crane:#F0BE1E; --c-ring:#F0D56E; --c-guard:#F29A4A;
+  --c-scaf:#A3AEB5; --c-blue:#7FA4FF; --c-base:#E3E9EC; --c-secline:#B7C1C7; --c-fill:#8A7F5E; --c-pave:#C98A85; --c-wall:#F0766E; --c-stone:#7C776A; --c-sea:#27485A; --c-seabed:#57503C; --c-grate:#2B3338; --c-steel:#93A0A8;
+  --c-edge:#0A0F12;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A;
+  --accent:#F0766E; --accent-ink:#1A0E0D;
+  --scene:#0D1418;
+  --c-terrain:#5F5D49; --c-contour:#A5A07E; --c-exist:#757E84; --c-body:#5E676D; --c-ground:#6A6551; --c-new:#EC6A63; --c-panel:#C98A85;
+  --c-rope:#B892F2; --c-drain:#5CB6EE; --c-masu:#8FD0F5; --c-stair:#F2A25E; --c-gate:#6DCB96; --c-crane:#F0BE1E; --c-ring:#F0D56E; --c-guard:#F29A4A;
+  --c-scaf:#A3AEB5; --c-blue:#7FA4FF; --c-base:#E3E9EC; --c-secline:#B7C1C7; --c-fill:#8A7F5E; --c-pave:#C98A85; --c-wall:#F0766E; --c-stone:#7C776A; --c-sea:#27485A; --c-seabed:#57503C; --c-grate:#2B3338; --c-steel:#93A0A8;
+  --c-edge:#0A0F12;
+  color-scheme:dark }
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.55;display:flex;flex-direction:column;overflow:hidden}
+*{box-sizing:border-box}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+header.bar{display:flex;align-items:baseline;gap:8px 16px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header.bar h1{font-size:16px;font-weight:700;margin:0;letter-spacing:.02em;text-wrap:balance}
+header.bar p{margin:0;color:var(--muted);font-size:12px}
+
+main{flex:1;min-height:0;display:flex}
+.stage{position:relative;flex:1;min-width:0;min-height:0;background:var(--scene)}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.views{position:absolute;top:12px;left:16px;right:16px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.views button{pointer-events:auto}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:3px;padding:5px 10px;font-size:12.5px;font-weight:500;cursor:pointer;line-height:1.3}
+.btn:hover{border-color:var(--muted)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.dir{position:absolute;left:16px;bottom:14px;margin:0;font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:4px 8px;pointer-events:none}
+.hint{position:absolute;right:16px;bottom:14px;margin:0;max-width:calc(100% - 400px);font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:4px 8px;pointer-events:none;text-align:right}
+.nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+aside.panel{width:340px;flex:none;border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;overscroll-behavior:contain}
+.sec{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.sec h2{margin:0;font-size:11.5px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.info h3{margin:0;font-size:15px;font-weight:700}
+.info p{margin:0;font-size:13px}
+.info .src{color:var(--muted);font-size:12px}
+.swatch{display:inline-block;width:11px;height:11px;border-radius:2px;flex:none;border:1px solid var(--line)}
+.layers{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.layers label{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px;min-width:0}
+.layers label span.t{min-width:0}
+.layers small{color:var(--muted);font-size:11.5px}
+.grp{font-size:11.5px;color:var(--muted);margin-top:6px}
+input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);flex:none;margin:0}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chips .btn{padding:3px 7px;font-size:12px}
+.read{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0;font-size:12.5px}
+.read dt{color:var(--muted)}
+.read dd{margin:0;text-align:right}
+.works{display:grid;grid-template-columns:1fr;gap:5px}
+.works .btn{text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.works .btn span.w{display:flex;align-items:center;gap:8px;min-width:0}
+.works .btn span.q{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.works .btn[aria-pressed="true"] span.q{color:inherit;opacity:.8}
+details summary{cursor:pointer;font-size:11.5px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+details ul{margin:10px 0 0;padding-left:1.2em;font-size:12.5px;display:flex;flex-direction:column;gap:5px}
+.toggle{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500}
+
+@media (max-width:820px){
+  body{overflow:auto}
+  main{flex-direction:column;flex:none}
+  .stage{height:56vh;min-height:300px;flex:none}
+  aside.panel{width:auto;border-left:0;border-top:1px solid var(--line);overflow:visible}
+  .hint{display:none}
+}
+</style>
+
+<header class="bar">
+  <h1>福島川 管理用通路（転落防止柵・手摺）</h1>
+  <p>福島豊浜外急傾斜地工事外（補正明許）外 ／ 2次元の設計図（令和8年）から組み立てた3Dモデル</p>
+</header>
+
+<main>
+  <div class="stage" id="stage">
+    <canvas id="gl" aria-label="福島川右岸の管理用通路の3Dモデル。ドラッグで回転できます"></canvas>
+    <div class="views" id="views" role="group" aria-label="視点"></div>
+    <p class="dir">手前が福島川、奥が住宅。右が上流、左が下流</p>
+    <p class="hint">ドラッグで回転・ホイールで拡大・右ドラッグで移動。クリックで説明</p>
+  </div>
+
+  <aside class="panel">
+    <section class="sec info" aria-live="polite">
+      <h2>選択中の部材</h2>
+      <h3 id="info-name">部材をクリックしてください</h3>
+      <p id="info-body"></p>
+      <p class="src" id="info-src"></p>
+    </section>
+
+    <section class="sec">
+      <h2>工種から探す</h2>
+      <div class="works" id="works" role="group" aria-label="工種"></div>
+    </section>
+
+    <section class="sec">
+      <h2>断面を切る</h2>
+      <label class="toggle"><input type="checkbox" id="cut-on"> 柵の線を横に切って断面を見る</label>
+      <input type="range" id="cut-s" min="5" max="292" step="0.5" value="225" aria-label="切る位置（柵に沿った距離）">
+      <div class="chips" id="cut-chips" role="group" aria-label="代表の断面"></div>
+      <dl class="read">
+        <dt>切る位置</dt><dd class="num" id="r-pos">—</dd>
+        <dt>柵の種類</dt><dd id="r-kind">—</dd>
+        <dt>壁の天端</dt><dd class="num" id="r-top">—</dd>
+        <dt>住宅側の地盤</dt><dd class="num" id="r-g">—</dd>
+        <dt>地盤から柵の上まで</dt><dd class="num" id="r-h">—</dd>
+      </dl>
+    </section>
+
+    <section class="sec">
+      <h2>表示するもの</h2>
+      <ul class="layers" id="layers"></ul>
+      <label class="toggle"><input type="checkbox" id="xray"> 地盤と壁を半透明にする</label>
+    </section>
+
+
+    <section class="sec">
+      <details>
+        <summary>このモデルの作り方と注意</summary>
+        <ul>
+          <li>2次元の図面（平面図・転落防止柵計画図・管理用通路計画図・横断図・詳細図）から組み立てたモデルです。3Dの設計データはフォルダにありません。</li>
+          <li>柵の線の平面の位置は、平面図（1:500）の赤い線を座標で読み取りました。柵と手摺の割り付け（スパン）は、転落防止柵計画図(1)(2)の縦断図の寸法どおりです。</li>
+          <li>平面図（1:500）では村上排水樋門の所で赤い線が5mほど切れていますが、縦断図では柵と手摺のあいだは0.2mです。モデルは縦断図に合わせ、柵を樋門の側へ寄せて並べています。</li>
+          <li>壁の天端と地盤の高さは、縦断図の「地盤高」の数字と横断図（7断面）から決めた目安です。測点（SP）は川の中心線の距離なので、柵に沿った距離とは合いません。SPの表示は「付近」です。</li>
+          <li>壁の天端から地盤までの高さは、手摺 h=0.2m の区間で1.0m、h=0.6m の区間で0.5〜0.9m、転落防止柵の区間で0.25mほどとして描いています。</li>
+          <li>川側の護岸ののり面は、勾配1:0.5で川底（+1.0）まで下ろした目安の形です。護岸ブロック、根固めブロック、樋門や排水工の本体は描いていません（位置を板で示しています）。</li>
+          <li>水面の高さは図面に無いので仮です。</li>
+          <li>管理用通路は、SP482.50 から上流を「今回の土工」の色で、それより下流を幅1.0mの帯で示しています。盛土と掘削の形（横断図の CA・BA）は描いていません。</li>
+          <li>住宅、町道、堤内排水路は描いていません。</li>
+          <li>排水工の所の柵（3m＋5m）は、位置と形が分かる図面を見つけられなかったので描いていません。</li>
+          <li>上流の河道掘削（200m、500m³）と伐木の範囲は、この3Dの範囲の外です。</li>
+        </ul>
+      </details>
+    </section>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+"use strict";
+/* ================= shared viewer core ================= */
+const $=id=>document.getElementById(id);
+const stage=$("stage"), canvas=$("gl");
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fm=(v,d)=>v.toFixed(d===undefined?1:d);
+const state={cut:false,s:0,xray:false,vis:{}};
+let INFO={}, DEFAULT_INFO=["部材をクリックしてください","",""], LAYERS=[], WORKS=[], VIEWS=[], PRI={};
+function showInfo(key,extra){
+  if(!key||!INFO[key]){$("info-name").textContent=DEFAULT_INFO[0];$("info-body").textContent=DEFAULT_INFO[1];$("info-src").textContent="";return;}
+  const inf=INFO[key]; $("info-name").textContent=inf.n; $("info-body").textContent=inf.b+(extra?" ／ "+extra:""); $("info-src").textContent="出典："+inf.s;
+}
+let renderer;
+try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true}); }
+catch(e){ const d=document.createElement("div");d.className="nogl";d.textContent="この環境では3D表示（WebGL）が使えません。別のブラウザで開いてください。";stage.appendChild(d);return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(38,1,0.2,3000);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true; controls.dampingFactor=0.12; controls.maxPolarAngle=Math.PI*0.97; controls.minDistance=0.8; controls.maxDistance=900;
+scene.add(new THREE.HemisphereLight(0xffffff,0x7c838a,0.62));
+const sun=new THREE.DirectionalLight(0xffffff,0.48); sun.position.set(-70,120,-90); scene.add(sun);
+const fill=new THREE.DirectionalLight(0xffffff,0.14); fill.position.set(90,50,80); scene.add(fill);
+const cutPlane=new THREE.Plane(new THREE.Vector3(1,0,0),0);
+renderer.localClippingEnabled=true;
+let root=null, capGroup=null, groups={}, pick=[], selected=null, nearLabels=[], edgeMat;
+
+class Tris{
+  constructor(){this.p=[];}
+  tri(a,b,c){this.p.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z);}
+  quad(a,b,c,d){this.tri(a,b,c);this.tri(a,c,d);}
+  geom(){const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(this.p,3));g.computeVertexNormals();return g;}
+}
+function mat(token,o){
+  o=o||{};
+  const m=new THREE.MeshLambertMaterial({color:new THREE.Color(css(token)),side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:o.po===undefined?1:o.po,polygonOffsetUnits:o.po===undefined?1:o.po});
+  if(o.opacity!==undefined&&o.opacity<1){m.transparent=true;m.opacity=o.opacity;m.depthWrite=false;}
+  return m;
+}
+function solid(grp,geom,material,info,extra,edges){
+  const mesh=new THREE.Mesh(geom,material); mesh.userData.info=info; mesh.userData.extra=extra||""; grp.add(mesh); pick.push(mesh);
+  if(edges!==false){const l=new THREE.LineSegments(new THREE.EdgesGeometry(geom,28),edgeMat); grp.add(l);}
+  return mesh;
+}
+function label(text,pos,o){
+  o=o||{};
+  const pad=10,fs=30,cv=document.createElement("canvas"),c=cv.getContext("2d");
+  const font="500 "+fs+"px "+(o.mono?'"IBM Plex Mono",ui-monospace,Menlo,monospace':'"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif');
+  c.font=font; const w=Math.ceil(c.measureText(text).width)+pad*2,h=fs+pad*1.4;
+  cv.width=w;cv.height=h; c.font=font;
+  c.fillStyle=o.bg||css("--panel"); c.globalAlpha=0.92; c.fillRect(0,0,w,h); c.globalAlpha=1;
+  c.strokeStyle=o.fg||css("--line"); c.lineWidth=2; c.strokeRect(1,1,w-2,h-2);
+  c.fillStyle=o.fg||css("--ink"); c.textBaseline="middle"; c.fillText(text,pad,h/2+1);
+  const tx=new THREE.CanvasTexture(cv); tx.minFilter=THREE.LinearFilter;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:!!o.depth,sizeAttenuation:false,transparent:true}));
+  const k=(o.size||0.022); sp.scale.set(k*w/h,k,1); sp.position.copy(pos); sp.renderOrder=10; return sp;
+}
+function near(sp,dist){sp.userData.near=dist;nearLabels.push(sp);return sp;}
+function dispose(o){o.traverse(c=>{if(c.geometry)c.geometry.dispose();if(c.material){(Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{if(m.map)m.map.dispose();m.dispose();});}});}
+function lineOf(pts,color,o){o=o||{};const g=new THREE.BufferGeometry().setFromPoints(pts);
+  const m=o.dash?new THREE.LineDashedMaterial({color:new THREE.Color(color),dashSize:o.dash,gapSize:o.dash*0.6}):new THREE.LineBasicMaterial({color:new THREE.Color(color)});
+  const l=new THREE.Line(g,m); if(o.dash)l.computeLineDistances(); return l;}
+/* a polygon [[u,v],…] pushed from station a to b; map(s,u,v) gives the 3D point */
+function prism(poly,a,b,map){
+  const T=new Tris(), A=poly.map(p=>map(a,p[0],p[1])), B=poly.map(p=>map(b,p[0],p[1])), n=poly.length;
+  for(let i=0;i<n;i++){const k=(i+1)%n;T.quad(A[i],B[i],B[k],A[k]);}
+  THREE.ShapeUtils.triangulateShape(poly.map(p=>new THREE.Vector2(p[0],p[1])),[]).forEach(t=>{T.tri(A[t[0]],A[t[1]],A[t[2]]);T.tri(B[t[0]],B[t[1]],B[t[2]]);});
+  return T.geom();
+}
+/* same number of points at every station */
+function loft(sts,fn,map){
+  const T=new Tris(), polys=sts.map(fn), R=polys.map((pl,i)=>pl.map(p=>map(sts[i],p[0],p[1])));
+  for(let i=0;i<R.length-1;i++){const A=R[i],B=R[i+1],n=A.length;for(let j=0;j<n;j++){const k=(j+1)%n;T.quad(A[j],B[j],B[k],A[k]);}}
+  [0,R.length-1].forEach(e=>THREE.ShapeUtils.triangulateShape(polys[e].map(p=>new THREE.Vector2(p[0],p[1])),[]).forEach(t=>T.tri(R[e][t[0]],R[e][t[1]],R[e][t[2]])));
+  return T.geom();
+}
+const rect=(u0,u1,v0,v1)=>[[u0,v0],[u1,v0],[u1,v1],[u0,v1]];
+/* a flat polygon in the cutting plane: poly in (u,v), place(u,v) gives the 3D point */
+function capPoly(poly,place,token,info,extra){
+  if(poly.length<3)return;
+  const g=new THREE.ShapeGeometry(new THREE.Shape(poly.map(p=>new THREE.Vector2(p[0],p[1])))), pa=g.attributes.position;
+  for(let i=0;i<pa.count;i++){const q=place(pa.getX(i),pa.getY(i));pa.setXYZ(i,q.x,q.y,q.z);}
+  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:new THREE.Color(css(token)),side:THREE.DoubleSide})); m.userData.info=info; m.userData.extra=extra||""; capGroup.add(m); pick.push(m);
+  capGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(poly.concat([poly[0]]).map(p=>place(p[0],p[1]))),new THREE.LineBasicMaterial({color:new THREE.Color(css("--c-edge"))})));
+}
+function setView(pos,tgt){
+  const a=camera.aspect, k=Math.max(1,1.25/a), t=new THREE.Vector3(tgt[0],tgt[1],tgt[2]), p=new THREE.Vector3(pos[0],pos[1],pos[2]);
+  p.sub(t).multiplyScalar(k).add(t); camera.position.copy(p); controls.target.copy(t); controls.update();
+  const b=$("view-sec"); if(b)b.setAttribute("aria-pressed","false");
+}
+const secOn=()=>{const b=$("view-sec");return !!b&&b.getAttribute("aria-pressed")==="true";};
+let SITE={build(){},cut(){},readout(){},pickExtra(){return null;},labelOk(){return true;},keep(){return true;}};
+
+/* ================= site ================= */
+const DATA={"line":[[-147.759,50.81],[-120.742,24.088],[-114.931,18.341],[-96.411,-0.159],[-91.638,-1.132],[-72.482,-10.382],[-70.63,-11.134],[-70.302,-11.292],[-70.45,-11.218],[-70.312,-11.292],[-69.4,-11.708],[-68.473,-12.086],[-67.533,-12.426],[-66.581,-12.729],[-65.62,-12.993],[-64.639,-13.219],[-49.685,-16.362],[-48.424,-16.604],[-47.151,-16.792],[-45.869,-16.924],[-44.578,-17.001],[-43.281,-17.022],[-41.981,-16.986],[-12.167,-15.526],[-12.146,-15.875],[11.878,-14.69],[12.185,-14.679],[12.502,-14.668],[12.809,-14.647],[13.116,-14.637],[13.423,-14.616],[13.73,-14.605],[14.048,-14.594],[14.355,-14.584],[14.661,-14.563],[14.968,-14.552],[15.286,-14.542],[15.593,-14.531],[15.9,-14.51],[16.207,-14.499],[16.514,-14.489],[16.831,-14.478],[17.138,-14.467],[17.445,-14.457],[17.752,-14.446],[18.059,-14.436],[18.376,-14.425],[18.683,-14.415],[18.99,-14.404],[19.297,-14.393],[19.614,-14.383],[19.921,-14.372],[20.228,-14.362],[20.535,-14.351],[20.842,-14.34],[21.16,-14.33],[21.467,-14.33],[21.773,-14.319],[22.08,-14.309],[22.398,-14.298],[22.705,-14.287],[23.012,-14.287],[23.319,-14.277],[23.636,-14.266],[23.943,-14.266],[24.25,-14.256],[24.557,-14.245],[24.864,-14.245],[25.181,-14.235],[25.488,-14.235],[25.795,-14.224],[26.102,-14.224],[26.42,-14.213],[26.726,-14.213],[27.033,-14.203],[27.34,-14.203],[27.658,-14.192],[27.965,-14.192],[28.272,-14.192],[28.579,-14.182],[28.896,-14.182],[29.203,-14.182],[29.51,-14.171],[29.817,-14.171],[30.124,-14.171],[30.441,-14.16],[30.748,-14.16],[31.055,-14.16],[31.362,-14.16],[31.679,-14.16],[31.986,-14.16],[32.293,-14.15],[32.6,-14.15],[32.918,-14.15],[33.225,-14.15],[33.532,-14.15],[33.838,-14.15],[34.156,-14.15],[34.463,-14.15],[34.77,-14.15],[35.077,-14.15],[35.394,-14.15],[35.701,-14.15],[36.008,-14.16],[36.315,-14.16],[36.622,-14.16],[36.939,-14.16],[37.246,-14.16],[37.553,-14.171],[37.86,-14.171],[38.178,-14.171],[38.485,-14.171],[38.791,-14.182],[39.098,-14.182],[39.416,-14.182],[39.723,-14.192],[40.03,-14.192],[40.337,-14.192],[40.654,-14.203],[40.961,-14.203],[41.268,-14.213],[41.575,-14.213],[41.882,-14.224],[42.199,-14.224],[42.506,-14.235],[42.813,-14.235],[43.12,-14.245],[43.438,-14.256],[43.744,-14.256],[44.051,-14.266],[44.358,-14.277],[44.676,-14.277],[44.983,-14.287],[45.29,-14.298],[45.597,-14.298],[45.903,-14.309],[46.221,-14.319],[46.528,-14.33],[46.835,-14.34],[47.142,-14.34],[47.459,-14.351],[47.766,-14.362],[48.073,-14.372],[48.38,-14.383],[48.697,-14.393],[49.004,-14.404],[49.311,-14.415],[49.618,-14.425],[49.925,-14.436],[50.243,-14.446],[50.55,-14.457],[50.856,-14.467],[51.163,-14.478],[51.47,-14.489],[51.788,-14.51],[52.095,-14.52],[52.402,-14.531],[52.709,-14.542],[53.026,-14.552],[53.333,-14.573],[53.64,-14.584],[53.947,-14.594],[54.254,-14.616],[54.571,-14.626],[54.878,-14.637],[55.185,-14.658],[55.492,-14.668],[55.799,-14.679],[56.116,-14.7],[56.423,-14.711],[56.73,-14.732],[57.037,-14.743],[57.344,-14.764],[57.662,-14.774],[57.968,-14.795],[58.275,-14.806],[58.582,-14.827],[58.889,-14.848],[59.207,-14.859],[59.514,-14.88],[59.821,-14.901],[60.127,-14.912],[60.434,-14.933],[60.752,-14.954],[61.059,-14.965],[61.366,-14.986],[61.673,-15.007],[61.98,-15.028],[62.286,-15.05],[62.604,-15.06],[62.911,-15.081],[63.218,-15.102],[63.525,-15.124],[63.832,-15.145],[64.149,-15.166],[64.456,-15.187],[64.763,-15.208],[65.07,-15.229],[65.377,-15.251],[65.684,-15.272],[66.001,-15.293],[66.308,-15.314],[66.615,-15.335],[66.922,-15.367],[67.229,-15.388],[67.536,-15.409],[67.853,-15.431],[68.16,-15.452],[68.467,-15.483],[68.774,-15.505],[69.081,-15.526],[69.388,-15.547],[69.695,-15.579],[70.012,-15.6],[70.319,-15.621],[70.626,-15.653],[70.933,-15.674],[71.24,-15.706],[71.547,-15.727],[71.854,-15.748],[72.171,-15.78],[72.478,-15.801],[72.785,-15.833],[73.092,-15.854],[73.399,-15.886],[73.706,-15.917],[74.013,-15.939],[74.32,-15.97],[74.637,-15.991],[74.944,-16.023],[75.251,-16.055],[75.558,-16.076],[75.865,-16.108],[76.172,-16.14],[76.479,-16.171],[76.786,-16.192],[77.093,-16.224],[77.41,-16.256],[77.717,-16.288],[78.024,-16.319],[78.331,-16.351],[78.638,-16.383],[78.945,-16.404],[79.252,-16.436],[79.558,-16.468],[79.865,-16.499],[80.172,-16.531],[80.479,-16.563],[80.797,-16.595],[81.104,-16.626],[81.411,-16.658],[81.717,-16.7],[82.024,-16.732],[82.331,-16.764],[82.638,-16.796],[82.945,-16.827],[83.252,-16.859],[83.559,-16.902],[83.866,-16.933],[84.173,-16.965],[84.48,-16.997],[84.787,-17.039],[85.094,-17.071],[85.4,-17.103],[85.718,-17.145],[86.025,-17.177],[86.332,-17.208],[86.639,-17.251],[86.946,-17.283],[87.253,-17.325],[87.559,-17.357],[87.866,-17.399],[88.173,-17.431],[88.48,-17.473],[88.787,-17.505],[89.094,-17.547],[89.401,-17.59],[89.708,-17.621],[90.015,-17.664],[90.322,-17.695],[90.629,-17.738],[90.936,-17.78],[91.242,-17.822],[91.549,-17.854],[91.856,-17.896],[92.163,-17.939],[92.47,-17.981],[92.777,-18.013],[93.084,-18.055],[93.391,-18.098],[93.698,-18.14],[94.005,-18.182],[94.312,-18.225],[94.619,-18.267],[94.925,-18.309],[95.232,-18.351],[95.539,-18.394],[95.846,-18.436],[96.153,-18.478],[96.46,-18.521],[96.756,-18.563],[97.063,-18.606],[97.37,-18.648],[97.677,-18.69],[97.984,-18.733],[98.291,-18.775],[98.598,-18.828],[98.905,-18.87],[99.212,-18.912],[99.519,-18.955],[99.826,-19.008],[100.132,-19.05],[100.439,-19.092],[100.746,-19.145],[101.053,-19.188],[101.35,-19.23],[101.656,-19.283],[101.963,-19.325],[102.27,-19.378],[102.577,-19.42],[110.419,-20.627],[112.335,-21.198],[114.229,-21.833],[116.145,-22.426],[120.093,-23.04],[133.803,-25.873]],"off":-0.071,"els":[{"id":"e200","kind":"h200","now":false,"a":4.6,"spans":[2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0],"b":30.6},{"id":"e600","kind":"h600","now":false,"a":30.6,"spans":[2.0,2.0,2.0,2.0,2.0,2.0],"b":42.6},{"id":"f1","kind":"fence","now":true,"a":42.6,"spans":[2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,1.45,1.45,2.0,2.0,1.45],"slope":[13,14,17],"b":76.95},{"id":"h1","kind":"h200","now":true,"a":77.15,"spans":[2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,1.47,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,1.037],"b":153.657},{"id":"h2","kind":"h600","now":true,"a":153.66,"spans":[2.0,2.0,2.0],"b":159.66},{"id":"f2","kind":"fence","now":true,"a":159.7,"spans":[1.463,2.0,1.5,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0],"slope":[],"b":292.663}],"zt":[[0,3.63],[30.6,3.63],[42.6,3.68],[68.6,3.69],[71.5,4.31],[75.5,4.31],[76.95,3.77],[85,3.79],[102,3.84],[153.67,3.91],[159.7,3.95],[170.7,3.94],[283.1,4.11],[287.0,4.12],[292.7,4.44],[298,4.44],[310,4.9]],"zg":[[0,2.5],[4.6,2.56],[30.6,2.56],[42.6,3.43],[68.6,3.44],[71.5,4.25],[75.5,4.25],[76.95,3.7],[80.6,3.72],[82.0,2.85],[115.8,2.82],[144.8,2.91],[157.2,2.9],[167.5,3.68],[179.2,3.7],[283.1,3.85],[287.0,3.86],[292.7,4.18],[298,4.18],[310,4.75]],"sp":[[0,360.25],[22.6,378.61],[70.2,415.73],[79.5,423.47],[133.7,464.47],[153.67,479.72],[170.7,493.15],[179.2,500],[200.0,517.11],[223.0,540],[243.0,560],[263.0,580],[283.1,600],[293.2,611],[301.3,620],[315,634.72]],"zb":1.0};
+/* 福島川 右岸の管理用通路（転落防止柵・手摺）
+   c = 柵の線に沿った距離（縦断図の左端 SP360.25 を 0 とする）。u = 柵の線から川側へ＋、v = 標高。 */
+const LN=DATA.line, CUM=[0]; for(let i=1;i<LN.length;i++)CUM.push(CUM[i-1]+Math.hypot(LN[i][0]-LN[i-1][0],LN[i][1]-LN[i-1][1]));
+const CMAX=CUM[CUM.length-1]+DATA.off, OX=7, OY=-12.5;
+function at(c){                                     // → {x,y,tx,ty,nx,ny}（n は川側）
+  const s=Math.max(0,Math.min(CUM[CUM.length-1]-1e-6,c-DATA.off)); let i=1; while(i<CUM.length-1&&CUM[i]<s)i++;
+  const a=LN[i-1], b=LN[i], L=CUM[i]-CUM[i-1]||1, t=(s-CUM[i-1])/L, tx=(b[0]-a[0])/L, ty=(b[1]-a[1])/L;
+  return {x:a[0]+(b[0]-a[0])*t,y:a[1]+(b[1]-a[1])*t,tx,ty,nx:-ty,ny:tx};
+}
+const tab=(T,c)=>{ if(c<=T[0][0])return T[0][1]; for(let i=1;i<T.length;i++)if(c<=T[i][0]){const a=T[i-1],b=T[i];return a[1]+(b[1]-a[1])*(c-a[0])/(b[0]-a[0]);} return T[T.length-1][1]; };
+const zt=c=>tab(DATA.zt,c), zgr=c=>tab(DATA.zg,c), spOf=c=>tab(DATA.sp,c), ZB=DATA.zb;
+const cOfSp=sp=>{const T=DATA.sp; for(let i=1;i<T.length;i++)if(sp<=T[i][1]){const a=T[i-1],b=T[i];return a[0]+(b[0]-a[0])*(sp-a[1])/(b[1]-a[1]);} return T[T.length-1][0];};
+const M=(c,u,v)=>{const f=at(c);return new THREE.Vector3(f.x+f.nx*u+OX,v,f.y+f.ny*u+OY);};
+const KIND={fence:{h:1.1,u:-0.25,n:"転落防止柵 h=1.1m"},h200:{h:0.2,u:0.2,n:"手摺 h=0.2m"},h600:{h:0.6,u:0.2,n:"手摺 h=0.6m"}};
+const elAt=c=>DATA.els.find(e=>c>=e.a-1e-6&&c<=e.b+1e-6)||null;
+const pathB=c=>c>=167.5?4.0:1.0, EARTH0=157.2;       // SP482.50 から上流が今回の土工の範囲
+const RU=24;                                        // 川側に描く幅
+const body=c=>{const T=zt(c),G=zgr(c),R=T-1.0;return [[-12,G-0.15],[0,G],[0,R],[0.4,R],[0.4+0.5*(R-ZB),ZB],[RU,ZB],[RU,ZB-1.5],[-12,ZB-1.5]];};
+const wallP=c=>{const T=zt(c);return rect(0,0.4,T-1.0,T);};
+const revet=c=>{const R=zt(c)-1.0,x=0.4+0.5*(R-ZB);return [[0.4,R+0.02],[x+0.02,ZB+0.02],[x+0.02,ZB-0.3],[0.4,R-0.6]];};
+state.s=225; state.cut=false;
+
+INFO={
+  fence:{n:"転落防止柵（h=1.1m）",b:"川への転落を防ぐ柵です。耐雪型のパネル式で、支柱はφ60.5、ビームはφ48.6、縦格子はφ21.7。支柱の間隔は2.0m、溶融亜鉛メッキ（積雪ランク2）。支柱はプレキャストの基礎ブロック（400×400×500）に建て込みます。延長は 34.35m（下流側、村上排水樋門の手前）と 132.96m（上流側）の計167m。下流側には石積を越える所に傾斜タイプ（特注品、1.45mのパネル）があります。総括表は167mのうち2mを傾斜タイプとしています。柵は河川用転落防止柵の概算単価です。",s:"転落防止柵計画図(1)(2)・転落防止柵詳細図・転落防止柵横断図・工事数量総括表・数量計算書（路側防護柵工）"},
+  block:{n:"基礎ブロック（400×400×500）",b:"転落防止柵の支柱を建て込むプレキャストの基礎ブロックです（1個162kg）。87個（支柱の本数と同じ。下流側19、上流側68）。下に切込砕石0〜80mm（再生骨材）を厚さ10cmで敷きます（0.5×0.5×87＝22m²）。モデルではブロックの上を護岸の天端と同じ高さに置いています。",s:"転落防止柵詳細図・工事数量総括表・数量計算書（路側防護柵工）"},
+  h200:{n:"手摺（h=0.2m）",b:"護岸の壁（特殊堤）が地面から1mほど立ち上がっている区間は、壁の上に高さ0.2mの手摺を付けて、合わせて1.2mほどにします（横断図では、SP464.47で地面から壁の上まで1.002m、手摺の上まで1.202m）。ベースプレート式、支柱は□50×50×3.2、胴縁は□50×50×2.3、支柱の間隔2.0m。溶融亜鉛メッキのうえに静電粉体塗装。延長76.51m（10@2.0＋1.47＋27@2.0＋1.037）。概算単価です。",s:"転落防止柵計画図(1)・手摺詳細図(1)・転落防止柵横断図・工事数量総括表・数量計算書"},
+  h600:{n:"手摺（h=0.6m）",b:"壁の立ち上がりが0.5〜0.8mの区間に付ける、高さ0.6mの手摺です（胴縁4段）。ベースプレート式、支柱の間隔2.0m。今回は SP479.72 の上流の6.0m（3@2.0）。前後の手摺・柵とは取合い部詳細図の納まりでつなぎます。概算単価です。",s:"転落防止柵計画図(2)・手摺詳細図(2)・取合い部詳細図・工事数量総括表"},
+  exist:{n:"施工済みの手摺（令和4年度）",b:"下流側の、令和4年度に施工済みの区間です（平面図の表示は L=38.84m）。計画図では手摺 h=0.2m が26m、h=0.6m が12m。今回の柵はこの続きから始まります。",s:"平面図・転落防止柵計画図(1)"},
+  earth:{n:"管理用通路の土工（今回）",b:"SP482.50 から SP645.44 までの管理用通路を作るための土工です。総括表は 掘削（流用土）100m³、掘削 40m³（10tダンプで2.0km運搬）、路体（築堤）盛土 140m³。数量計算書の土積調書は 掘削97.6m³・盛土128.2m³（締固め前に直して142m³）です。通路の高さは SP490.57 で +3.68、SP600 で +3.85、上流の端 SP645.44 で +5.70（道路へ上がる坂）。数量計算書には、堤防天端のアスファルト舗装（3.0m幅×156.93m ほか、491m²）、敷砂利10m、U形側溝131mの計算も入っていますが、工事数量総括表にはありません（今回の発注に入るのか確認したい点）。",s:"管理用通路計画図(1)(2)・管理用通路横断図・工事数量総括表・数量計算書（福島川工区 付帯道路工）"},
+  path:{n:"管理用通路（B=1.0m の区間）",b:"下流側の管理用通路です。計画図では SP364.46〜420.07 が幅1.0mの砂利舗装（71.30m）、SP426.48〜482.50 が幅1.0mの舗装なし（73.16m）。今回の総括表に舗装の数量はありません。モデルでは地面の高さに帯で示しています。",s:"管理用通路計画図(1)"},
+  wall:{n:"護岸の壁（特殊堤）",b:"川に面したコンクリートの壁です。上の高さは、転落防止柵計画図の縦断図の数字から +3.6〜4.4 としています。石積の所（SP415.73〜423.47）は +4.3。壁と護岸そのものは施工済みで、形は目安です。",s:"転落防止柵計画図(1)(2)・転落防止柵横断図・平面図"},
+  revet:{n:"護岸（のり面）",b:"川側ののり面です。管理用通路計画図の断面図の勾配 1:0.5 で、計画河床高（+1.0前後）まで下ろした目安の形です。護岸ブロックや根固めブロックは描いていません。",s:"管理用通路計画図(1)(2)の断面図・管理用通路横断図"},
+  ground:{n:"地盤（住宅側と川底）",b:"住宅側の地面と川底です。高さは縦断図の地盤高（+2.6〜3.9）からの目安で、川底は計画河床高に近い +1.0 で平らにしています。",s:"転落防止柵計画図(1)(2)・管理用通路横断図"},
+  water:{n:"福島川の水面（目安）",b:"水面の高さは図面に無いので、川底から0.4m上に置いた目安です。図の右が上流、左が下流です。",s:""},
+  gate:{n:"村上排水樋門（SP422.84）",b:"既設の樋門です（BOX 1.00×1.00）。この前後は石積で一段高くなっていて、柵は傾斜タイプで上り下りします。計画図の縦断では、柵（34.35m）と手摺（76.51m）のあいだは0.2mです。平面図（1:500）の赤い線は樋門の所で5mほど切れて描かれています。",s:"平面図・転落防止柵計画図(1)"},
+  box:{n:"排水工（BOX 2.50×3.00、SP612.51）",b:"上流の端にある排水工です。総括表には「防止柵工［排水工］」として、転落防止柵 3m（支柱間隔1.7m、基礎ブロック3個）と、ベースプレート式の柵 5m（L=1.60m、L=2.80m で柵高1.1〜0.37m、門扉付き L=1.0m の3組）があります。この柵の位置と形が分かる図面はフォルダで見つけられなかったので、3Dには描いていません。",s:"平面図・工事数量総括表"},
+  kussaku:{n:"福島川の掘削と伐木（この範囲の外）",b:"同じ契約に、上流の河道掘削が入っています。延長200m×幅12.5m×厚さ0.2m＝500m³（簡略数量）。残土は知内町湯ノ里の処分場へ10tダンプで運びます。その前に伐木（2,500m²、立木225本を想定）と除根、すきとり物の処分があります。平面の位置はこの3Dの範囲の外なので描いていません。",s:"工事数量総括表・数量計算書（掘削工）・特記仕様書"}
+};
+DEFAULT_INFO=["部材をクリックしてください","福島川の右岸、住宅のすぐ裏を通る管理用通路です。赤が今回付ける転落防止柵（h=1.1m）、オレンジと紫が今回の手摺（h=0.2m・0.6m）、灰色は施工済みです。図の右が上流です。",""];
+LAYERS=[
+  {id:"fence",t:"転落防止柵 h=1.1m",sub:"167m",c:"--c-new",on:true,grp:"今回の工事"},
+  {id:"block",t:"基礎ブロック",sub:"87個",c:"--c-wall",on:true},
+  {id:"h200",t:"手摺 h=0.2m",sub:"77m",c:"--c-stair",on:true},
+  {id:"h600",t:"手摺 h=0.6m",sub:"6m",c:"--c-rope",on:true},
+  {id:"earth",t:"管理用通路の土工",sub:"",c:"--c-fill",on:true},
+  {id:"exist",t:"施工済みの手摺",sub:"",c:"--c-exist",on:true,grp:"まわり"},
+  {id:"wall",t:"護岸の壁とのり面",sub:"",c:"--c-body",on:true},
+  {id:"ground",t:"地盤",sub:"",c:"--c-ground",on:true},
+  {id:"water",t:"福島川の水面",sub:"",c:"--c-sea",on:true},
+  {id:"label",t:"ラベルと測点",sub:"",c:"--panel",on:true}
+];
+const vAt=(c,back,up,side)=>{const f=at(c),z=zt(c);return [[f.x+OX-f.tx*back+f.nx*side,z+up,f.y+OY-f.ty*back+f.ny*side],[f.x+OX,z,f.y+OY]];};
+WORKS=[
+  {id:"fence",t:"転落防止柵 h=1.1m",q:"167m",c:"--c-new",v:vAt(215,26,9,12)},
+  {id:"block",t:"基礎ブロック",q:"87個",c:"--c-wall",v:vAt(60,6,2.6,-4)},
+  {id:"h200",t:"手摺 h=0.2m",q:"77m",c:"--c-stair",v:vAt(112,14,5,-7)},
+  {id:"h600",t:"手摺 h=0.6m",q:"6m",c:"--c-rope",v:vAt(156.6,9,3.5,-6)},
+  {id:"earth",t:"管理用通路の土工",q:"盛土140m³",c:"--c-fill",v:vAt(230,30,14,-14)},
+  {id:null,inf:"box",t:"排水工の柵",q:"3m＋5m",c:"--c-exist",v:vAt(294,14,6,-8)},
+  {id:null,inf:"kussaku",t:"河道の掘削と伐木",q:"500m³",c:"--c-ground",v:null}
+];
+PRI={fence:1,block:1,h200:1,h600:1,exist:2,earth:4,path:4,wall:3,revet:5,ground:8,water:7,gate:2,box:2};
+VIEWS=[
+  {id:"all",t:"全体（川側から）",go:()=>setView([0,190,250],[0,2,6])},
+  {id:"down",t:"下流側（樋門のあたり）",go:()=>{const v=vAt(70,-34,16,30);setView(v[0],v[1]);}},
+  {id:"up",t:"上流側",go:()=>{const v=vAt(230,-46,20,38);setView(v[0],v[1]);}},
+  {id:"top",t:"真上から",go:()=>setView([0,430,0.1],[0,0,0])},
+  {id:"sec",t:"断面を正面から",go:()=>SITE.viewSec()}
+];
+function stations(a,b){ const s=new Set(); for(let c=Math.ceil(a);c<=b;c+=1)s.add(c); s.add(a); s.add(b);
+  DATA.zt.concat(DATA.zg).forEach(q=>{if(q[0]>a&&q[0]<b)s.add(q[0]);}); return [...s].sort((x,y)=>x-y); }
+
+SITE.build=function(){
+  const xo=state.xray?0.3:1, lam=(tok,op)=>{const m=new THREE.MeshLambertMaterial({color:new THREE.Color(css(tok)),side:THREE.DoubleSide});if(op&&op<1){m.transparent=true;m.opacity=op;m.depthWrite=false;}return m;};
+  const ALL=stations(0,CMAX-0.5);
+  const g1=solid(groups.ground,loft(ALL,body,M),mat("--c-ground",{opacity:xo,po:2}),"ground","",false); g1.userData.nohl=true;
+  solid(groups.wall,loft(ALL,wallP,M),mat("--c-body",{opacity:xo}),"wall","",false);
+  const rv=solid(groups.wall,loft(ALL,revet,M),mat("--c-stone",{opacity:xo}),"revet","",false); rv.userData.nohl=true;
+  const wt=solid(groups.water,loft(ALL,c=>{const R=zt(c)-1.0;return rect(0.4+0.5*(R-ZB-0.4),RU,ZB+0.36,ZB+0.4);},M),mat("--c-sea",{opacity:0.72}),"water","",false); wt.userData.nohl=true;
+  /* path strips */
+  solid(groups.ground,loft(stations(4.6,EARTH0),c=>rect(-1.5,-0.5,zgr(c)-0.02,zgr(c)+0.04),M),mat("--c-stone"),"path","",false);
+  [[EARTH0,167.5],[167.5,CMAX-0.5]].forEach(r=>solid(groups.earth,loft(stations(r[0],r[1]),c=>rect(-0.5-pathB(c),-0.5,zgr(c)-0.02,zgr(c)+0.05),M),mat("--c-fill"),"earth","SP"+fm(spOf(r[0]))+"〜"+fm(spOf(r[1]))+"、幅"+fm(pathB((r[0]+r[1])/2))+"m",false));
+  /* guards */
+  const colOf=e=>!e.now?"--c-exist":e.kind==="fence"?"--c-new":e.kind==="h200"?"--c-stair":"--c-rope";
+  DATA.els.forEach(e=>{
+    const K=KIND[e.kind], grp=e.now?groups[e.kind]:groups.exist, info=e.now?e.kind:"exist", tok=colOf(e), col=css(tok), mP=lam(tok), mQ=lam(tok,e.kind==="fence"?0.3:0.45), mB=lam("--c-wall");
+    let c=e.a; const posts=[c]; e.spans.forEach(s=>{c+=s;posts.push(c);});
+    posts.forEach((pc,i)=>{const w=e.kind==="fence"?0.07:0.05, m=new THREE.Mesh(new THREE.BoxGeometry(w,K.h,w),mP); m.position.copy(M(pc,K.u,zt(pc)+K.h/2));
+      m.userData.info=info; m.userData.extra=K.n+"、支柱 "+(i+1)+"/"+posts.length+"、SP"+fm(spOf(pc))+"付近、天端 +"+fm(zt(pc),2); grp.add(m); pick.push(m);
+      if(e.kind==="fence"){const b=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.5,0.4),mB), f=at(pc); b.position.copy(M(pc,K.u,zt(pc)-0.25)); b.rotation.y=-Math.atan2(f.ty,f.tx);
+        b.userData.info="block"; b.userData.extra="SP"+fm(spOf(pc))+"付近"; groups.block.add(b); pick.push(b);}
+    });
+    for(let i=0;i<posts.length-1;i++){const a=posts[i],b=posts[i+1],T=new Tris(),lo=e.kind==="fence"?0.1:0.02;
+      T.quad(M(a,K.u,zt(a)+lo),M(b,K.u,zt(b)+lo),M(b,K.u,zt(b)+K.h),M(a,K.u,zt(a)+K.h));
+      const m=new THREE.Mesh(T.geom(),mQ); m.userData.info=info; m.userData.extra=K.n+"、スパン "+fm(b-a,b-a===2?1:3)+"m"+(e.slope&&e.slope.includes(i)?"（傾斜タイプ）":"")+"、SP"+fm(spOf((a+b)/2))+"付近"; grp.add(m); pick.push(m);
+      (e.kind==="h600"?[0.15,0.3,0.45,0.6]:e.kind==="h200"?[0.2]:[0.1,1.1]).forEach(h=>grp.add(lineOf([M(a,K.u,zt(a)+h),M(b,K.u,zt(b)+h)],col)));}
+  });
+  /* labels */
+  { const g=groups.label, ac=css("--accent");
+    for(let sp=380;sp<=620;sp+=20){const c=cOfSp(sp);g.add(near(label("SP "+sp,M(c,6,ZB+1.2),{mono:true,size:0.013}),5000)); g.add(lineOf([M(c,0.4,zt(c)+0.05),M(c,5,ZB+0.5)],css("--c-secline"),{dash:0.5}));}
+    const L=(t,c,u,dz,o)=>g.add(near(label(t,M(c,u,zt(c)+dz),o||{}),o&&o.near||5000));
+    L("転落防止柵 h=1.1m　34.35m",60,-3,4.5,{fg:ac,size:0.018}); L("手摺 h=0.2m　76.51m",115,-3,4.5,{fg:css("--c-stair"),size:0.018});
+    L("手摺 h=0.6m　6m",156.6,-6,6.5,{fg:css("--c-rope"),size:0.016}); L("転落防止柵 h=1.1m　132.96m",225,-3,5,{fg:ac,size:0.018});
+    L("施工済み（令和4年度）",23,-3,4,{size:0.016}); L("村上排水樋門",78.5,3,3.2,{size:0.015}); L("排水工 BOX（SP612.51）",294.6,3,3.4,{size:0.015});
+    L("管理用通路の土工（SP482.50〜645.44）",240,-9,3.4,{size:0.016,fg:css("--c-edge")});
+    g.add(near(label("福島川　← 下流　　上流 →",M(170,15,ZB+2.2),{size:0.02}),5000)); g.add(near(label("住宅側",M(170,-10,zt(170)+3),{size:0.017}),5000));
+    [78.7,294.6].forEach((c,i)=>{const T=new Tris(),w=i?1.5:0.6;T.quad(M(c-w,0.4,zt(c)+0.04),M(c+w,0.4,zt(c)+0.04),M(c+w,3.2,ZB+0.5),M(c-w,3.2,ZB+0.5));const m=new THREE.Mesh(T.geom(),lam("--c-exist"));m.userData.info=i?"box":"gate";groups.wall.add(m);pick.push(m);});
+  }
+};
+
+/* ---------- section cut across the fence line ---------- */
+const dirAt=c=>{const f=at(c);return new THREE.Vector3(f.tx,0,f.ty);};
+SITE.snap=v=>Math.round(v*2)/2;
+SITE.keep=p=>{const d=dirAt(state.s), o=M(state.s,0,0);return (p.x-o.x)*d.x+(p.z-o.z)*d.z>=-1e-3;};
+SITE.readout=function(){
+  const c=state.s, e=elAt(c), T=zt(c), G=zgr(c), K=e?KIND[e.kind]:null;
+  $("r-pos").textContent="SP "+fm(spOf(c))+" 付近";
+  $("r-kind").textContent=e?(K.n+(e.now?"（今回）":"（施工済み）")):"柵なし";
+  $("r-top").textContent="+"+fm(T,2)+" m";
+  $("r-g").textContent="+"+fm(G,2)+" m（壁は "+fm(Math.max(0,T-G),2)+" m 上）";
+  $("r-h").textContent=K?fm(T+K.h-G,2)+" m":"—";
+};
+SITE.cut=function(){
+  const c=state.s, d=dirAt(c), o=M(c,0,0), front=d.clone().multiplyScalar(-0.03), e=elAt(c), T=zt(c), G=zgr(c);
+  cutPlane.normal.copy(d); cutPlane.constant=-(d.x*o.x+d.z*o.z);
+  const place=(u,v)=>M(c,u,v), placeF=(u,v)=>M(c,u,v).add(front);
+  if(state.vis.ground)capPoly(body(c),place,"--c-ground","ground","");
+  if(state.vis.wall){capPoly(wallP(c),placeF,"--c-body","wall","");capPoly(revet(c),placeF,"--c-stone","revet","");}
+  if(state.vis.water){const R=T-1.0;capPoly(rect(0.4+0.5*(R-ZB-0.4),RU,ZB,ZB+0.4),placeF,"--c-sea","water","");}
+  if(c>=EARTH0&&state.vis.earth)capPoly(rect(-0.5-pathB(c),-0.5,G-0.25,G+0.05),placeF,"--c-fill","earth","");
+  const L=(t,u,v,o2)=>capGroup.add(label(t,placeF(u,v),Object.assign({size:0.02,mono:true},o2||{})));
+  if(e){const K=KIND[e.kind], vis=e.now?state.vis[e.kind]:state.vis.exist, tok=!e.now?"--c-exist":e.kind==="fence"?"--c-new":e.kind==="h200"?"--c-stair":"--c-rope";
+    if(vis){ if(e.kind==="fence"&&state.vis.block)capPoly(rect(K.u-0.2,K.u+0.2,T-0.5,T),placeF,"--c-wall","block","");
+      capPoly(rect(K.u-0.035,K.u+0.035,T,T+K.h),placeF,tok,e.now?e.kind:"exist","");
+      if(state.vis.label)L(K.n,K.u-1.4,T+K.h+0.55,{mono:false,fg:css(tok)}); }
+  }
+  if(state.vis.label){ L("天端 +"+fm(T,2),2.6,T+0.35); L("地盤 +"+fm(G,2),-4.5,G+0.45); L("SP "+fm(spOf(c))+" 付近",2,T+2.3,{fg:css("--accent"),size:0.026,mono:false});
+    L("← 住宅側",-9.5,G+1.4,{mono:false}); L("福島川 →",11,ZB+1.4,{mono:false}); }
+};
+SITE.viewSec=function(){
+  if(!state.cut){state.cut=true;$("cut-on").checked=true;updateCut();}
+  const c=state.s, d=dirAt(c), p=M(c,3,zt(c)-0.8); setView([p.x-d.x*26,p.y,p.z-d.z*26],[p.x,p.y,p.z]); $("view-sec").setAttribute("aria-pressed","true");
+};
+SITE.home=()=>VIEWS[0].go();
+(function(){
+  const ch=$("cut-chips");
+  [["施工済み h=0.2",15],["柵（下流）",56],["石積",73.5],["手摺 h=0.2",115],["手摺 h=0.6",156.5],["柵（上流）",225],["上流の端",290]].forEach(q=>{const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=q[0];
+    b.addEventListener("click",()=>{state.s=q[1];$("cut-s").value=q[1];if(!state.cut){state.cut=true;$("cut-on").checked=true;}updateCut();if(secOn())SITE.viewSec();});ch.appendChild(b);});
+})();
+
+/* ================= shared: panel, cut, picking, loop ================= */
+LAYERS.forEach(l=>state.vis[l.id]=l.on);
+showInfo(null);
+(function buildPanel(){
+  const ul=$("layers");
+  LAYERS.forEach(l=>{
+    if(l.grp){const g=document.createElement("li");g.className="grp";g.textContent=l.grp;ul.appendChild(g);}
+    const li=document.createElement("li");
+    li.innerHTML='<label><input type="checkbox" id="ly-'+l.id+'"'+(l.on?" checked":"")+'><span class="swatch" style="background:var('+l.c+')"></span><span class="t">'+l.t+(l.sub?' <small class="num">'+l.sub+'</small>':'')+'</span></label>';
+    ul.appendChild(li);
+    li.querySelector("input").addEventListener("change",e=>{state.vis[l.id]=e.target.checked;applyVis();updateCut();});
+  });
+  const wk=$("works");
+  WORKS.forEach((w,i)=>{
+    const b=document.createElement("button");b.type="button";b.className="btn";b.id="work-"+i;b.setAttribute("aria-pressed","false");
+    b.innerHTML='<span class="w"><span class="swatch" style="background:var('+w.c+')"></span>'+w.t+'</span><span class="q num">'+w.q+'</span>';
+    b.addEventListener("click",()=>{
+      (w.on||(w.id?[w.id]:[])).forEach(id=>{ if(!state.vis[id]){state.vis[id]=true;$("ly-"+id).checked=true;} }); applyVis();
+      if(w.v){ if(state.cut){state.cut=false;$("cut-on").checked=false;updateCut();} setView(w.v[0],w.v[1]); }
+      showInfo(w.inf||w.id);
+      [...wk.children].forEach(c=>c.setAttribute("aria-pressed",String(c===b)));
+    });
+    wk.appendChild(b);
+  });
+  const vw=$("views");
+  VIEWS.forEach(v=>{const b=document.createElement("button");b.type="button";b.className="btn";b.id="view-"+v.id;b.textContent=v.t;if(v.id==="sec")b.setAttribute("aria-pressed","false");b.addEventListener("click",v.go);vw.appendChild(b);});
+})();
+function rebuild(){
+  if(root){scene.remove(root);dispose(root);}
+  root=new THREE.Group(); scene.add(root); pick=[]; groups={}; selected=null; nearLabels=[];
+  LAYERS.forEach(l=>{groups[l.id]=new THREE.Group();root.add(groups[l.id]);});
+  capGroup=new THREE.Group(); root.add(capGroup);
+  renderer.setClearColor(new THREE.Color(css("--scene")),1);
+  edgeMat=new THREE.LineBasicMaterial({color:new THREE.Color(css("--c-edge")),transparent:true,opacity:0.5});
+  SITE.build();
+  applyVis(); updateCut();
+}
+function applyVis(){ LAYERS.forEach(l=>{groups[l.id].visible=state.vis[l.id];}); }
+function updateCut(){
+  if(!capGroup)return;
+  pick=pick.filter(m=>m.parent!==capGroup);
+  while(capGroup.children.length){const c=capGroup.children.pop();dispose(c);}
+  SITE.readout();
+  const planes=state.cut?[cutPlane]:null;
+  root.traverse(o=>{ if(o.material&&!o.isSprite&&o.parent!==capGroup&&(o.material.clippingPlanes?1:0)!==(planes?1:0)){o.material.clippingPlanes=planes;o.material.needsUpdate=true;} });
+  if(state.cut) SITE.cut();
+}
+$("cut-on").addEventListener("change",e=>{state.cut=e.target.checked;updateCut();});
+$("cut-s").addEventListener("input",e=>{state.s=SITE.snap?SITE.snap(parseFloat(e.target.value)):parseFloat(e.target.value);updateCut();if(secOn())SITE.viewSec();});
+$("xray").addEventListener("change",e=>{state.xray=e.target.checked;rebuild();});
+controls.addEventListener("start",()=>{const b=$("view-sec");if(b)b.setAttribute("aria-pressed","false");[...$("works").children].forEach(c=>c.setAttribute("aria-pressed","false"));});
+
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2(); let down=null;
+const shown=o=>{for(let p=o;p;p=p.parent)if(!p.visible)return false;return true;};
+canvas.addEventListener("pointerdown",e=>{down=[e.clientX,e.clientY];});
+canvas.addEventListener("pointerup",e=>{
+  if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
+  const r=canvas.getBoundingClientRect(); ptr.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1));
+  ray.setFromCamera(ptr,camera);
+  const hits=ray.intersectObjects(pick,false).filter(h=>shown(h.object)&&(!state.cut||h.object.parent===capGroup||SITE.keep(h.point)));
+  const pri=h=>{const v=PRI[h.object.userData.info];return v===undefined?5:v;};
+  let hit=hits[0]; if(hit) hits.forEach(h=>{ if(h.distance<=hits[0].distance+0.35&&pri(h)<pri(hit)) hit=h; });
+  if(selected){selected.material=selected.userData.base;selected=null;}
+  if(!hit){showInfo(null);return;}
+  const o=hit.object;
+  if(o.material.emissive&&!o.isInstancedMesh&&!o.userData.nohl){o.userData.base=o.material;o.material=o.material.clone();o.material.emissive=new THREE.Color(0x3a3a12);selected=o;}
+  showInfo(o.userData.info,SITE.pickExtra(o,hit)||o.userData.extra);
+});
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(stage);
+function tick(){
+  controls.update();
+  const cp=camera.position, front=state.cut&&secOn();
+  for(let i=0;i<nearLabels.length;i++){const sp=nearLabels[i],d=cp.distanceTo(sp.position);
+    sp.visible=!front&&d<sp.userData.near&&(!state.cut||SITE.keep(sp.position));}
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+const retheme=()=>rebuild();
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",retheme);
+new MutationObserver(retheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+resize(); rebuild(); SITE.home(); tick();
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>rebuild());
+window.__viewer={state,setView,updateCut,rebuild,applyVis,camera,controls,scene,SITE};
+})();
+</script>
+
+</body></html>

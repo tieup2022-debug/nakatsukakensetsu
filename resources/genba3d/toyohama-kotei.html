@@ -1,0 +1,464 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>豊浜 急傾斜地 工程表</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a working schedule sheet. Settings and key dates on top, the bar chart as the centrepiece, then the step-by-step procedure and the points to confirm. */
+:root{
+  --bg:#EEF1F2; --panel:#F8FAFA; --ink:#1C2A33; --muted:#5A6A74; --line:#CBD4D9; --chip:#E3E9EC; --off:#E1E7EA; --hold:#F3D9D6;
+  --accent:#C2302A; --warn-bg:#FBEFD9; --warn-line:#D9A441;
+  --s-reg:#2a78d6; --s-out:#eb6834; --s-cure:#1baf7a; --s-prep:#75858F;
+  --font-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A; --off:#1D2830; --hold:#3A2422;
+  --accent:#F0766E; --warn-bg:#2E2717; --warn-line:#A57E2E;
+  --s-reg:#3987e5; --s-out:#d95926; --s-cure:#199e70; --s-prep:#8797A1;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A; --off:#1D2830; --hold:#3A2422;
+  --accent:#F0766E; --warn-bg:#2E2717; --warn-line:#A57E2E;
+  --s-reg:#3987e5; --s-out:#d95926; --s-cure:#199e70; --s-prep:#8797A1;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.65}
+.page{max-width:1240px;margin:0 auto;padding-inline:20px;padding-block:24px 56px;display:flex;flex-direction:column;gap:28px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+h1{font-size:22px;font-weight:700;margin:0;letter-spacing:.02em;text-wrap:balance;line-height:1.35}
+h2{font-size:16px;font-weight:700;margin:0;text-wrap:balance}
+.eyebrow{margin:0;font-size:12px;color:var(--muted);letter-spacing:.06em}
+.lead{margin:0;max-width:46em;color:var(--muted)}
+header.top{display:flex;flex-direction:column;gap:6px}
+section{display:flex;flex-direction:column;gap:12px;min-width:0}
+
+.setup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;align-items:start}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 14px}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field label{font-size:12px;color:var(--muted)}
+.field input,.field select{border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:5px 8px;width:100%;min-width:0}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:5px 12px;cursor:pointer;font-size:13px;align-self:flex-start}
+.btn:hover{border-color:var(--muted)}
+.small{font-size:12px;color:var(--muted);margin:0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{display:flex;flex-direction:column;gap:1px;min-width:0}
+.stat span{font-size:12px;color:var(--muted)}
+.stat b{font-size:18px;font-weight:500;font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.02em;overflow-wrap:anywhere}
+.miles{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:2px 18px;font-size:13px;border-top:1px solid var(--line);padding-top:10px}
+.miles div{display:flex;justify-content:space-between;gap:8px}
+.miles dt{color:var(--muted)}
+.miles dd{margin:0}
+#alert{color:var(--ink);background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:3px;padding:7px 10px}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.key{display:inline-block;width:22px;height:10px;border-radius:3px}
+.k-reg{background:var(--s-reg)} .k-out{background:var(--s-out)} .k-prep{background:var(--s-prep)}
+.k-cure,.bar.cure{background:repeating-linear-gradient(135deg,var(--s-cure) 0 4px,color-mix(in srgb,var(--s-cure) 45%,var(--panel)) 4px 7px)}
+.k-off{background:var(--off);border:1px solid var(--line)}
+.k-hold{background:var(--hold);border:1px solid var(--line)}
+.k-dl{width:3px;height:14px;border-radius:0;background:var(--accent)}
+
+.gwrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:var(--panel)}
+table.gantt{border-collapse:separate;border-spacing:0;font-size:12.5px}
+.gantt th,.gantt td{border-bottom:1px solid var(--line);padding:0 8px;height:36px;white-space:nowrap;text-align:left;font-weight:400;vertical-align:middle}
+.gantt thead th{height:44px;font-size:11.5px;color:var(--muted);font-weight:500;vertical-align:bottom;padding-bottom:5px}
+.gantt .c-task{position:sticky;left:0;z-index:2;background:var(--panel);border-right:1px solid var(--line);width:268px;min-width:268px;max-width:268px;white-space:normal;line-height:1.3;padding-block:4px}
+.gantt .c-task b{font-weight:500;display:block}
+.gantt .c-task small{color:var(--muted);font-size:11px;display:block}
+.gantt .c-d{text-align:right}
+.gantt input.days{width:46px;text-align:right;border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:2px 5px;font-family:var(--font-data)}
+.gantt .unit{font-size:11px;color:var(--muted);margin-left:3px;display:inline-block;width:2em;text-align:left}
+.gantt tr.grp th,.gantt tr.grp td{height:28px;background:var(--chip)}
+.gantt tr.grp .c-task{background:var(--chip);font-weight:700;font-size:12px;letter-spacing:.04em}
+.gantt td.tl,.gantt th.tl{padding:0;position:relative;background-image:var(--dl),var(--wk),var(--holdbg),var(--offbg);background-repeat:no-repeat}
+.gantt th.tl{vertical-align:top}
+.tl .mon,.tl .wk,.tl .dl{position:absolute;white-space:nowrap;font-family:var(--font-data);font-size:11px}
+.tl .mon{top:5px;font-weight:500;color:var(--ink);font-family:var(--font-ui);font-size:12px}
+.tl .wk{bottom:5px;color:var(--muted)}
+.tl .dl{bottom:4px;z-index:1;color:var(--accent);font-family:var(--font-ui);font-weight:700;background:var(--panel);padding:0 3px}
+.bar{position:absolute;top:11px;height:14px;border-radius:4px;cursor:default}
+.bar.reg{background:var(--s-reg)} .bar.out{background:var(--s-out)} .bar.prep{background:var(--s-prep)}
+.span{position:absolute;top:12px;height:4px;border-radius:2px;background:var(--muted);opacity:.7}
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--panel);border-radius:4px;padding:7px 10px;font-size:12px;line-height:1.5;max-width:280px}
+#tip b{display:block;font-weight:700}
+
+ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;counter-reset:st}
+ol.steps li{counter-increment:st;display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 12px;padding:14px 0;border-top:1px solid var(--line)}
+ol.steps li::before{content:counter(st);font-family:var(--font-data);font-size:15px;color:var(--accent);font-weight:500;grid-row:1 / span 4;padding-top:1px}
+ol.steps h3{margin:0;font-size:14.5px;font-weight:700;grid-column:2}
+ol.steps p{margin:0;grid-column:2;max-width:52em}
+ol.steps p.q{font-size:12.5px;color:var(--muted)}
+ol.steps p.pt{font-size:13px}
+ol.steps p.pt::before{content:"留意点　";color:var(--accent);font-weight:700;font-size:12px}
+
+.warn{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.warn h3{margin:0;font-size:14px;font-weight:700}
+.warn p{margin:0;max-width:56em}
+ul.notes{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;max-width:58em}
+.twrap{overflow-x:auto}
+table.q{border-collapse:collapse;font-size:13px;min-width:520px}
+table.q th,table.q td{border-bottom:1px solid var(--line);padding:5px 14px 5px 0;text-align:left;vertical-align:top}
+table.q th{font-size:12px;color:var(--muted);font-weight:500}
+table.q td.r{text-align:right;white-space:nowrap}
+
+@media (max-width:760px){
+  .page{padding-inline:16px}
+  .setup{grid-template-columns:minmax(0,1fr)}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gantt .c-task{width:168px;min-width:168px;max-width:168px}
+  ol.steps li{grid-template-columns:24px minmax(0,1fr)}
+}
+</style>
+
+<div class="page">
+  <header class="top">
+    <p class="eyebrow">北海道 渡島総合振興局 函館建設管理部　令和8年度（松前郡福島町字豊浜・福島川）</p>
+    <h1>福島豊浜外急傾斜地工事外（補正明許）外　施工工程表（案）</h1>
+    <p class="lead">福島豊浜の急傾斜地（土留柵工）と、福島川の管理用通路（転落防止柵）・河道掘削をまとめた、考えられる施工手順と工程です。設計図書に1日当たりの施工量が載っていないので、日数はすべて私の想定です。表の中の数字を書き換えると工程が引き直されます。</p>
+  </header>
+
+  <section class="setup" aria-label="条件と結果">
+    <div class="box">
+      <h2>条件</h2>
+      <div class="fields">
+        <div class="field"><label for="start">着手日（仮）</label><input type="date" id="start"></div>
+        <div class="field"><label for="rest">休日</label><select id="rest"><option value="satsun">土日休み（完全週休2日）</option><option value="sun">日曜のみ休み</option></select></div>
+        <div class="field"><label for="rate">斜面の作業の稼働率（雨・雪・風）</label><select id="rate"><option value="1">100%</option><option value="0.9">90%</option><option value="0.8">80%（土日休みと合わせて雨休率1.75に相当）</option><option value="0.7">70%</option><option value="0.6">60%</option></select></div>
+        <div class="field"><label for="crews">福島川の進め方</label><select id="crews"><option value="2">急傾斜地と並行して進める</option><option value="1">急傾斜地のあとに福島川</option></select></div>
+        <div class="field"><label for="p41">4工区1段目の杭の本数</label><select id="p41"><option value="13">13本（工事数量総括表）</option><option value="1">1本（計画平面図・数量計算書）</option></select></div>
+      </div>
+      <p class="small">着手日の初期値は設計図書の工期（令和8年7月16日〜令和9年3月23日）の初日です。フレックス工期なので、実際に申し出た工期に合わせて変えてください。設計図書は、準備30日・後片付け20日・雨休率1.75（実働日数×1.75。休日と悪天候の日を含む）を見込んでいます。稼働率は斜面の作業だけに掛かります。祝日は稼働日として計算し、12/29〜1/3は休みにしています。</p>
+      <button class="btn" id="reset" type="button">日数と条件を初期値に戻す</button>
+    </div>
+    <div class="box">
+      <h2>この条件での見込み</h2>
+      <div class="stats">
+        <div class="stat"><span>完了見込み</span><b id="s-end">—</b></div>
+        <div class="stat"><span>全体の暦日数</span><b id="s-cal">—</b></div>
+        <div class="stat"><span>うち稼働日</span><b id="s-work">—</b></div>
+        <div class="stat"><span>工期末までの余裕</span><b id="s-float">—</b></div>
+      </div>
+      <dl class="miles" id="miles"></dl>
+      <p class="small" id="alert" hidden></p>
+    </div>
+  </section>
+
+  <section aria-label="工程表">
+    <h2>工程表</h2>
+    <div class="legend" aria-label="凡例">
+      <span><i class="key k-out"></i>斜面の作業（稼働率が掛かる）</span>
+      <span><i class="key k-reg"></i>平地の作業（ヤード・福島川）</span>
+      <span><i class="key k-cure"></i>養生・製作待ち（暦日）</span>
+      <span><i class="key k-prep"></i>準備・協議・片付け</span>
+      <span><i class="key k-off"></i>休日</span>
+      <span><i class="key k-hold"></i>冬期（11月〜3月）</span>
+      <span><i class="key k-dl"></i>工期末 令和9年3月23日</span>
+    </div>
+    <div class="gwrap" id="gwrap" tabindex="0" aria-label="工程表（横にスクロールできます）"><table class="gantt" id="gantt"></table></div>
+    <p class="small">バーにカーソルを合わせると期間が出ます。同じ行の「開始」「終了」にも日付があります。</p>
+  </section>
+
+  <section aria-label="施工手順">
+    <h2>施工手順</h2>
+    <ol class="steps">
+      <li><h3>準備（施工計画・起工測量・借地範囲の杭出し・住民への説明）</h3>
+        <p>斜面のすぐ下に住宅があります。仮設ヤード（豊浜39、民地を北海道が借地）の範囲を現地に杭で出して確認し、仮排水のルートを現地で調べて協議します。騒音・振動の調査は別途発注の業務が行うので、調査の受注者と測る工種を打ち合わせます。</p>
+        <p class="q num">設計図書の工期 251日のうち、準備30日・後片付け20日・雨休率1.75／完全週休2日（土日）または月単位の週休2日／施工管理業務の受託者が監督の一部を行う工事</p>
+        <p class="pt">規定を越える騒音・振動が出たときは工事を一時中止して報告、と特記仕様書にあります。杭の削孔（ダウンザホールハンマ）がいちばん音の出る作業です。</p></li>
+      <li><h3>線形（小段の幅）の協議と、鋼材の手配</h3>
+        <p>フォルダには9月18日の変更案と9月29日の線形修正案があります。小段の幅（1.0mまたは0.8m）を確保するために、2工区2段目の起点と3工区2段目（SP40〜47）の柵を山側へ0.3〜0.7m寄せる案で、1工区2段目との取り合いでは張りコンクリートの撤去（0.21m³）が描かれています。杭の位置が決まるまで、その段の削孔は始められません。</p>
+        <p class="q num">H形鋼杭：溶融亜鉛メッキ HDZ55＋塩化ゴム系塗装（こげ茶）、継杭（ボルト接合）／土留横材：軽量鋼矢板 LSP 1型・2型・3A型・3D型／鋼製階段・門扉・乗越階段は概算単価や策定歩掛</p>
+        <p class="pt">町道が狭くトレーラーが入れないので、杭は短く切って現場でつなぐ継杭です。質疑応答では、ボルト接合の補正は設計変更確認会議で変更するとされています。メッキと塗装の日数は私の想定なので、製作工場の納期で置き換えてください。</p></li>
+      <li><h3>仮設ヤード・仮排水・仮設防護柵</h3>
+        <p>斜面の下に仮設の落石防護柵を立ててから、斜面の作業に入ります。仮排水は合成樹脂管φ300（貸与品）で法面の下を通し、普通河川へつなぎます。</p>
+        <p class="q num">仮設防護柵 A型 H=4m L=6m×7組（42m）・C型 H=6m L=6m×5組（30m）［指定仮設］／仮排水 φ300 9m／交通誘導警備員 A 4人日・B 4人日</p>
+        <p class="pt">仮設防護柵は指定仮設です。現地で範囲が変わるときは協議します。仮設昇降階段は任意仮設です。</p></li>
+      <li><h3>ジブクレーンの組立（相取工法）</h3>
+        <p>参考図の手順は、①16tラフタークレーンで1段目を組む、②1段目で2段目を組む、③2段目で1段目を解体して3段目を組む、です。作業半径は22m。資材は斜面を小運搬します。</p>
+        <p class="q num">ジブクレーン組立解体：1台目（ラフター使用）1回・2台目以降（ジブクレーン使用）3回／拘束費 153日＋80日／やぐら設置撤去 6回</p>
+        <p class="pt">仮設工計画平面図は参考図で、工法の指定ではありません。相取工法の積算資料は令和7年版です（質疑応答）。</p></li>
+      <li><h3>［4工区］仮設足場・やぐら → 杭の削孔と建込み</h3>
+        <p>3段目のクレーンで4工区を施工します。各段にH形鋼の足場を組み、やぐらを据えて、ダウンザホールハンマ（B工法）で削孔し、H形鋼を建て込んでモルタルを詰めます。</p>
+        <p class="q num">4工区2段目 H-300×300×10×15 L=10.5m 6本（杭16〜21、足場EL20.46）／4工区1段目 H-150×150×7×10 L=6.5m 13本（杭13〜25、足場EL15.89）／杭間隔1.5m</p>
+        <p class="pt">4工区1段目の本数は、総括表が13本、計画平面図と数量計算書が1本です（下の「確認しておきたい点」）。</p></li>
+      <li><h3>［4工区］床掘・土留横材・裏込め → 崩土防止横材 → 山腹水路 → 階段</h3>
+        <p>杭のあいだに軽量鋼矢板を落とし込み、裏に吸出し防止材と裏込材（再生骨材0〜80mm）を入れます。その上にワイヤロープと金網の崩土防止横材を張り、柵の前の小段にU形側溝と張コンクリートを作ります。</p>
+        <p class="q num">土留横材 4工区1段目 20m（19.5m、柵高1.3m）・2段目 9m（柵高1.0m）／崩土防止横材 1段目 35m・2段目 16m／U-300B 19m（1段目）・U-240 9m（2段目）／階段No.9（1:1.0、6.9m）・乗越階段 H=1.3m・門扉</p>
+        <p class="pt">総括表の季節区分では、U-240の9mが通常期、U-300Bの19mが冬期加熱期です。4工区2段目の水路を寒くなる前に、1段目を生コンを加熱する時期に、という想定と読めます。</p></li>
+      <li><h3>ジブクレーンの組み替え</h3>
+        <p>参考図の手順は、⑤2段目で3段目を解体して1段目を組む、⑥1段目で2段目を解体、です。そのあと1段目で2工区・3工区を施工します。</p></li>
+      <li><h3>［2工区・3工区］仮設足場・やぐら → 杭の削孔と建込み</h3>
+        <p>2工区2段目と3工区2段目は杭7と杭1が1.5mでつながる一続きの柵です。3工区3段目はその上の段の端の2本です。</p>
+        <p class="q num">3工区3段目 H-300 L=11.5m 2本（足場EL17.63）／3工区2段目 H-250×250×9×14 L=9.0m 9本／2工区2段目 H-250 L=8.5m 7本（足場EL14.10）</p></li>
+      <li><h3>［2工区・3工区］土留横材・崩土防止・山腹水路・集水桝・縦排水・階段</h3>
+        <p>横材を入れ、3工区3段目に崩土防止横材（6m）、2段目には支柱だけを立てます。小段の水路と集水桝3か所、縦排水（No.6・No.8）を作り、階段No.7を掛けます。</p>
+        <p class="q num">土留横材 2工区2段目 9m・3工区2段目 14m（13.5m）・3段目 3m（柵高1.6・1.6・1.2m）／U-300B 12m・U-240 17m＋2m／集水桝 560型1・650型2／コルゲートフリューム A-350 6m／横断処理 J・Lタイプ 各1／階段No.7（1:0.9、6.6m）・乗越階段 H=1.6m</p>
+        <p class="pt">総括表では、この区間の水路は防寒養生期の計上です（U-240 17m、U-300B 12m。普通ポルトランド＋生コン加熱費）。冬の打設と防寒養生（8.8m³）を見込んだ積算です。</p></li>
+      <li><h3>法面整形・小口止・張芝</h3>
+        <p>掘った所を埋め戻して法面を整え、端を植生土のうで止め、張芝（生芝）で仕上げます。</p>
+        <p class="q num">床掘 110m³・埋戻し 20m³／法面整形 切土20m²・盛土80m²／杭土処理 40m³／残土 90m³（4tダンプ、知内町湯ノ里の残土処分場まで19.3km）／植生土のう 258袋／張芝 100m²</p>
+        <p class="pt">特記仕様書に「張芝は、施工完了時期が日平均気温-5℃以上確保される時期までに完了」とあります（原文どおり）。芝の生育を考えた時期を施工計画書に書き、遅れそうなら協議、とされています。</p></li>
+      <li><h3>仮設の撤去</h3>
+        <p>足場とやぐらを外し、最後のジブクレーン（1段目）をラフタークレーンで解体します。斜面の作業が終わってから、仮設防護柵と仮排水を撤去し、ヤードを戻します。</p></li>
+      <li><h3>［福島川］管理用通路の土工と転落防止柵・手摺</h3>
+        <p>右岸の特殊堤の裏を、SP482.50 から上流へ掘削と盛土で整え、柵を立てます。壁が地面から1mほど高い区間は壁の上に手摺、壁が低い区間は基礎ブロックに建て込む高さ1.1mの転落防止柵です。</p>
+        <p class="q num">掘削（流用土）100m³・掘削 40m³（運搬2.0km）・盛土 140m³／転落防止柵 h=1.1m 167m（34.35＋132.96m）・基礎ブロック 87個・基礎砕石 22m²／手摺 h=0.2m 77m・h=0.6m 6m／排水工の柵 3m＋5m／交通誘導警備員B 1人日</p>
+        <p class="pt">住宅のすぐ裏で、通路の幅は下流側で1.0mしかありません。柵と手摺は概算単価で、石積の所の傾斜タイプは特注品です。納期は私の想定です。</p></li>
+      <li><h3>［福島川］伐木・除根と河道の掘削</h3>
+        <p>上流の河道を、延長200m・幅12.5m・厚さ0.2mで掘ります。先に木を切り、根を抜き、表土をすきとります。</p>
+        <p class="q num">伐木 2,500m²（立木225本を想定）／伐採木 54t・抜根物 18.6t・すきとり物 120t／掘削 500m³／残土 500m³（10tダンプ、知内町湯ノ里の残土処分場）／交通誘導警備員B 3人日</p>
+        <p class="pt">掘削は簡略数量です（平面図と標準断面図から 200×12.5×0.2）。川の中の作業なので、水位の高い時期を避けた並びにしてください（時期の指定は特記仕様書で見つけられませんでした）。</p></li>
+      <li><h3>出来形の確認・後片付け</h3>
+        <p>出来形と数量を確定させます。設計図書の工期には後片付け20日が見込まれています。</p></li>
+    </ol>
+  </section>
+
+  <section aria-label="確認しておきたい点">
+    <h2>確認しておきたい点</h2>
+    <div class="warn">
+      <h3>4工区1段目のH形鋼杭の本数が、資料で違います</h3>
+      <p>工事数量総括表と実施設計書は「杭13〜25」の13本で、杭の合計は37本です。計画平面図の一覧は4工区1段目が「n=1本」、合計「N=25本」。数量計算書（土留柵一覧表）も1本で、削孔は5.8m×1本です。</p>
+      <p>一方、同じ段の土留横材は19.5m（＝1.5m×13スパン）、仮設足場も19.5mで、13本の側と合います。杭12本分（H-150、L=6.5m）の材料と削孔が増減するので、発注者に確かめてください。</p>
+    </div>
+    <ul class="notes">
+      <li>2工区2段目の山腹水路（U-240）は、排水系統図の赤い寸法が L=9.00m、数量計算書（延長箇所調書）が16.66m（SP19.03〜33.23）です。16.66mは、排水系統図では隣の施工済みの段に付いている延長と同じ数字です。均しコンクリート・張コンクリート・床掘も16.66mで計算されています。</li>
+      <li>3工区3段目のU-240は、図面に L=2.60 と 0.55、延長箇所調書は 1.90 と 0.55 です。同じ区間を指しているなら0.7m違います。</li>
+      <li>縦排水No.6のコルゲートフリュームは、計画平面図が L=0.90、縦排水工詳細図と数量計算書が 1.0m です。</li>
+      <li>仮設防護柵A型は、図面と総括表が H=4m、数量計算書（仮設工）の集計表は「H=6.0m」と書かれています。</li>
+      <li>計画平面図の「土留柵工横材 L=57m」は、崩土防止横材の合計（6＋35＋16m）と同じ数字です。土留横材は図面の延長で54.0m（総括表は段ごとに 9・14・3・20・9m）なので、別のものを指しています。</li>
+      <li>張芝の完了時期は、特記仕様書に「日平均気温-5℃以上確保される時期まで」とあります。+5℃の書き間違いではないか、確かめておくと安心です。</li>
+      <li>9月18日の変更案と9月29日の線形修正案（小段の幅の確保）は、当初設計の数量に反映されていません。杭の位置、横材の延長、張りコンクリートの撤去（0.21m³）が変わります。3Dモデルの柵は当初設計の位置で、修正案は青い線で重ねています。</li>
+      <li>コルゲートフリュームの単価は、総括表の表記が「2誌平均単価11月号」、質疑応答の回答は「7月号が正」です。暗渠排水管は貸与品です（質疑応答）。</li>
+      <li>継杭のボルト接合の補正は、設計変更確認会議で変更するとされています（質疑応答）。鋼製階段とパイプアンカーは策定歩掛で、希望すれば着手前に試験施工を行います。</li>
+      <li>福島川：付帯道路工の数量計算書には、堤防天端のアスファルト舗装（3.0m×156.93m＋取付部＝491m²）、敷砂利10m、U形側溝131mの計算がありますが、工事数量総括表にはありません。今回は土工と柵だけの発注と読めます。</li>
+      <li>福島川：数量計算書の採取土は 128.2÷0.9−97.6＝44.8m³、総括表の掘削（運搬2.0km）は40m³です。</li>
+      <li>福島川：村上排水樋門の所の柵の切れ目が、平面図（1:500）では5mほど、転落防止柵計画図の縦断図では0.2mです。</li>
+      <li>福島川：排水工の柵（転落防止柵3m、ベースプレート式5m）の位置と形が分かる図面を、フォルダで見つけられませんでした。</li>
+      <li>福島川：掘削工の数量計算書（Excel）の表紙が「令和5年度 安野呂川総合流域防災工事（補正明許）外」のままで、別の工事の計算シート（伐採19,335m²、敷鉄板など）が残っています。今回の数量は 掘削500m³・伐木2,500m² のシートです。</li>
+      <li>仮設工計画平面図（ジブクレーンの位置と手順）は参考図です。仮設防護柵は指定仮設、仮設昇降階段は任意仮設です。</li>
+      <li>ジブクレーンの拘束費は153日＋80日、快適トイレは9基・月の計上です。上の「この条件での見込み」に、工程表から数えた日数と月数を出しています。</li>
+      <li>日数はすべて私の想定です。標準歩掛と協力会社の実績に置き換えてください。着手日と稼働率も仮の値です。</li>
+    </ul>
+  </section>
+
+  <section aria-label="数量">
+    <h2>主な数量</h2>
+    <div class="twrap"><table class="q">
+      <thead><tr><th>場所</th><th>細目</th><th>規格</th><th>数量</th></tr></thead>
+      <tbody>
+        <tr><td>福島豊浜</td><td>H形鋼杭</td><td>H-150 L=6.5m・H-250 L=8.5m/9.0m・H-300 L=10.5m/11.5m、B工法</td><td class="r num">37 本（図面は25本）</td></tr>
+        <tr><td></td><td>土留横材</td><td>軽量鋼矢板、柵高1.0〜1.6m</td><td class="r num">54 m</td></tr>
+        <tr><td></td><td>崩土防止横材</td><td>ワイヤロープ3本＋金網、H=1.0m</td><td class="r num">57 m</td></tr>
+        <tr><td></td><td>端末支柱の基礎</td><td>0.6×0.8×2.0m 5か所・0.6×0.8×4.0m 2か所</td><td class="r num">7 か所</td></tr>
+        <tr><td></td><td>山腹水路</td><td>U-240（通常期9・冬期加熱期2・防寒養生期17）</td><td class="r num">28 m</td></tr>
+        <tr><td></td><td></td><td>U-300B（冬期加熱期19・防寒養生期12）</td><td class="r num">31 m</td></tr>
+        <tr><td></td><td>縦排水</td><td>コルゲートフリューム A-350、横断処理 J・L 各1</td><td class="r num">6 m</td></tr>
+        <tr><td></td><td>集水桝</td><td>560型（A-1）1・650型（B-1・B-2）2</td><td class="r num">3 か所</td></tr>
+        <tr><td></td><td>鋼製階段</td><td>No.7（6.6m）・No.9（6.9m）、乗越階段2・門扉2</td><td class="r num">2 基</td></tr>
+        <tr><td></td><td>土工</td><td>床掘110・埋戻20・杭土処理40・残土90</td><td class="r num">m³</td></tr>
+        <tr><td></td><td>法面整形・張芝</td><td>切土20・盛土80m²、植生土のう258袋</td><td class="r num">張芝 100 m²</td></tr>
+        <tr><td></td><td>仮設防護柵</td><td>A型 H=4m 42m・C型 H=6m 30m</td><td class="r num">72 m</td></tr>
+        <tr><td></td><td>仮設足場（H形鋼）</td><td>相取工法、やぐら設置撤去6回</td><td class="r num">75 m</td></tr>
+        <tr><td></td><td>ジブクレーン</td><td>組立解体 1回＋3回、拘束費153日＋80日</td><td class="r num">—</td></tr>
+        <tr><td>福島川</td><td>転落防止柵</td><td>h=1.1m、支柱間隔2.0m、基礎ブロック87個</td><td class="r num">167 m</td></tr>
+        <tr><td></td><td>手摺</td><td>h=0.2m 77m・h=0.6m 6m、ベースプレート式</td><td class="r num">83 m</td></tr>
+        <tr><td></td><td>排水工の柵</td><td>転落防止柵3m・ベースプレート式5m</td><td class="r num">8 m</td></tr>
+        <tr><td></td><td>管理用通路の土工</td><td>掘削100＋40・盛土140</td><td class="r num">m³</td></tr>
+        <tr><td></td><td>河道の掘削</td><td>L=200m×12.5m×0.2m、残土処分</td><td class="r num">500 m³</td></tr>
+        <tr><td></td><td>伐木</td><td>立木225本を想定</td><td class="r num">2,500 m²</td></tr>
+        <tr><td>共通</td><td>交通誘導警備員</td><td>豊浜 A4・B4／福島川 B1＋3</td><td class="r num">12 人日</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+(function(){
+"use strict";
+let DW=8; const KEY="toyohama-kotei-v1", DEADLINE="2027-03-23";
+const GROUPS={pre:"準備・協議・手配",ka:"仮設（防護柵・ジブクレーン）",k4:"急傾斜地 4工区（3段目のクレーンで）",k23:"急傾斜地 2工区・3工区（1段目のクレーンで）",fin:"仕上げと仮設の撤去",fk:"福島川 管理用通路（転落防止柵）",fd:"福島川 伐木と河道の掘削",out:"片付け"};
+// type: out = 斜面の作業（稼働率が掛かる） / reg = 平地の作業 / cure = 養生・製作待ち（暦日） / prep = 準備・協議・片付け
+// one = 「急傾斜地のあとに福島川」のときだけ加わる先行作業、p41 = 4工区1段目の杭を1本とするときの日数、gd = 残土を運ぶ作業
+const TASKS=[
+ {id:1, g:"pre",n:"施工計画・起工測量・借地範囲の杭出し・住民への説明", q:"設計図書の見込みは準備30日", d:20,t:"prep",pre:[]},
+ {id:2, g:"pre",n:"線形（小段の幅）の協議と杭位置の確定", q:"9/18の変更案・9/29の修正案。日数は想定", d:35,t:"prep",pre:[1]},
+ {id:3, g:"pre",n:"H形鋼杭・横材・階段の製作と納入（メッキ・塗装・継杭）", q:"納期は想定", d:55,t:"cure",pre:[]},
+ {id:4, g:"ka", n:"仮設ヤードの整備・仮排水", q:"φ300 9m", d:3,t:"reg",pre:[1]},
+ {id:5, g:"ka", n:"仮設防護柵の設置", q:"A型42m・C型30m", d:6,t:"reg",pre:[4],ms:"仮設防護柵の設置 完了"},
+ {id:6, g:"ka", n:"ジブクレーン1段目の組立（16tラフター）", q:"1台目 1回", d:2,t:"reg",pre:[5]},
+ {id:7, g:"ka", n:"2段目の組立 → 1段目の解体 → 3段目の組立", q:"2台目以降 3回のうち", d:6,t:"out",pre:[6],ms:"ジブクレーン 3段目まで組立"},
+ {id:8, g:"k4", n:"仮設足場・やぐら（4工区2段目・1段目）", q:"足場 9m＋19.5m", d:4,t:"out",pre:[7,3]},
+ {id:9, g:"k4", n:"4工区2段目 杭の削孔・建込み・モルタル", q:"H-300 L=10.5m 6本", d:7,t:"out",pre:[8]},
+ {id:10,g:"k4", n:"4工区1段目 杭の削孔・建込み・モルタル", q:"H-150 L=6.5m 13本（または1本）", d:10,t:"out",pre:[9,2],p41:2,ms:"4工区の杭 完了"},
+ {id:11,g:"k4", n:"床掘・土留横材・裏込め", q:"9m＋20m", d:7,t:"out",pre:[10]},
+ {id:12,g:"k4", n:"崩土防止横材・端末支柱の基礎", q:"16m＋35m", d:8,t:"out",pre:[11]},
+ {id:13,g:"k4", n:"山腹水路・張コンクリート", q:"U-240 9m・U-300B 19m", d:6,t:"out",pre:[11]},
+ {id:14,g:"k4", n:"水路のコンクリートの養生", q:"", d:5,t:"cure",pre:[13]},
+ {id:15,g:"k4", n:"階段No.9・乗越階段・門扉", q:"6.9m、H=1.3m", d:4,t:"out",pre:[12]},
+ {id:16,g:"k23",n:"ジブクレーンの組み替え（3段目の解体 → 1段目の組立 → 2段目の解体）", q:"", d:5,t:"out",pre:[13,15]},
+ {id:17,g:"k23",n:"仮設足場・やぐら（2工区2段目・3工区2段目・3段目）", q:"足場 9m＋13.5m＋3m", d:4,t:"out",pre:[16,2]},
+ {id:18,g:"k23",n:"3工区3段目 杭の削孔・建込み・モルタル", q:"H-300 L=11.5m 2本", d:4,t:"out",pre:[17]},
+ {id:19,g:"k23",n:"3工区2段目・2工区2段目 杭の削孔・建込み・モルタル", q:"H-250 L=9.0m 9本＋L=8.5m 7本", d:16,t:"out",pre:[18],ms:"2工区・3工区の杭 完了"},
+ {id:20,g:"k23",n:"床掘・土留横材・裏込め", q:"14m＋9m＋3m", d:7,t:"out",pre:[19]},
+ {id:21,g:"k23",n:"崩土防止横材（3工区3段目）と支柱・端末支柱の基礎", q:"6m、2段目は支柱のみ", d:4,t:"out",pre:[20]},
+ {id:22,g:"k23",n:"山腹水路・集水桝・縦排水（No.6・No.8）", q:"U-300B 12m・U-240 19m・桝3", d:8,t:"out",pre:[20]},
+ {id:23,g:"k23",n:"水路のコンクリートの養生（防寒養生）", q:"", d:5,t:"cure",pre:[22]},
+ {id:24,g:"k23",n:"階段No.7・乗越階段", q:"6.6m、H=1.6m", d:3,t:"out",pre:[21]},
+ {id:25,g:"fin",n:"法面整形・小口止・張芝", q:"100m²・植生土のう258袋", d:5,t:"out",pre:[22,24],ms:"張芝 完了"},
+ {id:26,g:"fin",n:"仮設足場の撤去・ジブクレーン1段目の解体（ラフター）", q:"", d:4,t:"out",pre:[25,23]},
+ {id:27,g:"fin",n:"仮設防護柵・仮排水の撤去、ヤードの復旧", q:"", d:4,t:"reg",pre:[26]},
+ {id:28,g:"fk", n:"柵・手摺・基礎ブロックの手配", q:"概算単価、傾斜タイプは特注。納期は想定", d:45,t:"cure",pre:[1]},
+ {id:29,g:"fk", n:"管理用通路の土工", q:"掘削100＋40m³・盛土140m³", d:5,t:"reg",pre:[1],one:[27],gd:1},
+ {id:30,g:"fk", n:"基礎ブロックの据付・転落防止柵の建込み", q:"87個・167m", d:10,t:"reg",pre:[28,29]},
+ {id:31,g:"fk", n:"手摺の取付（アンカー）", q:"h=0.2m 77m・h=0.6m 6m", d:5,t:"reg",pre:[30]},
+ {id:32,g:"fk", n:"排水工の柵", q:"3m＋5m", d:2,t:"reg",pre:[31],ms:"福島川の柵 完了"},
+ {id:33,g:"fd", n:"伐木・除根・すきとり", q:"2,500m²、立木225本を想定", d:5,t:"reg",pre:[1],one:[32]},
+ {id:34,g:"fd", n:"河道の掘削・残土の運搬", q:"500m³", d:6,t:"reg",pre:[33],gd:1},
+ {id:35,g:"out",n:"出来形の確認・後片付け", q:"設計図書の見込みは後片付け20日", d:14,t:"prep",pre:[27,32,34]}
+];
+const DEF={start:"2026-07-16",rest:"satsun",rate:"0.8",crews:"2",p41:"13"};
+const RATES=["1","0.9","0.8","0.7","0.6"];
+const state={start:DEF.start,rest:DEF.rest,rate:DEF.rate,crews:DEF.crews,p41:DEF.p41,days:{}};
+const dOf=t=>(t.p41&&state.p41==="1")?Math.min(t.p41,state.days[t.id]):state.days[t.id];
+TASKS.forEach(t=>state.days[t.id]=t.d);
+try{ const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s){ if(/^\d{4}-\d\d-\d\d$/.test(s.start||""))state.start=s.start; if(s.rest==="sun"||s.rest==="satsun")state.rest=s.rest; if(RATES.includes(s.rate))state.rate=s.rate;
+  if(s.crews==="1"||s.crews==="2")state.crews=s.crews; if(s.p41==="1"||s.p41==="13")state.p41=s.p41;
+  if(s.days)TASKS.forEach(t=>{const v=parseInt(s.days[t.id],10); if(v>=1&&v<=200)state.days[t.id]=v;}); } }catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}};
+
+const $=id=>document.getElementById(id);
+const WD=["日","月","火","水","木","金","土"];
+const utc=s=>{const p=s.split("-").map(Number);return Date.UTC(p[0],p[1]-1,p[2]);};
+const base=()=>utc(state.start);
+const dt=i=>new Date(base()+i*864e5);
+const md=i=>{const d=dt(i);return (d.getUTCMonth()+1)+"/"+d.getUTCDate();};
+const mdw=i=>md(i)+"（"+WD[dt(i).getUTCDay()]+"）";
+const ymd=i=>{const d=dt(i);return d.getUTCFullYear()+"年"+(d.getUTCMonth()+1)+"月"+d.getUTCDate()+"日";};
+function isWork(i){const d=dt(i),w=d.getUTCDay(),m=d.getUTCMonth()+1,day=d.getUTCDate();
+  if(w===0)return false; if(state.rest==="satsun"&&w===6)return false; if((m===12&&day>=29)||(m===1&&day<=3))return false; return true;}
+// 冬期（11月〜3月）: 色を付けるだけで、作業は止めない
+function isCold(i){const m=dt(i).getUTCMonth()+1;return m>=11||m<=3;}
+const isNY=i=>{const d=dt(i),m=d.getUTCMonth()+1,day=d.getUTCDate();return (m===12&&day>=29)||(m===1&&day<=3);};
+const canWork=(t,i)=>isWork(i);
+
+function schedule(){
+  const r={}, rate=parseFloat(state.rate), byId={}; TASKS.forEach(t=>byId[t.id]=t);
+  const done={}, order=[];
+  // 先行作業が後ろの行にあることがあるので、先行がそろった作業から順に計算する
+  let left=TASKS.slice(), guard=0;
+  while(left.length&&guard++<200){
+    left=left.filter(t=>{
+      const pre=t.pre.concat(state.crews==="1"&&t.one?t.one:[]), need0=pre.concat(t.ss?[t.ss[0]]:[]);
+      if(!need0.every(p=>r[p]))return true;
+      let es=0; pre.forEach(p=>{es=Math.max(es,r[p].end+1);});
+      if(t.ss) es=Math.max(es,r[t.ss[0]].start+t.ss[1]);
+      const d=dOf(t); let start,end,need=d;
+      if(t.t==="cure"){start=es;end=es+d-1;}
+      else{ need=t.t==="out"?Math.ceil(d/rate-1e-9):d; let i=es; while(!canWork(t,i))i++; start=i; let c=0;
+        for(;;){ if(canWork(t,i)){c++; if(c>=need)break;} i++; } end=i; }
+      r[t.id]={start,end,need}; return false;
+    });
+  }
+  return r;
+}
+
+const table=$("gantt"); let headTl;
+function build(){
+  let h='<thead><tr><th class="c-task">作業</th><th class="c-d">実働日数</th><th>開始</th><th>終了</th><th class="tl" id="htl"></th></tr></thead><tbody>';
+  let g=null;
+  TASKS.forEach(t=>{
+    if(t.g!==g){g=t.g;h+='<tr class="grp"><th class="c-task" scope="rowgroup">'+GROUPS[g]+'</th><td></td><td></td><td></td><td class="tl" id="g-'+g+'"></td></tr>';}
+    h+='<tr><th class="c-task" scope="row"><b>'+t.n+'</b>'+(t.q?'<small class="num">'+t.q+'</small>':'')+'</th>'
+      +'<td class="c-d"><input class="days" type="number" min="1" max="200" step="1" id="d-'+t.id+'" value="'+state.days[t.id]+'" aria-label="'+t.n+' の日数"><span class="unit">'+(t.t==="cure"?"暦日":"日")+'</span></td>'
+      +'<td class="num" id="s-'+t.id+'"></td><td class="num" id="e-'+t.id+'"></td><td class="tl" id="t-'+t.id+'"><div class="bar '+t.t+'" id="b-'+t.id+'"></div></td></tr>';
+  });
+  table.innerHTML=h+'</tbody>';
+  headTl=$("htl");
+  TASKS.forEach(t=>{
+    $("d-"+t.id).addEventListener("change",e=>{let v=parseInt(e.target.value,10); if(!(v>=1))v=1; if(v>200)v=200; e.target.value=v; state.days[t.id]=v; save(); render();});
+    const b=$("b-"+t.id); b.addEventListener("pointerenter",e=>showTip(t,e)); b.addEventListener("pointermove",moveTip); b.addEventListener("pointerleave",hideTip);
+  });
+}
+let R={};
+function render(){
+  R=schedule();
+  const last=Math.max(...TASKS.map(t=>R[t.id].end)), dl=Math.round((utc(DEADLINE)-base())/864e5), showDl=dl>=0&&dl<=last+150;
+  const N=Math.max(last,showDl?dl:0)+5;
+  const lead=headTl.offsetLeft, avail=$("gwrap").clientWidth-lead-2;
+  DW=Math.max(2.4,Math.min(13,Math.floor(avail/N*10)/10));
+  const W=N*DW;
+  const runs=(fn,color)=>{const st=["transparent 0"];let i=0;
+    while(i<N){ if(fn(i)){let j=i; while(j<N&&fn(j))j++; st.push("transparent "+i*DW+"px",color+" "+i*DW+"px",color+" "+j*DW+"px","transparent "+j*DW+"px"); i=j;} else i++; }
+    return "linear-gradient(to right,"+st.join(",")+")";};
+  const dow0=dt(0).getUTCDay(), firstMon=(8-dow0)%7;
+  table.style.setProperty("--offbg",runs(i=>!isWork(i),"var(--off)"));
+  table.style.setProperty("--holdbg",runs(i=>isCold(i)&&isWork(i),"var(--hold)"));
+  table.style.setProperty("--wk","repeating-linear-gradient(to right,var(--line) 0 1px,transparent 1px "+7*DW+"px)");
+  const dx=(dl+1)*DW-1;
+  table.style.setProperty("--dl",showDl?"linear-gradient(to right,transparent "+dx+"px,var(--accent) "+dx+"px,var(--accent) "+(dx+2)+"px,transparent "+(dx+2)+"px)":"none");
+  table.querySelectorAll(".tl").forEach(c=>{c.style.width=W+"px";c.style.minWidth=W+"px";c.style.backgroundPosition="0 0, "+(firstMon*DW)+"px 0, 0 0, 0 0";c.style.backgroundSize=W+"px 100%, "+(W-firstMon*DW)+"px 100%, "+W+"px 100%, "+W+"px 100%";});
+  let hh="";
+  let k1=1; while(k1<N&&dt(k1).getUTCDate()!==1)k1++;
+  const skip0=dt(0).getUTCDate()!==1&&k1*DW<74;
+  for(let k=0;k<N;k++){const d=dt(k); if(k===0||d.getUTCDate()===1){ if(N-k>3&&!(k===0&&skip0)) hh+='<span class="mon" style="left:'+(k*DW+4)+'px">'+(k===0||d.getUTCMonth()===0||(skip0&&k===k1)?d.getUTCFullYear()+"年":"")+(d.getUTCMonth()+1)+'月</span>'; } }
+  const wstep=7*DW>=34?7:14*DW>=34?14:28*DW>=34?28:56;
+  for(let k=firstMon;k<N-2;k+=wstep) hh+='<span class="wk" style="left:'+(k*DW+3)+'px">'+md(k)+'</span>';
+  if(showDl) hh+='<span class="dl" style="left:'+Math.max(0,dx-44)+'px">工期末</span>';
+  headTl.innerHTML=hh;
+  const span={};
+  TASKS.forEach(t=>{const r=R[t.id],b=$("b-"+t.id); b.style.left=(r.start*DW+1)+"px"; b.style.width=Math.max(2,(r.end-r.start+1)*DW-2)+"px";
+    $("s-"+t.id).textContent=md(r.start); $("e-"+t.id).textContent=md(r.end);
+    const s=span[t.g]||(span[t.g]=[r.start,r.end]); s[0]=Math.min(s[0],r.start); s[1]=Math.max(s[1],r.end);});
+  Object.keys(span).forEach(g=>{$("g-"+g).innerHTML='<div class="span" style="left:'+(span[g][0]*DW+1)+'px;width:'+((span[g][1]-span[g][0]+1)*DW-2)+'px"></div>';});
+  let wk=0; for(let k=0;k<=last;k++) if(isWork(k)) wk++;
+  const fl=dl-last;
+  $("s-end").textContent=ymd(last); $("s-cal").textContent=(last+1)+"日"; $("s-work").textContent=wk+"日";
+  $("s-float").textContent=fl>=0?fl+"日":"超過 "+(-fl)+"日";
+  TASKS.forEach(t=>{ if(t.p41){const inp=$("d-"+t.id), one=state.p41==="1"; inp.disabled=one; inp.value=one?dOf(t):state.days[t.id];} });
+  const haul=TASKS.filter(t=>t.gd).reduce((a,t)=>a+dOf(t),0);
+  const months=new Set(); for(let k=0;k<=last;k++){const d=dt(k);months.add(d.getUTCFullYear()*12+d.getUTCMonth());}
+  const crane=R[26].end-R[6].start+1, slope=TASKS.filter(t=>t.t==="out").reduce((a,t)=>a+dOf(t),0);
+  const ms=[["着手",mdw(0)]].concat(TASKS.filter(t=>t.ms).map(t=>[t.ms,mdw(R[t.id].end)]),
+    [["ジブクレーンを置いている期間",crane+"日（拘束費の計上は153日＋80日）"],
+     ["斜面の作業の実働日数",slope+"日（稼働率を掛ける前）"],
+     ["工事にかかる月数",months.size+"か月（快適トイレの計上は9基・月）"],["残土を運ぶ作業の日数",haul+"日（福島川）"]]);
+  $("miles").innerHTML=ms.map(m=>'<div><dt>'+m[0]+'</dt><dd class="num">'+m[1]+'</dd></div>').join("");
+  const msg=[];
+  if(fl<0) msg.push("完了見込みが、工期末（令和9年3月23日）を"+(-fl)+"日過ぎます。フレックス工期でも令和9年3月23日が期限です。4工区と2・3工区の作業を重ねる、班を増やすなど、日数か条件を見直してください。");
+  const mon=i=>dt(i).getUTCMonth()+1;
+  const g=R[25].end, gm=mon(g);
+  if(gm>=11||gm<=4) msg.push("張芝の完了が"+gm+"月になります。特記仕様書は「日平均気温-5℃以上確保される時期までに完了」（原文どおり）で、芝の生育を考えた時期を施工計画書に書くことになっています。4工区の分を先に張る、時期を協議するなどを考えてください。");
+  if(isCold(R[13].start)) msg.push("4工区2段目の水路（U-240 9m）は、総括表では通常期の計上です。この工程では打設が"+mon(R[13].start)+"月になるので、加熱や防寒養生の扱いを協議してください。");
+  if(!isCold(R[22].start)||mon(R[22].start)===11) msg.push("2工区・3工区の水路（U-240 17m・U-300B 12m）は、総括表では防寒養生期の計上です。この工程では打設が"+mon(R[22].start)+"月になるので、時期が変わるなら加熱と防寒養生の要否を協議してください。");
+  const mid=[9,10,18,19].filter(id=>{for(let k=R[id].start;k<=R[id].end;k++){const m=mon(k);if(m===1||m===2)return true;}return false;});
+  if(mid.length) msg.push("杭の削孔と建込みが1月〜2月にかかります。斜面の雪と凍結で作業できない日が増える時期なので、稼働率を下げて見てください。足場とやぐらの除雪も要ります。");
+  const ny=[[8,12,"4工区"],[17,21,"2工区・3工区"]].filter(c=>{for(let k=R[c[0]].start;k<=R[c[1]].end;k++)if(isNY(k))return true;return false;}).map(c=>c[2]);
+  if(ny.length) msg.push(ny.join("と")+"の作業が年末年始（12/29〜1/3）をまたぎます。掘ったままの床掘や、建て込んだだけの杭を残して休みに入らない並びにしてください。仮設防護柵の点検も要ります。");
+  const a=$("alert"); a.hidden=!msg.length; a.innerHTML=msg.join("<br>");
+}
+const tip=$("tip");
+const TN={reg:"平地の作業",out:"斜面の作業",prep:"準備・協議・片付け"};
+function showTip(t,e){const r=R[t.id],cal=r.end-r.start+1;
+  tip.innerHTML='<b>'+t.n+'</b>'+mdw(r.start)+' 〜 '+mdw(r.end)+'<br>'+(t.t==="cure"?"養生・製作待ち "+cal+"暦日":TN[t.t]+"　実働 "+dOf(t)+"日"+(t.t==="out"&&r.need>dOf(t)?"（雨・雪の日を見込んで "+r.need+"日）":"")+"、暦日 "+cal+"日");
+  tip.hidden=false; moveTip(e);}
+function moveTip(e){const w=tip.offsetWidth,h=tip.offsetHeight; let x=e.clientX+14,y=e.clientY+16; if(x+w>window.innerWidth-8)x=e.clientX-w-10; if(x<8)x=8; if(y+h>window.innerHeight-8)y=e.clientY-h-12; tip.style.left=x+"px"; tip.style.top=y+"px";}
+function hideTip(){tip.hidden=true;}
+$("gwrap").addEventListener("scroll",hideTip);
+
+function syncInputs(){ $("start").value=state.start; $("rest").value=state.rest; $("rate").value=state.rate; $("crews").value=state.crews; $("p41").value=state.p41; TASKS.forEach(t=>{$("d-"+t.id).value=state.days[t.id];}); }
+$("start").addEventListener("change",e=>{ if(/^\d{4}-\d\d-\d\d$/.test(e.target.value)){state.start=e.target.value;save();render();} else e.target.value=state.start; });
+["rest","rate","crews","p41"].forEach(k=>$(k).addEventListener("change",e=>{state[k]=e.target.value;save();render();}));
+$("reset").addEventListener("click",()=>{Object.assign(state,DEF);TASKS.forEach(t=>state.days[t.id]=t.d);save();syncInputs();render();});
+
+build(); syncInputs(); render();
+let lastW=0; new ResizeObserver(()=>{const w=$("gwrap").clientWidth; if(w!==lastW){lastW=w;render();}}).observe($("gwrap"));
+window.__kotei={state,schedule,TASKS,render};
+})();
+</script>
+
+</body></html>
