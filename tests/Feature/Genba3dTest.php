@@ -24,7 +24,7 @@ class Genba3dTest extends TestCase
         $page->assertOk();
 
         // 現場のある工事: 現場ごとに、3Dモデル・工程表・資料へ直接行ける
-        $page->assertSeeInOrder(['R08-01福島トンネル', '1現場', '福島トンネル補修工事', 'R08-08滝ノ下', '1現場', '滝ノ下覆道地先 緊急総合治山工事', 'R08-11吉岡', '3現場', '吉岡漁港 -4.5m岸壁', '吉岡漁港 第2船揚場', '吉岡漁港 -3.0m岸壁の側溝', 'R08-14豊浜', '2現場', '福島豊浜 急傾斜地（土留柵工）', '福島川 管理用通路（転落防止柵）', 'R08-16大沢', '3現場', '朝日地区 船揚場', '朝日地区 東護岸', '大沢漁港海岸 護岸工']);
+        $page->assertSeeInOrder(['R07-20重内', '6現場', '幸連橋', '重内橋', '神馬橋（右歩道）', '原口大橋', '初神大橋', '寅の沢橋', 'R08-01福島トンネル', '1現場', '福島トンネル補修工事', 'R08-08滝ノ下', '1現場', '滝ノ下覆道地先 緊急総合治山工事', 'R08-11吉岡', '3現場', '吉岡漁港 -4.5m岸壁', '吉岡漁港 第2船揚場', '吉岡漁港 -3.0m岸壁の側溝', 'R08-14豊浜', '2現場', '福島豊浜 急傾斜地（土留柵工）', '福島川 管理用通路（転落防止柵）', 'R08-16大沢', '3現場', '朝日地区 船揚場', '朝日地区 東護岸', '大沢漁港海岸 護岸工']);
         foreach (config('genba3d.sites') as $slug => $site) {
             $page->assertSee($site['summary']);
             $page->assertSee('href="'.route('genba3d.show', ['site' => $slug]).'"', false);
@@ -63,14 +63,14 @@ class Genba3dTest extends TestCase
         $page = $this->withSession(['login_user_id' => 1])->get(route('genba3d.index'));
         $page->assertOk();
         // 工事に入れ忘れた現場は「その他」に出る。設定に無い現場のキーは無視する
-        $page->assertSeeInOrder(['R08-16大沢', '1現場', '朝日地区 船揚場', 'その他', '9現場', '朝日地区 東護岸', '大沢漁港海岸 護岸工', '福島トンネル補修工事', '滝ノ下覆道地先 緊急総合治山工事', '吉岡漁港 -4.5m岸壁', '吉岡漁港 第2船揚場', '吉岡漁港 -3.0m岸壁の側溝', '福島豊浜 急傾斜地（土留柵工）', '福島川 管理用通路（転落防止柵）']);
+        $page->assertSeeInOrder(['R08-16大沢', '1現場', '朝日地区 船揚場', 'その他', '15現場', '幸連橋', '重内橋', '神馬橋（右歩道）', '原口大橋', '初神大橋', '寅の沢橋', '朝日地区 東護岸', '大沢漁港海岸 護岸工', '福島トンネル補修工事', '滝ノ下覆道地先 緊急総合治山工事', '吉岡漁港 -4.5m岸壁', '吉岡漁港 第2船揚場', '吉岡漁港 -3.0m岸壁の側溝', '福島豊浜 急傾斜地（土留柵工）', '福島川 管理用通路（転落防止柵）']);
         $page->assertDontSee('準備中の工事');
     }
 
     public function test_every_site_serves_its_model_as_html(): void
     {
         $sites = config('genba3d.sites');
-        $this->assertCount(10, $sites);
+        $this->assertCount(16, $sites);
 
         foreach ($sites as $slug => $site) {
             $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', $slug);
@@ -145,9 +145,9 @@ class Genba3dTest extends TestCase
                 ->view('layouts.partials.app-sidebar-nav', ['dismissOffcanvas' => $dismiss]);
 
             // 現場のある工事が、設定の並び順で出る。行き先はその工事の最初の現場
-            $menu->assertSeeInOrder(['現場3D', '一覧', 'R08-01福島トンネル', 'R08-08滝ノ下', 'R08-11吉岡', 'R08-14豊浜', 'R08-16大沢', 'お問い合わせ']);
+            $menu->assertSeeInOrder(['現場3D', '一覧', 'R07-20重内', 'R08-01福島トンネル', 'R08-08滝ノ下', 'R08-11吉岡', 'R08-14豊浜', 'R08-16大沢', 'お問い合わせ']);
             $menu->assertSee('href="'.route('genba3d.index').'"', false);
-            foreach (['r08-01', 'r08-08', 'r08-11', 'r08-14', 'r08-16'] as $key) {
+            foreach (['r07-20', 'r08-01', 'r08-08', 'r08-11', 'r08-14', 'r08-16'] as $key) {
                 $menu->assertSee('href="'.route('genba3d.show', ['site' => config("genba3d.projects.{$key}.sites.0")]).'"', false);
             }
             // 現場の名前と、準備中の工事はメニューに並べない
@@ -188,7 +188,7 @@ class Genba3dTest extends TestCase
         $tunnel->assertDontSee('朝日地区 船揚場');
         // メニューには、現場のある工事が設定の並び順で出る
         $tunnel->assertDontSee('滝ノ下覆道地先 緊急総合治山工事');
-        $tunnel->assertSeeInOrder(['一覧', 'R08-01福島トンネル', 'R08-08滝ノ下', 'R08-11吉岡', 'R08-14豊浜', 'R08-16大沢', 'お問い合わせ']);
+        $tunnel->assertSeeInOrder(['一覧', 'R07-20重内', 'R08-01福島トンネル', 'R08-08滝ノ下', 'R08-11吉岡', 'R08-14豊浜', 'R08-16大沢', 'お問い合わせ']);
 
         $slope = $this->withSession(['login_user_id' => 1])->get(route('genba3d.show', ['site' => 'takinoshita-chisan']));
         $slope->assertOk();
@@ -218,6 +218,17 @@ class Genba3dTest extends TestCase
         }
         $river->assertSeeInOrder(['福島豊浜 急傾斜地（土留柵工）', '福島川 管理用通路（転落防止柵）']);
         $river->assertDontSee('吉岡漁港 第2船揚場');
+
+        // 1つの工事に6橋。工程表は6橋で同じものを開く
+        $arch = $this->withSession(['login_user_id' => 1])->get(route('genba3d.show', ['site' => 'omonai-haraguchi']));
+        $arch->assertOk();
+        $arch->assertSee('<h1 class="h4 mb-1 fw-semibold">R07-20重内</h1>', false);
+        foreach (['omonai-koren', 'omonai-omonai', 'omonai-shinma', 'omonai-haraguchi', 'omonai-hatsukami', 'omonai-toranosawa'] as $slug) {
+            $arch->assertSee('href="'.route('genba3d.show', ['site' => $slug]).'"', false);
+            $this->assertSame('omonai-kotei.html', config("genba3d.sites.{$slug}.schedule_file"));
+        }
+        $arch->assertSeeInOrder(['幸連橋', '重内橋', '神馬橋（右歩道）', '原口大橋', '初神大橋', '寅の沢橋']);
+        $arch->assertDontSee('福島川 管理用通路（転落防止柵）');
     }
 
     public function test_schedule_tab_embeds_the_schedule_and_keeps_the_tab_across_sites(): void

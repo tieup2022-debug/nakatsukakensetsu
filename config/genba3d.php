@@ -30,6 +30,7 @@
 
 return [
     'projects' => [
+        'r07-20' => ['name' => 'R07-20重内', 'sites' => ['omonai-koren', 'omonai-omonai', 'omonai-shinma', 'omonai-haraguchi', 'omonai-hatsukami', 'omonai-toranosawa']],
         'r08-01' => ['name' => 'R08-01福島トンネル', 'sites' => ['fukushima-tunnel']],
         'r08-02' => ['name' => 'R08-02魚礁', 'sites' => []],
         'r08-03' => ['name' => 'R08-03桧倉', 'sites' => []],
@@ -43,6 +44,48 @@ return [
     ],
 
     'sites' => [
+        'omonai-koren' => [
+            'name' => '幸連橋',
+            'summary' => '国道228号 知内町の幸連橋（L=49.0m、鋼2径間連続鈑桁）。G2の当て板補修と塗装塗替57m²、橋面防水98m²と舗装打換え、排水管8か所・床版水抜きパイプ10か所。',
+            'file' => 'omonai-koren.html',
+            'schedule_file' => 'omonai-kotei.html',
+            'knowledge_file' => 'omonai-koren.md',
+        ],
+        'omonai-omonai' => [
+            'name' => '重内橋',
+            'summary' => '国道228号の重内橋（L=22.9m、鋼単純鈑桁）。桁端の当て板補修4か所（A1G1・A1G3・A1G4・A2G3）と沓座コンクリートの打ち直し。',
+            'file' => 'omonai-omonai.html',
+            'schedule_file' => 'omonai-kotei.html',
+            'knowledge_file' => 'omonai-omonai.md',
+        ],
+        'omonai-shinma' => [
+            'name' => '神馬橋（右歩道）',
+            'summary' => '国道228号の神馬橋（右歩道、L=11.06m）。ベントで桁を仮受けして、A2橋台の断面修復とケイ酸塩系含浸防水材。',
+            'file' => 'omonai-shinma.html',
+            'schedule_file' => 'omonai-kotei.html',
+            'knowledge_file' => 'omonai-shinma.md',
+        ],
+        'omonai-haraguchi' => [
+            'name' => '原口大橋',
+            'summary' => '国道228号 松前町の原口大橋（L=163.4m、3径間連続ローゼアーチ）。床版・地覆の断面修復21か所と落下物防止柵のボルト交換2,120本。吊足場580m²。',
+            'file' => 'omonai-haraguchi.html',
+            'schedule_file' => 'omonai-kotei.html',
+            'knowledge_file' => 'omonai-haraguchi.md',
+        ],
+        'omonai-hatsukami' => [
+            'name' => '初神大橋',
+            'summary' => '国道228号の初神大橋（L=190.0m、鋼鈑桁＋鋼トラス）。P1・P2橋脚の断面修復0.5m³、犠牲陽極材41個、ひびわれ注入。枠組足場1,420m²。',
+            'file' => 'omonai-hatsukami.html',
+            'schedule_file' => 'omonai-kotei.html',
+            'knowledge_file' => 'omonai-hatsukami.md',
+        ],
+        'omonai-toranosawa' => [
+            'name' => '寅の沢橋',
+            'summary' => '国道228号 上ノ国町の寅の沢橋（L=48.7m、鋼2径間連続鈑桁）。水平補剛材の当て板補修60か所と床版水抜きのフレキシブルチューブ31か所。吊足場450m²。',
+            'file' => 'omonai-toranosawa.html',
+            'schedule_file' => 'omonai-kotei.html',
+            'knowledge_file' => 'omonai-toranosawa.md',
+        ],
         'asahi-funaageba' => [
             'name' => '朝日地区 船揚場',
             'summary' => '大沢朝日漁港（朝日地区）船揚場。張コンクリート打替えと滑り材の撤去・新設（P8.49〜P33.06、L=24.5m）。',
