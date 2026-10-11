@@ -219,7 +219,7 @@
             data-bs-toggle="offcanvas"
             data-bs-target="#genba3dChat"
             aria-controls="genba3dChat"
-        >💬 AIに質問</button>
+        >💬 質問する</button>
 
         {{-- 3Dモデルや工程表を見ながら使えるよう、背景は暗くせず、下の画面も操作できるままにする --}}
         <div
@@ -234,7 +234,7 @@
         >
             <div class="offcanvas-header border-bottom">
                 <div class="min-w-0">
-                    <h2 class="offcanvas-title h6 mb-0 fw-semibold" id="genba3dChatLabel">AIに質問</h2>
+                    <h2 class="offcanvas-title h6 mb-0 fw-semibold" id="genba3dChatLabel">質問する</h2>
                     <div class="small text-muted text-truncate">{{ $current['name'] }}</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="閉じる"></button>

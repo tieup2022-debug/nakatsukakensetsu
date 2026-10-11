@@ -58,7 +58,7 @@ class Genba3dChatTest extends TestCase
         $this->withSession(['login_user_id' => 1])
             ->get(route('genba3d.show', ['site' => self::SITE]))
             ->assertOk()
-            ->assertDontSee('AIに質問')
+            ->assertDontSee('質問する')
             ->assertDontSee('genba3dChat', false);
 
         $this->withSession(['login_user_id' => 1])
@@ -75,7 +75,7 @@ class Genba3dChatTest extends TestCase
         $this->withSession(['login_user_id' => 1])
             ->get(route('genba3d.show', ['site' => self::SITE]))
             ->assertOk()
-            ->assertDontSee('AIに質問')
+            ->assertDontSee('質問する')
             ->assertDontSee('genba3dChat', false);
     }
 
@@ -89,7 +89,7 @@ class Genba3dChatTest extends TestCase
         $this->withSession(['login_user_id' => 1])
             ->get(route('genba3d.schedule', ['site' => self::SITE]))
             ->assertOk()
-            ->assertDontSee('AIに質問')
+            ->assertDontSee('質問する')
             ->assertDontSee('genba3dChat', false);
 
         $this->withSession(['login_user_id' => 1])
@@ -105,7 +105,7 @@ class Genba3dChatTest extends TestCase
             $this->withSession(['login_user_id' => 1])
                 ->get(route($name, ['site' => self::SITE]))
                 ->assertOk()
-                ->assertSee('AIに質問')
+                ->assertSee('質問する')
                 ->assertSee('data-ask-url="'.route('genba3d.ask', ['site' => self::SITE]).'"', false);
         }
     }
