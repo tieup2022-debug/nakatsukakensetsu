@@ -124,6 +124,11 @@ details ul{margin:10px 0 0;padding-left:1.2em;font-size:12.5px;display:flex;flex
       <h2>断面を切る</h2>
       <label class="toggle"><input type="checkbox" id="cut-on"> 覆道を横に切って断面を見る</label>
       <input type="range" id="cut-s" min="0.2" max="61.0" step="0.1" value="38.7" aria-label="切る位置（起点からの距離）">
+      <!--cutstep:start--><style>.cut-step{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;gap:5px;margin:8px 0 4px}
+.cut-step .btn{min-height:38px;padding:4px 8px;font-size:13px;white-space:nowrap}
+.cut-step input{min-width:0;width:100%;min-height:38px;box-sizing:border-box;border:1px solid var(--line);border-radius:3px;background:var(--bg);color:var(--ink);font:inherit;font-size:16px;text-align:center;font-variant-numeric:tabular-nums}
+.cut-step [hidden]{display:none}.cut-step.nonum{grid-template-columns:1fr 1fr}.cut-note{margin:0 0 8px;font-size:11.5px;color:var(--muted)}</style><div class="cut-step" role="group" aria-label="切る位置を細かく動かす"><button type="button" class="btn" id="cs-prev" aria-label="前の代表の断面へ">◀ 断面</button><button type="button" class="btn" id="cs-m" aria-label="0.5m戻す">−0.5</button><input type="text" id="cs-num" inputmode="decimal" autocomplete="off" aria-label="切る位置を数字で入力"><button type="button" class="btn" id="cs-p" aria-label="0.5m進める">+0.5</button><button type="button" class="btn" id="cs-next" aria-label="次の代表の断面へ">断面 ▶</button></div><p class="cut-note" id="cs-note" aria-live="polite"></p><!--cutstep:end-->
+      
       <div class="chips" id="cut-chips" role="group" aria-label="代表の断面"></div>
       <dl class="read">
         <dt>切る位置</dt><dd class="num" id="r-pos">—</dd>
@@ -517,4 +522,20 @@ window.__viewer={state,setView,updateCut,rebuild,applyVis,camera,controls,scene,
 })();
 </script>
 
+
+<script>/*cutstep*/(function(){const C={"lo": 0.2, "hi": 61.0, "inc": 0.5, "stops": [17.1, 31.0, 38.7], "kind": "代表の断面", "tol": 0.050001000000000004};const $=id=>document.getElementById(id),rng=$("cut-s"),num=$("cs-num"),note=$("cs-note"),on=$("cut-on");if(!rng||!num)return;
+const dec=Math.max(...[C.inc].concat(C.stops).map(v=>{const s=String(v);return s.includes(".")?s.split(".")[1].length:0;}),1);
+const f=v=>Number(v).toFixed(dec);let last=null;
+function cur(){return parseFloat(rng.value);}
+function sync(){const v=cur();if(v===last)return;last=v;if(document.activeElement!==num)num.value=f(v);
+ const at=C.stops.some(x=>Math.abs(x-v)<=C.tol);note.textContent=C.stops.length?(at?"いまの位置は"+C.kind+"です（◀ ▶ で前後の"+C.kind+"へ）":"◀ ▶ で前後の"+C.kind+"へ移れます"):"";}
+function go(v){v=Math.min(C.hi,Math.max(C.lo,Math.round(v*1000)/1000));rng.value=v;if(on&&!on.checked){on.checked=true;on.dispatchEvent(new Event("change",{bubbles:true}));}
+ rng.dispatchEvent(new Event("input",{bubbles:true}));last=null;sync();}
+const q=C.inc;$("cs-m").addEventListener("click",()=>go(Math.ceil(cur()/q-1e-6)*q-q));
+$("cs-p").addEventListener("click",()=>go(Math.floor(cur()/q+1e-6)*q+q));
+$("cs-prev").addEventListener("click",()=>{const a=C.stops.filter(x=>x<cur()-C.tol);go(a.length?a[a.length-1]:C.stops[0]);});
+$("cs-next").addEventListener("click",()=>{const b=C.stops.find(x=>x>cur()+C.tol);go(b!==undefined?b:C.stops[C.stops.length-1]);});
+num.addEventListener("change",()=>{const v=parseFloat(String(num.value).replace(/[^0-9.\-]/g,""));if(isFinite(v))go(v);else{last=null;sync();}});
+num.addEventListener("keydown",e=>{if(e.key==="Enter")num.blur();});num.addEventListener("blur",()=>{last=null;sync();});
+rng.addEventListener("input",()=>setTimeout(sync,0));setInterval(sync,250);sync();})();</script>
 </body></html>
