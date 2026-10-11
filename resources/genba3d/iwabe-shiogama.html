@@ -1,0 +1,520 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>第三塩釜覆道 補修 3D</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one-screen viewer. 3D stage fills the left, a narrow instrument panel sits on the right; on phones the stage stacks above the panel. */
+:root{
+  --bg:#EEF1F2; --panel:#F8FAFA; --ink:#1C2A33; --muted:#5A6A74; --line:#CBD4D9; --chip:#E3E9EC;
+  --accent:#C2302A; --accent-ink:#FFFFFF;
+  --scene:#E2E9EC;
+  --c-ground:#C4BC98; --c-slope:#A9A07C; --c-road:#7D858B; --c-sea:#9CC3D6; --c-conc:#C9C5BB; --c-conc2:#ABA79D; --c-conc3:#8E8A80; --c-sand:#D8C9A0;
+  --c-new:#D9453F; --c-new2:#EF8FA0; --c-net:#C0392B; --c-rope:#7A2018; --c-grout:#B8B2A6; --c-cut:#E39B3A; --c-scaf:#4F8A5B; --c-plate:#59646C; --c-crane:#E8B923;
+  --c-exist:#8F979D; --c-future:#B7BEC3; --c-stair:#2F7FD0; --c-water2:#2F7FD0; --c-drain:#1C4E80; --c-crack:#7A1F3D; --c-sheet:#E07B1F; --c-secline:#5A6A74;
+  --c-edge:#2A343B;
+  --font-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A;
+  --accent:#F0766E; --accent-ink:#1A0E0D;
+  --scene:#0D1418;
+  --c-ground:#6A6551; --c-slope:#5C5845; --c-road:#4A5258; --c-sea:#2D5468; --c-conc:#77736A; --c-conc2:#8E8A80; --c-conc3:#A39F95; --c-sand:#8C805F;
+  --c-new:#EC6A63; --c-new2:#F3A8B6; --c-net:#F07A6E; --c-rope:#F3B0A6; --c-grout:#8E897F; --c-cut:#F2A25E; --c-scaf:#7DC08B; --c-plate:#9AA6AE; --c-crane:#F0CF4E;
+  --c-exist:#9AA3A9; --c-future:#5E676D; --c-stair:#6FB0F0; --c-water2:#6FB0F0; --c-drain:#7FB2E8; --c-crack:#E07A9C; --c-sheet:#F2A25E; --c-secline:#93A3AD;
+  --c-edge:#0A0F12;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A;
+  --accent:#F0766E; --accent-ink:#1A0E0D;
+  --scene:#0D1418;
+  --c-ground:#6A6551; --c-slope:#5C5845; --c-road:#4A5258; --c-sea:#2D5468; --c-conc:#77736A; --c-conc2:#8E8A80; --c-conc3:#A39F95; --c-sand:#8C805F;
+  --c-new:#EC6A63; --c-new2:#F3A8B6; --c-net:#F07A6E; --c-rope:#F3B0A6; --c-grout:#8E897F; --c-cut:#F2A25E; --c-scaf:#7DC08B; --c-plate:#9AA6AE; --c-crane:#F0CF4E;
+  --c-exist:#9AA3A9; --c-future:#5E676D; --c-stair:#6FB0F0; --c-water2:#6FB0F0; --c-drain:#7FB2E8; --c-crack:#E07A9C; --c-sheet:#F2A25E; --c-secline:#93A3AD;
+  --c-edge:#0A0F12;
+  color-scheme:dark }
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.55;display:flex;flex-direction:column;overflow:hidden}
+*{box-sizing:border-box}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+header.bar{display:flex;align-items:baseline;gap:8px 16px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header.bar h1{font-size:16px;font-weight:700;margin:0;letter-spacing:.02em;text-wrap:balance}
+header.bar p{margin:0;color:var(--muted);font-size:12px}
+
+main{flex:1;min-height:0;display:flex}
+.stage{position:relative;flex:1;min-width:0;min-height:0;background:var(--scene)}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.views{position:absolute;top:12px;left:16px;right:16px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.views button{pointer-events:auto}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:3px;padding:5px 10px;font-size:12.5px;font-weight:500;cursor:pointer;line-height:1.3}
+.btn:hover{border-color:var(--muted)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.dir{position:absolute;left:16px;bottom:14px;margin:0;font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:4px 8px;pointer-events:none}
+.hint{position:absolute;right:16px;bottom:14px;margin:0;max-width:calc(100% - 400px);font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:4px 8px;pointer-events:none;text-align:right}
+.nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+aside.panel{width:340px;flex:none;border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;overscroll-behavior:contain}
+.sec{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.sec h2{margin:0;font-size:11.5px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.info h3{margin:0;font-size:15px;font-weight:700}
+.info p{margin:0;font-size:13px}
+.info .src{color:var(--muted);font-size:12px}
+.swatch{display:inline-block;width:11px;height:11px;border-radius:2px;flex:none;border:1px solid var(--line)}
+.layers{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.layers label{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px;min-width:0}
+.layers label span.t{min-width:0}
+.layers small{color:var(--muted);font-size:11.5px}
+.grp{font-size:11.5px;color:var(--muted);margin-top:6px}
+input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);flex:none;margin:0}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chips .btn{padding:3px 7px;font-size:12px}
+.read{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0;font-size:12.5px}
+.read dt{color:var(--muted)}
+.read dd{margin:0;text-align:right}
+.works{display:grid;grid-template-columns:1fr;gap:5px}
+.works .btn{text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.works .btn span.w{display:flex;align-items:center;gap:8px;min-width:0}
+.works .btn span.q{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.works .btn[aria-pressed="true"] span.q{color:inherit;opacity:.8}
+details summary{cursor:pointer;font-size:11.5px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+details ul{margin:10px 0 0;padding-left:1.2em;font-size:12.5px;display:flex;flex-direction:column;gap:5px}
+.toggle{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500}
+
+@media (max-width:820px){
+  body{overflow:auto}
+  main{flex-direction:column;flex:none}
+  .stage{height:56vh;min-height:300px;flex:none}
+  aside.panel{width:auto;border-left:0;border-top:1px solid var(--line);overflow:visible}
+  .hint{display:none}
+}
+</style>
+
+<header class="bar">
+  <h1>第三塩釜覆道の補修（排水管の取替）</h1>
+  <p>岩部渡島福島停車場線 砂防連携（改築-14）工事外（函館建設管理部） ／ 2次元の設計図から組み立てた3Dモデル</p>
+</header>
+
+<main>
+  <div class="stage" id="stage">
+    <canvas id="gl" aria-label="第三塩釜覆道の3Dモデル。ドラッグで回転できます"></canvas>
+    <div class="views" id="views" role="group" aria-label="視点"></div>
+    <p class="dir">手前が海、奥が山。右が起点（岩部側）、左が終点（福島側）</p>
+    <p class="hint">ドラッグで回転・ホイールで拡大・右ドラッグで移動。クリックで説明</p>
+  </div>
+
+  <aside class="panel">
+    <section class="sec info" aria-live="polite">
+      <h2>選択中の部材</h2>
+      <h3 id="info-name">部材をクリックしてください</h3>
+      <p id="info-body"></p>
+      <p class="src" id="info-src"></p>
+    </section>
+
+    <section class="sec">
+      <h2>工種から探す</h2>
+      <div class="works" id="works" role="group" aria-label="工種"></div>
+    </section>
+
+    <section class="sec">
+      <h2>断面を切る</h2>
+      <label class="toggle"><input type="checkbox" id="cut-on"> 覆道を横に切って断面を見る</label>
+      <input type="range" id="cut-s" min="0.2" max="69.8" step="0.1" value="11" aria-label="切る位置（起点からの距離）">
+      <div class="chips" id="cut-chips" role="group" aria-label="代表の断面"></div>
+      <dl class="read">
+        <dt>切る位置</dt><dd class="num" id="r-pos">—</dd>
+        <dt>主梁</dt><dd id="r-beam">—</dd>
+        <dt>近くの補修</dt><dd id="r-rep">—</dd>
+      </dl>
+    </section>
+
+    <section class="sec">
+      <h2>表示するもの</h2>
+      <ul class="layers" id="layers"></ul>
+      <label class="toggle"><input type="checkbox" id="xray"> コンクリートを半透明にする</label>
+    </section>
+
+
+    <section class="sec">
+      <details>
+        <summary>このモデルの作り方と注意</summary>
+        <ul>
+          <li>2次元の図面（対策工一般図・補修図・施工計画図）から組み立てた3Dモデルです。3Dの設計データはフォルダにありません。</li>
+          <li>覆道の断面（主梁の長さ・内空・柱の高さ・勾配）は断面図の寸法からの目安で、主梁は同じ形をくり返して描いています。添架物・照明・排水桝・既設の防水層などは省略しています。</li>
+          <li>補修の位置は図面の主梁番号・補修位置から置いています。大きさは図面の寸法どおりですが、見やすいように少し厚みを付けています。灰色は図面に描かれていても今回の工事（総括表）に入っていない補修です。</li>
+          <li>延長は図面に無いので、主梁35本を板橋覆道と同じ 2.0m 間隔として 70m にしています。断面は排水管補修一般図（覆道一般図 1:50）の寸法からの目安です。</li>
+        </ul>
+      </details>
+    </section>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+"use strict";
+/* ================= shared viewer core ================= */
+const $=id=>document.getElementById(id);
+const stage=$("stage"), canvas=$("gl");
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fm=(v,d)=>v.toFixed(d===undefined?1:d);
+const state={cut:false,s:0,xray:false,vis:{}};
+let INFO={}, DEFAULT_INFO=["部材をクリックしてください","",""], LAYERS=[], WORKS=[], VIEWS=[], PRI={};
+function showInfo(key,extra){
+  if(!key||!INFO[key]){$("info-name").textContent=DEFAULT_INFO[0];$("info-body").textContent=DEFAULT_INFO[1];$("info-src").textContent="";return;}
+  const inf=INFO[key]; $("info-name").textContent=inf.n; $("info-body").textContent=inf.b+(extra?" ／ "+extra:""); $("info-src").textContent="出典："+inf.s;
+}
+let renderer;
+try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true}); }
+catch(e){ const d=document.createElement("div");d.className="nogl";d.textContent="この環境では3D表示（WebGL）が使えません。別のブラウザで開いてください。";stage.appendChild(d);return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(38,1,0.2,3000);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true; controls.dampingFactor=0.12; controls.maxPolarAngle=Math.PI*0.97; controls.minDistance=0.8; controls.maxDistance=900;
+scene.add(new THREE.HemisphereLight(0xffffff,0x7c838a,0.62));
+const sun=new THREE.DirectionalLight(0xffffff,0.48); sun.position.set(-70,120,-90); scene.add(sun);
+const fill=new THREE.DirectionalLight(0xffffff,0.14); fill.position.set(90,50,80); scene.add(fill);
+const cutPlane=new THREE.Plane(new THREE.Vector3(1,0,0),0);
+renderer.localClippingEnabled=true;
+let root=null, capGroup=null, groups={}, pick=[], selected=null, nearLabels=[], edgeMat;
+
+class Tris{
+  constructor(){this.p=[];}
+  tri(a,b,c){this.p.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z);}
+  quad(a,b,c,d){this.tri(a,b,c);this.tri(a,c,d);}
+  geom(){const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(this.p,3));g.computeVertexNormals();return g;}
+}
+function mat(token,o){
+  o=o||{};
+  const m=new THREE.MeshLambertMaterial({color:new THREE.Color(css(token)),side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:o.po===undefined?1:o.po,polygonOffsetUnits:o.po===undefined?1:o.po});
+  if(o.opacity!==undefined&&o.opacity<1){m.transparent=true;m.opacity=o.opacity;m.depthWrite=false;}
+  return m;
+}
+function solid(grp,geom,material,info,extra,edges){
+  const mesh=new THREE.Mesh(geom,material); mesh.userData.info=info; mesh.userData.extra=extra||""; grp.add(mesh); pick.push(mesh);
+  if(edges!==false){const l=new THREE.LineSegments(new THREE.EdgesGeometry(geom,28),edgeMat); grp.add(l);}
+  return mesh;
+}
+function label(text,pos,o){
+  o=o||{};
+  const pad=10,fs=30,cv=document.createElement("canvas"),c=cv.getContext("2d");
+  const font="500 "+fs+"px "+(o.mono?'"IBM Plex Mono",ui-monospace,Menlo,monospace':'"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif');
+  c.font=font; const w=Math.ceil(c.measureText(text).width)+pad*2,h=fs+pad*1.4;
+  cv.width=w;cv.height=h; c.font=font;
+  c.fillStyle=o.bg||css("--panel"); c.globalAlpha=0.92; c.fillRect(0,0,w,h); c.globalAlpha=1;
+  c.strokeStyle=o.fg||css("--line"); c.lineWidth=2; c.strokeRect(1,1,w-2,h-2);
+  c.fillStyle=o.fg||css("--ink"); c.textBaseline="middle"; c.fillText(text,pad,h/2+1);
+  const tx=new THREE.CanvasTexture(cv); tx.minFilter=THREE.LinearFilter;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:!!o.depth,sizeAttenuation:false,transparent:true}));
+  const k=(o.size||0.022); sp.scale.set(k*w/h,k,1); sp.position.copy(pos); sp.renderOrder=10; return sp;
+}
+function near(sp,dist){sp.userData.near=dist;nearLabels.push(sp);return sp;}
+function dispose(o){o.traverse(c=>{if(c.geometry)c.geometry.dispose();if(c.material){(Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{if(m.map)m.map.dispose();m.dispose();});}});}
+function lineOf(pts,color,o){o=o||{};const g=new THREE.BufferGeometry().setFromPoints(pts);
+  const m=o.dash?new THREE.LineDashedMaterial({color:new THREE.Color(color),dashSize:o.dash,gapSize:o.dash*0.6}):new THREE.LineBasicMaterial({color:new THREE.Color(color)});
+  const l=new THREE.Line(g,m); if(o.dash)l.computeLineDistances(); return l;}
+/* a polygon [[u,v],…] pushed from station a to b; map(s,u,v) gives the 3D point */
+function prism(poly,a,b,map){
+  const T=new Tris(), A=poly.map(p=>map(a,p[0],p[1])), B=poly.map(p=>map(b,p[0],p[1])), n=poly.length;
+  for(let i=0;i<n;i++){const k=(i+1)%n;T.quad(A[i],B[i],B[k],A[k]);}
+  THREE.ShapeUtils.triangulateShape(poly.map(p=>new THREE.Vector2(p[0],p[1])),[]).forEach(t=>{T.tri(A[t[0]],A[t[1]],A[t[2]]);T.tri(B[t[0]],B[t[1]],B[t[2]]);});
+  return T.geom();
+}
+/* same number of points at every station */
+function loft(sts,fn,map){
+  const T=new Tris(), polys=sts.map(fn), R=polys.map((pl,i)=>pl.map(p=>map(sts[i],p[0],p[1])));
+  for(let i=0;i<R.length-1;i++){const A=R[i],B=R[i+1],n=A.length;for(let j=0;j<n;j++){const k=(j+1)%n;T.quad(A[j],B[j],B[k],A[k]);}}
+  [0,R.length-1].forEach(e=>THREE.ShapeUtils.triangulateShape(polys[e].map(p=>new THREE.Vector2(p[0],p[1])),[]).forEach(t=>T.tri(R[e][t[0]],R[e][t[1]],R[e][t[2]])));
+  return T.geom();
+}
+const rect=(u0,u1,v0,v1)=>[[u0,v0],[u1,v0],[u1,v1],[u0,v1]];
+/* a flat polygon in the cutting plane: poly in (u,v), place(u,v) gives the 3D point */
+function capPoly(poly,place,token,info,extra){
+  if(poly.length<3)return;
+  const g=new THREE.ShapeGeometry(new THREE.Shape(poly.map(p=>new THREE.Vector2(p[0],p[1])))), pa=g.attributes.position;
+  for(let i=0;i<pa.count;i++){const q=place(pa.getX(i),pa.getY(i));pa.setXYZ(i,q.x,q.y,q.z);}
+  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:new THREE.Color(css(token)),side:THREE.DoubleSide})); m.userData.info=info; m.userData.extra=extra||""; capGroup.add(m); pick.push(m);
+  capGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(poly.concat([poly[0]]).map(p=>place(p[0],p[1]))),new THREE.LineBasicMaterial({color:new THREE.Color(css("--c-edge"))})));
+}
+function setView(pos,tgt){
+  const a=camera.aspect, k=Math.max(1,1.25/a), t=new THREE.Vector3(tgt[0],tgt[1],tgt[2]), p=new THREE.Vector3(pos[0],pos[1],pos[2]);
+  p.sub(t).multiplyScalar(k).add(t); camera.position.copy(p); controls.target.copy(t); controls.update();
+  const b=$("view-sec"); if(b)b.setAttribute("aria-pressed","false");
+}
+const secOn=()=>{const b=$("view-sec");return !!b&&b.getAttribute("aria-pressed")==="true";};
+let SITE={build(){},cut(){},readout(){},pickExtra(){return null;},labelOk(){return true;},keep(){return true;}};
+
+/* ================= site ================= */
+const DATA={"sec":{"win":9.72,"col":0.5,"ov":0.5,"bear":0.3,"hc":3.5,"i":0.1,"db":0.75,"cu0":0.6,"cu1":0.9,"par":0.3,"tw":1.9,"toe":2.5,"wf":2.0,"cw":0.6,"hf":6.5,"fdW":0.25,"fdS":0.5,"rc":4.5,"rw":6.5},"sheds":[{"c0":0,"c1":70,"n":35,"name":"第三塩釜覆道","now":true}],"reps":[{"k":"drain","g":"drain","info":"drain","tok":"--c-drain","c":11,"n":"主梁6 の排水管取替（SGP100A、L=3.72m）"},{"k":"drain","g":"drain","info":"drain","tok":"--c-drain","c":21,"n":"主梁11 の排水管取替（SGP100A、L=3.72m）"},{"k":"drain","g":"drain","info":"drain","tok":"--c-drain","c":31,"n":"主梁16 の排水管取替（SGP100A、L=3.72m）"},{"k":"drain","g":"drain","info":"drain","tok":"--c-drain","c":41,"n":"主梁21 の排水管取替（SGP100A、L=3.72m）"},{"k":"drain","g":"drain","info":"drain","tok":"--c-drain","c":51,"n":"主梁26 の排水管取替（SGP100A、L=3.72m）"},{"k":"drain","g":"drain","info":"drain","tok":"--c-drain","c":61,"n":"主梁31 の排水管取替（SGP100A、L=3.72m）"},{"k":"drain","g":"drain","info":"drain","tok":"--c-drain","c":69,"n":"主梁35 の排水管取替（SGP100A、L=3.72m）"},{"k":"drain","g":"other","info":"other","tok":"--c-exist","c":1,"now":false,"n":"主梁1 の排水管"}],"INFO":{"beam":{"n":"主梁（第三塩釜覆道）","b":"第三塩釜覆道は主梁35本、ブロック B-1〜B-7 の覆道です（延長は主梁35本×約2.0mの目安 70m）。主梁の長さ 11.02m、内空 9.72m、勾配10%、上にサンドクッション（厚さ900）。山側の壁の天端 EL=11.178、海側の路面 EL=5.2。","s":"第三塩釜覆道 対策工一般図・排水管補修一般図"},"col":{"n":"谷側柱","b":"主梁を受ける海側の柱（谷側受台の上から約3.5m）。排水管はこの柱の外側に沿って下ろします。","s":"排水管補修一般図"},"wall":{"n":"山側受台","b":"高さ約8.6m、底版 6.8m 幅（2.4＋0.9＋3.5m）の壁です。","s":"排水管補修一般図（覆道一般図）"},"found":{"n":"谷側受台","b":"谷側柱の下の受台（高さ1.8＋3.5＋1.0m、背面 1:0.5）。","s":"排水管補修一般図（覆道一般図）"},"cushion":{"n":"サンドクッション","b":"厚さ900。","s":"排水管補修一般図"},"drain":{"n":"排水管の取替（7か所）","b":"主梁の海側の端から柱に沿って下りる排水管を、溶融亜鉛めっきの鋼管 SGP100A（45°溶接用ベンド2か所、支持金具2か所、L=3,720）に取り替えます。既設管は切断して撤去し（発生品 0.4t を 25.6km 運搬）、上の端はドレンパイプ □100×100 につなぎます。あと施工アンカー M10×70 を1か所4本。8か所のうち今回は7か所（主梁⑥・⑪・⑯・㉑・㉖・㉛・㉟）。交通誘導警備員B 12人日。","s":"第三塩釜覆道 対策工一般図・排水管補修詳細図・施工計画図（参考図）・工事数量総括表"},"other":{"n":"今回の工事ではない排水管（主梁①）","b":"対策工一般図の「排水管補修箇所 8箇所」のうち、主梁①の1か所は今回の施工箇所に入っていません（当該工事施工箇所 N=7）。","s":"第三塩釜覆道 対策工一般図"},"road":{"n":"路面","b":"車道 6.5m（2.75m×2＋0.5m×2）。","s":"排水管補修一般図"},"ground":{"n":"地盤","b":"目安です。","s":""},"sea":{"n":"海","b":"目安です。","s":""}},"DEF":["部材をクリックしてください","第三塩釜覆道です。今回は海側の排水管7か所の取替え（青）だけです。",""],"LAYERS":[{"id":"beam","t":"主梁・頂版","sub":"","c":"--c-conc","on":true,"grp":"覆道"},{"id":"col","t":"谷側柱","sub":"","c":"--c-conc2","on":true},{"id":"wall","t":"山側受台（壁）","sub":"","c":"--c-conc3","on":true},{"id":"found","t":"谷側の下部工","sub":"","c":"--c-conc3","on":true},{"id":"cushion","t":"覆土・サンドクッション","sub":"","c":"--c-sand","on":true},{"id":"drain","t":"排水管の取替","sub":"7か所","c":"--c-drain","on":true,"grp":"今回の補修"},{"id":"other","t":"今回の工事ではない排水管","sub":"1か所","c":"--c-exist","on":true},{"id":"road","t":"路面","sub":"","c":"--c-road","on":true,"grp":"まわり"},{"id":"ground","t":"地盤","sub":"","c":"--c-ground","on":true},{"id":"sea","t":"海","sub":"","c":"--c-sea","on":true},{"id":"label","t":"ラベル","sub":"","c":"--panel","on":true}],"WORKS":[{"id":"drain","t":"排水管の取替","q":"7か所","c":"--c-drain","v":[31,-0.8,2,-8,-12,2.5]}],"VIEW":[35,-18,74,32,60,22,120],"numEvery":5,"chips":[["主梁⑥",11],["主梁㉑",41],["主梁㉟",69]],"cut0":11,"cmin":0.2,"cmax":69.8,"secW":26,"labels":[],"key":"shiogama"};
+/* 岩部渡島福島停車場線 覆道の補修（滝の下覆道・浦和覆道・板橋覆道・第三塩釜覆道）
+   c = 覆道の起点（岩部側）からの距離（m）、u = 海側の柱の内側の面から山側へ＋（m）、z = 海側の路面を 0 とした高さ（m）。
+   海から見ると起点は右、終点（福島側）は左。 */
+const X=DATA.sec, SH=DATA.sheds, LEN=SH[SH.length-1].c1, CC=DATA.cc!==undefined?DATA.cc:LEN/2;
+const M=(c,u,z)=>new THREE.Vector3(-(c-CC),z,-u);
+INFO=DATA.INFO; DEFAULT_INFO=DATA.DEF; state.s=DATA.cut0; state.cut=false;
+const U0=-(X.col+X.ov), U1=X.win+X.bear;                 // 主梁の海側の端・山側の端
+const zs=u=>X.hc+X.i*(u-U0);                              // 主梁の下面
+const zt=u=>zs(u)+X.db;                                   // 主梁の上面
+const cush=u=>X.cu0+(X.cu1-X.cu0)*(u-U0)/(U1-U0);         // 覆土・サンドクッションの厚さ
+const BEAMS=[]; SH.forEach((sh,k)=>{ const p=(sh.c1-sh.c0)/sh.n; for(let i=0;i<sh.n;i++)BEAMS.push({sh:k,i:i+1,c0:sh.c0+p*i,c1:sh.c0+p*(i+1),cm:sh.c0+p*(i+0.5),p}); });
+const beamAt=c=>BEAMS.find(b=>c>=b.c0-1e-6&&c<=b.c1+1e-6)||BEAMS[BEAMS.length-1];
+const shAt=c=>SH.find(s=>c>=s.c0-1e-6&&c<=s.c1+1e-6)||SH[SH.length-1];
+const CIRC="①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔㉕㉖㉗㉘㉙㉚㉛㉜㉝㉞㉟";
+const bname=b=>(DATA.gname?DATA.gname+b.i:(CIRC[b.i-1]||b.i));
+LAYERS=DATA.LAYERS; WORKS=DATA.WORKS.map(w=>Object.assign({},w,{v:w.v?vAt.apply(null,w.v):null}));
+PRI={patch:1,sheet:1,leak:1,spray:1,drain:1,gutter:1,crack:1,wallpatch:1,remove:2,other:3,dig:4,beam:5,col:5,wall:6,found:6,cushion:7,road:8,ground:9,sea:9,slope:9};
+function vAt(c,u,z,dc,du,dz){ const t=M(c,u,z), p=M(c+dc,u+du,z+dz); return [[p.x,p.y,p.z],[t.x,t.y,t.z]]; }
+const V=DATA.VIEW;
+VIEWS=[{id:"all",t:"全体（海側から）",go:()=>{const v=vAt(V[0],4,2,V[1],-V[2],V[3]);setView(v[0],v[1]);}}]
+  .concat((DATA.VIEWS||[]).map((q,i)=>({id:"p"+i,t:q[0],go:()=>{const v=vAt.apply(null,q.slice(1));setView(v[0],v[1]);}})))
+  .concat([{id:"in",t:"覆道の中から",go:()=>{const v=vAt(V[4],X.win*0.45,1.6,-V[5],0.2,0.6);setView(v[0],v[1]);}},
+           {id:"top",t:"真上から",go:()=>{const v=vAt(V[0],4,2,0,-0.5,V[6]);setView(v[0],v[1]);}},
+           {id:"sec",t:"断面を正面から",go:()=>SITE.viewSec()}]);
+
+const lam=(tok,op,o)=>{o=o||{};const m=new THREE.MeshLambertMaterial({color:new THREE.Color(css(tok)),side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:o.po===undefined?1:o.po,polygonOffsetUnits:o.po===undefined?1:o.po});if(op!==undefined&&op<1){m.transparent=true;m.opacity=op;m.depthWrite=false;}return m;};
+function addMesh(grp,geom,material,info,extra){ const m=new THREE.Mesh(geom,material); m.userData.info=info; m.userData.extra=extra||""; grp.add(m); pick.push(m); return m; }
+function edges(grp,geom){ grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(geom,28),edgeMat)); }
+const L3=(grp,pts,tok,o)=>{const l=lineOf(pts,css(tok),o);grp.add(l);return l;};
+function cyl(grp,a,b,r,material,info,extra){ const d=new THREE.Vector3().subVectors(b,a), L=d.length(), g=new THREE.CylinderGeometry(r,r,L,10);
+  const m=addMesh(grp,g,material,info,extra); m.position.copy(a).addScaledVector(d,0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.clone().normalize()); return m; }
+function pipe(grp,pts,r,material,info,extra){ for(let i=0;i<pts.length-1;i++) cyl(grp,pts[i],pts[i+1],r,material,info,extra); }
+/* 面に貼る四角（断面修復・シートなど）：face = "end"（主梁の海側の端面）| "soffit"（下面、u を指定）| "top"（受台の上）| "wall"（山側の壁面）| "found"（谷側受台の海側の面） */
+function plate(grp,c,w,h,face,o,material,info,extra){
+  const T=new Tris(); o=o||{}; const e=0.03;
+  if(face==="end"){ const u=U0-e, z=o.z!==undefined?o.z:zs(U0)+X.db*0.5; T.quad(M(c-w/2,u,z-h/2),M(c+w/2,u,z-h/2),M(c+w/2,u,z+h/2),M(c-w/2,u,z+h/2)); }
+  else if(face==="soffit"){ const u=o.u, d=o.d||h; T.quad(M(c-w/2,u-d/2,zs(u-d/2)-e),M(c+w/2,u-d/2,zs(u-d/2)-e),M(c+w/2,u+d/2,zs(u+d/2)-e),M(c-w/2,u+d/2,zs(u+d/2)-e)); }
+  else if(face==="top"){ const u=o.u, z=o.z; T.quad(M(c-w/2,u-h/2,z+e),M(c+w/2,u-h/2,z+e),M(c+w/2,u+h/2,z+e),M(c-w/2,u+h/2,z+e)); }
+  else if(face==="wall"){ const u=X.win-e, z=o.z; T.quad(M(c-w/2,u,z-h/2),M(c+w/2,u,z-h/2),M(c+w/2,u,z+h/2),M(c-w/2,u,z+h/2)); }
+  else if(face==="col"){ const u=-X.col-e, z=o.z; T.quad(M(c-w/2,u,z-h/2),M(c+w/2,u,z-h/2),M(c+w/2,u,z+h/2),M(c-w/2,u,z+h/2)); }
+  else if(face==="found"){ const u=-X.col-X.fdW-e, z=o.z; T.quad(M(c-w/2,u,z-h/2),M(c+w/2,u,z-h/2),M(c+w/2,u,z+h/2),M(c-w/2,u,z+h/2)); }
+  return addMesh(grp,T.geom(),material,info,extra);
+}
+/* 断面（u,z）の多角形：主梁・柱・壁・谷側受台・覆土・路面 */
+const beamPoly=()=>[[U0,zs(U0)],[U1,zs(U1)],[U1,zt(U1)],[U0,zt(U0)]];
+const colPoly=()=>[[-X.col,0],[0,0],[0,zs(0)],[-X.col,zs(-X.col)]];
+const wallPoly=()=>[[X.win,-X.wf],[X.win+X.tw+X.toe,-X.wf],[X.win+X.tw+X.toe,-X.wf+0.8],[X.win+X.tw,-X.wf+0.8],[X.win+X.tw,zt(U1)+X.cu1+X.par],[X.win+X.bear,zt(U1)+X.cu1+X.par],[X.win+X.bear,zs(U1)],[X.win,zs(X.win)]];
+const foundPoly=()=>[[-X.col-X.fdW,0],[0.4,0],[0.4,-0.6],[0,-0.6],[0,-X.hf],[-X.col-X.fdW-X.hf*X.fdS,-X.hf]];
+const cushPoly=()=>{ const a=U0+0.25, b=X.win+X.bear, n=8, top=[]; for(let k=0;k<=n;k++){const u=a+(b-a)*k/n;top.push([u,zt(u)+cush(u)]);} return [[a,zt(a)],[b,zt(b)]].concat(top.reverse()); };
+const parPoly=()=>[[U0,zt(U0)],[U0+0.25,zt(U0+0.25)],[U0+0.25,zt(U0)+cush(U0)+0.5],[U0,zt(U0)+cush(U0)+0.5]];
+const roadPoly=()=>[[0,-0.45],[X.win,-0.45],[X.win,0],[0,0]];
+
+SITE.build=function(){
+  const xo=state.xray?0.32:1, mB=lam("--c-conc",xo), mB2=lam("--c-conc2",xo), mW=lam("--c-conc3",xo), mOld=lam("--c-exist",state.xray?0.3:0.85);
+  // 主梁・柱
+  BEAMS.forEach(b=>{ const sh=SH[b.sh], now=sh.now, g=prism(beamPoly(),b.c0+0.015,b.c1-0.015,M);
+    const m=addMesh(groups.beam,g,now?mB:mOld,"beam",sh.name+" "+bname(b)+"（起点から "+fm(b.c0,1)+"〜"+fm(b.c1,1)+"m、幅 "+fm(b.p,2)+"m）"); m.userData.nohl=!now; edges(groups.beam,g);
+    const cw=Math.min(X.cw,b.p*0.6), gc=prism(colPoly(),b.cm-cw/2,b.cm+cw/2,M);
+    addMesh(groups.col,gc,now?mB2:mOld,"col",sh.name+" 谷側柱 "+bname(b)); edges(groups.col,gc);
+  });
+  // 山側の壁（受台）・谷側受台・覆土・高欄
+  SH.forEach(sh=>{ const gw=prism(wallPoly(),sh.c0,sh.c1,M); addMesh(groups.wall,gw,sh.now?mW:mOld,"wall",sh.name); edges(groups.wall,gw);
+    const gf=prism(foundPoly(),sh.c0,sh.c1,M); addMesh(groups.found,gf,sh.now?mW:mOld,"found",sh.name); edges(groups.found,gf);
+    const gcu=prism(cushPoly(),sh.c0,sh.c1,M); const cu=addMesh(groups.cushion,gcu,lam("--c-sand",state.xray?0.25:0.92),"cushion",sh.name); cu.userData.nohl=true;
+    addMesh(groups.beam,prism(parPoly(),sh.c0,sh.c1,M),sh.now?mB:mOld,"beam",sh.name+" 海側の高欄（パラペット）");
+    if(SH.length>1) groups.label.add(near(label(sh.name+(sh.now?"":"（今回なし）"),M((sh.c0+sh.c1)/2,X.win*0.5,zt(X.win*0.5)+X.cu1+2.4),{size:sh.now?0.017:0.013,fg:sh.now?css("--accent"):css("--muted")}),sh.now?420:200));
+    if(SH.length>1) L3(groups.label,[M(sh.c0,U0-0.4,zt(U0)+cush(U0)+0.6),M(sh.c0,U0-0.4,-X.hf)],"--c-secline",{dash:0.5});
+  });
+  // 路面・中央線
+  const gr=prism(roadPoly(),0,LEN,M); const rd=addMesh(groups.road,gr,lam("--c-road",xo),"road",""); rd.userData.nohl=true;
+  for(let c=1;c<LEN-2;c+=5) L3(groups.road,[M(c,X.rc,0.02),M(c+2.5,X.rc,0.02)],"--panel");
+  [X.rc-X.rw/2,X.rc+X.rw/2].forEach(u=>L3(groups.road,[M(-6,u,0.02),M(LEN+6,u,0.02)],"--panel"));
+  // 前後の道路・海・山
+  const T=new Tris(); T.quad(M(-30,0,0),M(0,0,0),M(0,X.win,0),M(-30,X.win,0)); T.quad(M(LEN,0,0),M(LEN+30,0,0),M(LEN+30,X.win,0),M(LEN,X.win,0));
+  addMesh(groups.road,T.geom(),lam("--c-road",xo),"road","").userData.nohl=true;
+  const G=new Tris(), zb=-X.hf, uf=-X.col-X.fdW-X.hf*X.fdS;
+  G.quad(M(-30,uf,zb),M(LEN+30,uf,zb),M(LEN+30,uf-10,zb-4),M(-30,uf-10,zb-4));
+  const zm=zt(U1)+X.cu1, um=X.win+X.tw;
+  G.quad(M(-30,um,zm),M(LEN+30,um,zm),M(LEN+30,um+18,zm+16),M(-30,um+18,zm+16));
+  G.quad(M(-30,X.win,0),M(0,X.win,0),M(0,um,zm),M(-30,um,zm)); G.quad(M(LEN,X.win,0),M(LEN+30,X.win,0),M(LEN+30,um,zm),M(LEN,um,zm));
+  const gg=addMesh(groups.ground,G.geom(),lam("--c-ground",state.xray?0.3:1,{po:3}),"ground",""); gg.userData.nohl=true;
+  const S=new Tris(); S.quad(M(-30,uf-10,zb-3.6),M(LEN+30,uf-10,zb-3.6),M(LEN+30,uf-40,zb-3.6),M(-30,uf-40,zb-3.6));
+  addMesh(groups.sea,S.geom(),lam("--c-sea",0.7),"sea","").userData.nohl=true;
+  // 補修
+  DATA.reps.forEach(r=>buildRep(r));
+  // ラベル
+  const g=groups.label;
+  (DATA.labels||[]).forEach(l=>g.add(near(label(l[0],M(l[1],l[2],l[3]),{size:l[4]||0.016,fg:l[5]?css(l[5]):undefined}),l[6]||300)));
+  g.add(near(label("起点（岩部側）",M(-3,X.win*0.5,zt(X.win*0.5)+X.cu1+1.2),{size:0.014}),600));
+  g.add(near(label("終点（福島側）",M(LEN+3,X.win*0.5,zt(X.win*0.5)+X.cu1+1.2),{size:0.014}),600));
+  if(DATA.numEvery) BEAMS.forEach(b=>{ if(b.i===1||b.i%DATA.numEvery===0||b.i===SH[b.sh].n) g.add(near(label(bname(b),M(b.cm,U0-0.6,zs(U0)-0.8),{size:0.012,mono:true}),45)); });
+};
+function buildRep(r){
+  const now=r.now!==false, grp=now?groups[r.g]:groups.other, info=now?r.info:"other", ex=(r.n||"")+(now?"":"（今回の工事ではない）");
+  const tok=now?r.tok:"--c-exist", mat=lam(tok,r.op||1,{po:-2});
+  if(r.k==="patch"||r.k==="sheet") plate(grp,r.c,r.w,r.h,r.face,r,mat,info,ex);
+  else if(r.k==="leak"){ // 漏水防止板（受部 500 幅・長さ 1.3m、主梁目地の海側の下）と流末の管
+    const c=r.c, u0=U0+0.1, u1=U0+1.4, T=new Tris(), w=0.25;
+    T.quad(M(c-w,u0,zs(u0)-0.12),M(c+w,u0,zs(u0)-0.12),M(c+w,u1,zs(u1)-0.12),M(c-w,u1,zs(u1)-0.12));
+    T.quad(M(c-w,u0,zs(u0)-0.12),M(c-w,u1,zs(u1)-0.12),M(c-w,u1,zs(u1)-0.02),M(c-w,u0,zs(u0)-0.02));
+    T.quad(M(c+w,u0,zs(u0)-0.12),M(c+w,u1,zs(u1)-0.12),M(c+w,u1,zs(u1)-0.02),M(c+w,u0,zs(u0)-0.02));
+    addMesh(grp,T.geom(),mat,info,ex);
+    if(r.pipe!==false){ const pm=lam(now?"--c-drain":"--c-exist"); pipe(grp,[M(c,u0+0.3,zs(u0+0.3)-0.14),M(c,U0+0.2,zs(U0)-0.6),M(c,-X.col-0.12,zs(0)-1.2),M(c,-X.col-0.12,0.3),M(c,-X.col-0.6,-0.1)],0.05,pm,info,ex+"（フレキシブル管 φ100）"); }
+  }
+  else if(r.k==="spray"){ // 吹付防水（主梁目地に沿って、覆土をはがして）。dig：床掘り
+    const c=r.c, w=(r.w||0.5)/2, T=new Tris(), a=U0+0.3, b=U1;
+    T.quad(M(c-w,a,zt(a)+0.03),M(c+w,a,zt(a)+0.03),M(c+w,b,zt(b)+0.03),M(c-w,b,zt(b)+0.03));
+    addMesh(grp,T.geom(),mat,info,ex);
+    if(now&&r.dig){ const d=r.dig/2, poly=[[a,zt(a)],[b,zt(b)],[b,zt(b)+cush(b)+0.02],[a,zt(a)+cush(a)+0.02]];
+      addMesh(groups.dig,prism(poly,c-d,c+d,M),lam("--c-cut",0.5,{po:-3}),"dig",ex); }
+  }
+  else if(r.k==="sprayL"){ // 胸壁との目地に沿う吹付防水（c0〜c1）
+    const T=new Tris(), u=U1-0.3, w=0.5;
+    T.quad(M(r.c0,u-w,zt(u-w)+0.03),M(r.c1,u-w,zt(u-w)+0.03),M(r.c1,u,zt(u)+0.03),M(r.c0,u,zt(u)+0.03));
+    T.quad(M(r.c0,u,zt(u)+0.03),M(r.c1,u,zt(u)+0.03),M(r.c1,u,zt(u)+0.6),M(r.c0,u,zt(u)+0.6));
+    addMesh(grp,T.geom(),mat,info,ex);
+    if(r.dig){ const poly=[[u-1.1,zt(u-1.1)],[U1,zt(U1)],[U1,zt(U1)+cush(U1)+0.02],[u-1.1,zt(u-1.1)+cush(u-1.1)+0.02]]; addMesh(groups.dig,prism(poly,r.c0,r.c1,M),lam("--c-cut",0.5,{po:-3}),"dig",ex); }
+  }
+  else if(r.k==="drain"){ // 排水管の取替（主梁の海側の端から柱に沿って谷側受台の上へ）
+    const c=r.c, pm=lam(now?"--c-drain":"--c-exist");
+    pipe(grp,[M(c,U0+0.35,zt(U0+0.35)+0.1),M(c,U0-0.15,zt(U0)-0.05),M(c,U0-0.2,zs(U0)-0.5),M(c,-X.col-0.18,zs(0)-1.3),M(c,-X.col-0.18,0.9),M(c,-X.col-0.6,0.25)],0.057,pm,info,ex);
+  }
+  else if(r.k==="longdrain"){ // 縦断排水管（海側の主梁の上、覆土の中）
+    const u=U0+0.55, pm=lam(now?"--c-drain":"--c-exist");
+    cyl(grp,M(r.c0,u,zt(u)+0.12),M(r.c1,u,zt(u)+0.12),0.06,pm,info,ex);
+    if(now&&r.dig) addMesh(groups.dig,prism([[U0+0.25,zt(U0+0.25)],[U0+1.25,zt(U0+1.25)],[U0+1.25,zt(U0+1.25)+cush(U0+1.25)+0.02],[U0+0.25,zt(U0+0.25)+cush(U0+0.25)+0.02]],r.c0,r.c1,M),lam("--c-cut",0.45,{po:-3}),"dig",ex);
+  }
+  else if(r.k==="gutter"){ // 樋排水（山側の壁に沿う、勾配2%）と流末
+    const u=X.win-0.12, z0=zs(X.win)-0.35, pm=lam(now?"--c-drain":"--c-exist");
+    const g=new THREE.BoxGeometry(Math.abs(r.c1-r.c0),0.1,0.1), m=addMesh(grp,g,pm,info,ex); const a=M(r.c0,u,z0-0.02*0), b=M(r.c1,u,z0-0.02*(r.c1-r.c0));
+    m.position.copy(a).add(b).multiplyScalar(0.5); m.rotation.z=Math.atan2(b.y-a.y,b.x-a.x);
+    if(r.down) pipe(grp,[b,M(r.c1+0.4,u,b.y-0.3),M(r.c1+0.4,u,0.1)],0.03,pm,info,ex+"（流末 フレキシブルホース φ50）");
+  }
+  else if(r.k==="crack"){ // ひび割れ（face=wall：山側受台の内側の面、found：谷側受台の海側の面）
+    const c=r.c, L=r.L, e=0.05, pts=[];
+    const at=(t)=>{ const z=r.face==="wall"?r.z+t*L:r.z-t*L, dc=0.12*Math.sin(t*9+c); return r.face==="wall"?M(c+dc,X.win-e,z):M(c+dc,-X.col-X.fdW-(r.z-t*L<0?(-(r.z-t*L))*X.fdS:0)-e,z); };
+    for(let k=0;k<=10;k++)pts.push(at(k/10));
+    pipe(grp,pts,0.035,mat,info,ex);
+  }
+}
+
+/* ---------- 断面（c で切る） ---------- */
+SITE.snap=v=>Math.round(v*10)/10;
+SITE.keep=p=>p.x<=-(state.s-CC)+1e-3;
+function nearReps(c){ return DATA.reps.filter(r=>{const a=r.c0!==undefined?r.c0:r.c, b=r.c1!==undefined?r.c1:r.c; return c>=a-1.2&&c<=b+1.2;}); }
+SITE.readout=function(){
+  const c=state.s, b=beamAt(c), sh=shAt(c);
+  $("r-pos").textContent="起点から "+fm(c,1)+" m"+(SH.length>1?"（"+sh.name+"）":"");
+  $("r-beam").textContent=bname(b)+"（幅 "+fm(b.p,2)+"m）";
+  const n=nearReps(c); $("r-rep").textContent=n.length?n.map(r=>(r.n||"").split("、")[0]+(r.now===false?"（今回外）":"")).slice(0,3).join("／"):"なし";
+};
+SITE.cut=function(){
+  const c=state.s, x0=-(c-CC);
+  cutPlane.normal.set(-1,0,0); cutPlane.constant=x0;
+  const placeF=(u,v)=>M(c,u,v).add(new THREE.Vector3(0.02,0,0));
+  const sh=shAt(c), b=beamAt(c), cw=Math.min(X.cw,b.p*0.6);
+  if(state.vis.beam){ capPoly(beamPoly(),placeF,sh.now?"--c-conc":"--c-exist","beam",""); capPoly(parPoly(),placeF,sh.now?"--c-conc":"--c-exist","beam",""); }
+  if(state.vis.col&&Math.abs(c-b.cm)<=cw/2) capPoly(colPoly(),placeF,sh.now?"--c-conc2":"--c-exist","col","");
+  if(state.vis.wall) capPoly(wallPoly(),placeF,sh.now?"--c-conc3":"--c-exist","wall","");
+  if(state.vis.found) capPoly(foundPoly(),placeF,sh.now?"--c-conc3":"--c-exist","found","");
+  if(state.vis.cushion) capPoly(cushPoly(),placeF,"--c-sand","cushion","");
+  if(state.vis.road) capPoly(roadPoly(),placeF,"--c-road","road","");
+  const L=(t,u,v,o)=>capGroup.add(label(t,placeF(u,v),Object.assign({size:0.019,mono:true},o||{})));
+  if(state.vis.label){ L(fm(c,1)+"m（"+bname(b)+"）",X.win*0.5,zt(X.win*0.5)+X.cu1+2.2,{fg:css("--accent"),size:0.022,mono:false});
+    L("← 海",U0-2.2,zs(U0)-0.5,{mono:false}); L("山 →",X.win+X.tw+1.2,zs(X.win)+0.8,{mono:false});
+    L("内空 "+fm(X.win,2)+"m",X.win*0.5,1.0); L("柱の高さ 約"+fm(X.hc,1)+"m",-X.col-1.4,X.hc*0.5); }
+};
+SITE.viewSec=function(){
+  if(!state.cut){state.cut=true;$("cut-on").checked=true;updateCut();}
+  const c=state.s, t=M(c,X.win*0.5-0.5,X.hc*0.4); setView([t.x+DATA.secW,t.y,t.z],[t.x,t.y,t.z]); $("view-sec").setAttribute("aria-pressed","true");
+};
+SITE.pickExtra=(o,hit)=>{ const i=o.userData.info; if(i==="ground"||i==="road"||i==="cushion"){ const c=CC-hit.point.x; return "起点から "+fm(c,1)+"m"; } return null; };
+SITE.home=()=>VIEWS[0].go();
+(function(){ const ch=$("cut-chips");
+  DATA.chips.forEach(q=>{const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=q[0];
+    b.addEventListener("click",()=>{state.s=q[1];$("cut-s").value=q[1];if(!state.cut){state.cut=true;$("cut-on").checked=true;}updateCut();if(secOn())SITE.viewSec();});ch.appendChild(b);});
+})();
+
+/* ================= shared: panel, cut, picking, loop ================= */
+LAYERS.forEach(l=>state.vis[l.id]=l.on);
+showInfo(null);
+(function buildPanel(){
+  const ul=$("layers");
+  LAYERS.forEach(l=>{
+    if(l.grp){const g=document.createElement("li");g.className="grp";g.textContent=l.grp;ul.appendChild(g);}
+    const li=document.createElement("li");
+    li.innerHTML='<label><input type="checkbox" id="ly-'+l.id+'"'+(l.on?" checked":"")+'><span class="swatch" style="background:var('+l.c+')"></span><span class="t">'+l.t+(l.sub?' <small class="num">'+l.sub+'</small>':'')+'</span></label>';
+    ul.appendChild(li);
+    li.querySelector("input").addEventListener("change",e=>{state.vis[l.id]=e.target.checked;applyVis();updateCut();});
+  });
+  const wk=$("works");
+  WORKS.forEach((w,i)=>{
+    const b=document.createElement("button");b.type="button";b.className="btn";b.id="work-"+i;b.setAttribute("aria-pressed","false");
+    b.innerHTML='<span class="w"><span class="swatch" style="background:var('+w.c+')"></span>'+w.t+'</span><span class="q num">'+w.q+'</span>';
+    b.addEventListener("click",()=>{
+      (w.on||(w.id?[w.id]:[])).forEach(id=>{ if(!state.vis[id]){state.vis[id]=true;$("ly-"+id).checked=true;} }); applyVis();
+      if(w.v){ if(state.cut){state.cut=false;$("cut-on").checked=false;updateCut();} setView(w.v[0],w.v[1]); }
+      showInfo(w.inf||w.id);
+      [...wk.children].forEach(c=>c.setAttribute("aria-pressed",String(c===b)));
+    });
+    wk.appendChild(b);
+  });
+  const vw=$("views");
+  VIEWS.forEach(v=>{const b=document.createElement("button");b.type="button";b.className="btn";b.id="view-"+v.id;b.textContent=v.t;if(v.id==="sec")b.setAttribute("aria-pressed","false");b.addEventListener("click",v.go);vw.appendChild(b);});
+})();
+function rebuild(){
+  if(root){scene.remove(root);dispose(root);}
+  root=new THREE.Group(); scene.add(root); pick=[]; groups={}; selected=null; nearLabels=[];
+  LAYERS.forEach(l=>{groups[l.id]=new THREE.Group();root.add(groups[l.id]);});
+  capGroup=new THREE.Group(); root.add(capGroup);
+  renderer.setClearColor(new THREE.Color(css("--scene")),1);
+  edgeMat=new THREE.LineBasicMaterial({color:new THREE.Color(css("--c-edge")),transparent:true,opacity:0.5});
+  SITE.build();
+  applyVis(); updateCut();
+}
+function applyVis(){ LAYERS.forEach(l=>{groups[l.id].visible=state.vis[l.id];}); }
+function updateCut(){
+  if(!capGroup)return;
+  pick=pick.filter(m=>m.parent!==capGroup);
+  while(capGroup.children.length){const c=capGroup.children.pop();dispose(c);}
+  SITE.readout();
+  const planes=state.cut?[cutPlane]:null;
+  root.traverse(o=>{ if(o.material&&!o.isSprite&&o.parent!==capGroup&&(o.material.clippingPlanes?1:0)!==(planes?1:0)){o.material.clippingPlanes=planes;o.material.needsUpdate=true;} });
+  if(state.cut) SITE.cut();
+}
+$("cut-on").addEventListener("change",e=>{state.cut=e.target.checked;updateCut();});
+$("cut-s").addEventListener("input",e=>{state.s=SITE.snap?SITE.snap(parseFloat(e.target.value)):parseFloat(e.target.value);updateCut();if(secOn())SITE.viewSec();});
+$("xray").addEventListener("change",e=>{state.xray=e.target.checked;rebuild();});
+controls.addEventListener("start",()=>{const b=$("view-sec");if(b)b.setAttribute("aria-pressed","false");[...$("works").children].forEach(c=>c.setAttribute("aria-pressed","false"));});
+
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2(); let down=null;
+const shown=o=>{for(let p=o;p;p=p.parent)if(!p.visible)return false;return true;};
+canvas.addEventListener("pointerdown",e=>{down=[e.clientX,e.clientY];});
+canvas.addEventListener("pointerup",e=>{
+  if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
+  const r=canvas.getBoundingClientRect(); ptr.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1));
+  ray.setFromCamera(ptr,camera);
+  const hits=ray.intersectObjects(pick,false).filter(h=>shown(h.object)&&(!state.cut||h.object.parent===capGroup||SITE.keep(h.point)));
+  const pri=h=>{const v=PRI[h.object.userData.info];return v===undefined?5:v;};
+  let hit=hits[0]; if(hit) hits.forEach(h=>{ if(h.distance<=hits[0].distance+0.35&&pri(h)<pri(hit)) hit=h; });
+  if(selected){selected.material=selected.userData.base;selected=null;}
+  if(!hit){showInfo(null);return;}
+  const o=hit.object;
+  if(o.material.emissive&&!o.isInstancedMesh&&!o.userData.nohl){o.userData.base=o.material;o.material=o.material.clone();o.material.emissive=new THREE.Color(0x3a3a12);selected=o;}
+  showInfo(o.userData.info,SITE.pickExtra(o,hit)||o.userData.extra);
+});
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(stage);
+function tick(){
+  controls.update();
+  const cp=camera.position, front=state.cut&&secOn();
+  for(let i=0;i<nearLabels.length;i++){const sp=nearLabels[i],d=cp.distanceTo(sp.position);
+    sp.visible=!front&&d<sp.userData.near&&(!state.cut||SITE.keep(sp.position));}
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+const retheme=()=>rebuild();
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",retheme);
+new MutationObserver(retheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+resize(); rebuild(); SITE.home(); tick();
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>rebuild());
+window.__viewer={state,setView,updateCut,rebuild,applyVis,camera,controls,scene,SITE};
+})();
+</script>
+
+</body></html>

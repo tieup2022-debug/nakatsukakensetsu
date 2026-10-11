@@ -1,0 +1,420 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>岩部線 落石対策・覆道補修 工程表</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a working schedule sheet. Settings and key dates on top, the bar chart as the centrepiece, then the step-by-step procedure and the points to confirm. */
+:root{
+  --bg:#EEF1F2; --panel:#F8FAFA; --ink:#1C2A33; --muted:#5A6A74; --line:#CBD4D9; --chip:#E3E9EC; --off:#E1E7EA; --hold:#F3D9D6;
+  --accent:#C2302A; --warn-bg:#FBEFD9; --warn-line:#D9A441;
+  --s-reg:#2a78d6; --s-out:#eb6834; --s-cure:#1baf7a; --s-prep:#75858F;
+  --font-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A; --off:#1D2830; --hold:#3A2422;
+  --accent:#F0766E; --warn-bg:#2E2717; --warn-line:#A57E2E;
+  --s-reg:#3987e5; --s-out:#d95926; --s-cure:#199e70; --s-prep:#8797A1;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A; --off:#1D2830; --hold:#3A2422;
+  --accent:#F0766E; --warn-bg:#2E2717; --warn-line:#A57E2E;
+  --s-reg:#3987e5; --s-out:#d95926; --s-cure:#199e70; --s-prep:#8797A1;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.65}
+.page{max-width:1240px;margin:0 auto;padding-inline:20px;padding-block:24px 56px;display:flex;flex-direction:column;gap:28px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+h1{font-size:22px;font-weight:700;margin:0;letter-spacing:.02em;text-wrap:balance;line-height:1.35}
+h2{font-size:16px;font-weight:700;margin:0;text-wrap:balance}
+.eyebrow{margin:0;font-size:12px;color:var(--muted);letter-spacing:.06em}
+.lead{margin:0;max-width:46em;color:var(--muted)}
+header.top{display:flex;flex-direction:column;gap:6px}
+section{display:flex;flex-direction:column;gap:12px;min-width:0}
+
+.setup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;align-items:start}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 14px}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field label{font-size:12px;color:var(--muted)}
+.field input,.field select{border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:5px 8px;width:100%;min-width:0}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:5px 12px;cursor:pointer;font-size:13px;align-self:flex-start}
+.btn:hover{border-color:var(--muted)}
+.small{font-size:12px;color:var(--muted);margin:0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{display:flex;flex-direction:column;gap:1px;min-width:0}
+.stat span{font-size:12px;color:var(--muted)}
+.stat b{font-size:18px;font-weight:500;font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.02em;overflow-wrap:anywhere}
+.miles{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:2px 18px;font-size:13px;border-top:1px solid var(--line);padding-top:10px}
+.miles div{display:flex;justify-content:space-between;gap:8px}
+.miles dt{color:var(--muted)}
+.miles dd{margin:0}
+#alert{color:var(--ink);background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:3px;padding:7px 10px}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.key{display:inline-block;width:22px;height:10px;border-radius:3px}
+.k-reg{background:var(--s-reg)} .k-out{background:var(--s-out)} .k-prep{background:var(--s-prep)}
+.k-cure,.bar.cure{background:repeating-linear-gradient(135deg,var(--s-cure) 0 4px,color-mix(in srgb,var(--s-cure) 45%,var(--panel)) 4px 7px)}
+.k-off{background:var(--off);border:1px solid var(--line)}
+.k-hold{background:var(--hold);border:1px solid var(--line)}
+.k-dl{width:3px;height:14px;border-radius:0;background:var(--accent)}
+
+.gwrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:var(--panel)}
+table.gantt{border-collapse:separate;border-spacing:0;font-size:12.5px}
+.gantt th,.gantt td{border-bottom:1px solid var(--line);padding:0 8px;height:36px;white-space:nowrap;text-align:left;font-weight:400;vertical-align:middle}
+.gantt thead th{height:44px;font-size:11.5px;color:var(--muted);font-weight:500;vertical-align:bottom;padding-bottom:5px}
+.gantt .c-task{position:sticky;left:0;z-index:2;background:var(--panel);border-right:1px solid var(--line);width:268px;min-width:268px;max-width:268px;white-space:normal;line-height:1.3;padding-block:4px}
+.gantt .c-task b{font-weight:500;display:block}
+.gantt .c-task small{color:var(--muted);font-size:11px;display:block}
+.gantt .c-d{text-align:right}
+.gantt input.days{width:46px;text-align:right;border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:2px 5px;font-family:var(--font-data)}
+.gantt .unit{font-size:11px;color:var(--muted);margin-left:3px;display:inline-block;width:2em;text-align:left}
+.gantt tr.grp th,.gantt tr.grp td{height:28px;background:var(--chip)}
+.gantt tr.grp .c-task{background:var(--chip);font-weight:700;font-size:12px;letter-spacing:.04em}
+.gantt td.tl,.gantt th.tl{padding:0;position:relative;background-image:var(--dl),var(--wk),var(--holdbg),var(--offbg);background-repeat:no-repeat}
+.gantt th.tl{vertical-align:top}
+.tl .mon,.tl .wk,.tl .dl{position:absolute;white-space:nowrap;font-family:var(--font-data);font-size:11px}
+.tl .mon{top:5px;font-weight:500;color:var(--ink);font-family:var(--font-ui);font-size:12px}
+.tl .wk{bottom:5px;color:var(--muted)}
+.tl .dl{bottom:4px;z-index:1;color:var(--accent);font-family:var(--font-ui);font-weight:700;background:var(--panel);padding:0 3px}
+.bar{position:absolute;top:11px;height:14px;border-radius:4px;cursor:default}
+.bar.reg{background:var(--s-reg)} .bar.out{background:var(--s-out)} .bar.prep{background:var(--s-prep)}
+.span{position:absolute;top:12px;height:4px;border-radius:2px;background:var(--muted);opacity:.7}
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--panel);border-radius:4px;padding:7px 10px;font-size:12px;line-height:1.5;max-width:280px}
+#tip b{display:block;font-weight:700}
+
+ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;counter-reset:st}
+ol.steps li{counter-increment:st;display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 12px;padding:14px 0;border-top:1px solid var(--line)}
+ol.steps li::before{content:counter(st);font-family:var(--font-data);font-size:15px;color:var(--accent);font-weight:500;grid-row:1 / span 4;padding-top:1px}
+ol.steps h3{margin:0;font-size:14.5px;font-weight:700;grid-column:2}
+ol.steps p{margin:0;grid-column:2;max-width:52em}
+ol.steps p.q{font-size:12.5px;color:var(--muted)}
+ol.steps p.pt{font-size:13px}
+ol.steps p.pt::before{content:"留意点　";color:var(--accent);font-weight:700;font-size:12px}
+
+.warn{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.warn h3{margin:0;font-size:14px;font-weight:700}
+.warn p{margin:0;max-width:56em}
+ul.notes{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;max-width:58em}
+.twrap{overflow-x:auto}
+table.q{border-collapse:collapse;font-size:13px;min-width:520px}
+table.q th,table.q td{border-bottom:1px solid var(--line);padding:5px 14px 5px 0;text-align:left;vertical-align:top}
+table.q th{font-size:12px;color:var(--muted);font-weight:500}
+table.q td.r{text-align:right;white-space:nowrap}
+
+@media (max-width:760px){
+  .page{padding-inline:16px}
+  .setup{grid-template-columns:minmax(0,1fr)}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gantt .c-task{width:168px;min-width:168px;max-width:168px}
+  ol.steps li{grid-template-columns:24px minmax(0,1fr)}
+}
+.bar.done{background:repeating-linear-gradient(90deg,var(--s-done) 0 6px,color-mix(in srgb,var(--s-done) 70%,var(--panel)) 6px 8px)}
+.k-done{background:var(--s-done)} .k-today{width:3px;height:14px;border-radius:0;background:var(--ink)}
+.tl .td{position:absolute;bottom:4px;z-index:1;color:var(--ink);font-family:var(--font-ui);font-weight:700;background:var(--panel);padding:0 3px;white-space:nowrap;font-size:11px}
+.gantt .c-d .jis{font-size:11px;color:var(--muted)}
+:root{--s-done:#7E8F7A}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--s-done:#93A58F} }
+:root[data-theme="dark"]{--s-done:#93A58F}
+</style>
+
+<div class="page">
+  <header class="top">
+    <p class="eyebrow">北海道 渡島総合振興局 函館建設管理部　令和8年度施行（松前郡福島町 岩部〜福島）</p>
+    <h1>岩部渡島福島停車場線 砂防連携（改築-14）工事外　施工工程表</h1>
+    <p class="lead">落石対策3工区（A140・A150・A170）と覆道の補修（滝の下覆道1・2・7、浦和覆道1、板橋覆道、第三塩釜覆道）の工程です。業者の実施工程表（9月末時点）の予定と実績を写し、基準日より後を引き直せるようにしています。灰緑のバーは実績（施工済み）です。表の日数を書き換えると工程が引き直されます。</p>
+  </header>
+
+  <section class="setup" aria-label="条件と結果">
+    <div class="box">
+      <h2>条件</h2>
+      <div class="fields">
+        <div class="field"><label for="start">契約工期の初日</label><input type="date" id="start"></div>
+        <div class="field"><label for="today">基準日（これより後を引き直す）</label><input type="date" id="today"></div>
+        <div class="field"><label for="plan">業者の予定日</label><select id="plan"><option value="1">合わせる（予定の開始日より前には始めない）</option><option value="0">合わせない（前の作業が終われば始める）</option></select></div>
+        <div class="field"><label for="crews">班の組み方</label><select id="crews"><option value="2">覆道班と落石対策班（並行）</option><option value="1">1班で順に回す</option></select></div>
+        <div class="field"><label for="rest">休日</label><select id="rest"><option value="satsun">土日休み（完全週休2日）</option><option value="sun">日曜のみ休み</option></select></div>
+        <div class="field"><label for="rate">現場作業の稼働率（天候）</label><select id="rate"><option value="1">100%（業者の予定どおり）</option><option value="0.9">90%</option><option value="0.8">80%</option><option value="0.7">70%</option><option value="0.6">60%</option></select></div>
+      </div>
+      <p class="small">工期は特記仕様書で 2026年7月9日〜2027年3月10日（完成期限）、フレックス工期の上限は 2027年3月23日。設計図書は準備40日・後片付け20日・雨休率1.75 を見込んでいます。初期値は業者の実施工程表の予定日に合わせ、稼働率100%で予定のバーと同じ長さになるようにしています。基準日の初期値は 2026年10月12日です。祝日は稼働日として計算し、12/29〜1/3 は休みにしています。</p>
+      <button class="btn" id="reset" type="button">日数と条件を初期値に戻す</button>
+    </div>
+    <div class="box">
+      <h2>この条件での見込み</h2>
+      <div class="stats">
+        <div class="stat"><span>完成見込み</span><b id="s-end">—</b></div>
+        <div class="stat"><span>全体の暦日数</span><b id="s-cal">—</b></div>
+        <div class="stat"><span>うち稼働日</span><b id="s-work">—</b></div>
+        <div class="stat"><span>工期末（3/10）までの余裕</span><b id="s-float">—</b></div>
+      </div>
+      <dl class="miles" id="miles"></dl>
+      <p class="small" id="alert" hidden></p>
+    </div>
+  </section>
+
+  <section aria-label="工程表">
+    <h2>工程表</h2>
+    <div class="legend" aria-label="凡例">
+      <span><i class="key k-done"></i>実績（施工済み）</span>
+      <span><i class="key k-out"></i>現場作業（稼働率が掛かる）</span>
+      <span><i class="key k-cure"></i>養生（暦日）</span>
+      <span><i class="key k-prep"></i>準備・片付け</span>
+      <span><i class="key k-off"></i>休日</span>
+      <span><i class="key k-hold"></i>冬期（11月〜3月）</span>
+      <span><i class="key k-today"></i>基準日</span>
+      <span><i class="key k-dl"></i>工期末 令和9年3月10日</span>
+    </div>
+    <div class="gwrap" id="gwrap" tabindex="0" aria-label="工程表（横にスクロールできます）"><table class="gantt" id="gantt"></table></div>
+    <p class="small">バーにカーソルを合わせると期間が出ます。覆道の作業は、業者の予定どおり、いくつかを同じ時期に並べています（覆道班が複数ある前提）。「1班で順に回す」にすると、覆道を1か所ずつ終えてから落石対策に移る並びになります。</p>
+  </section>
+
+  <section aria-label="施工手順">
+    <h2>施工手順</h2>
+    <ol class="steps">
+      <li><h3>準備（施工済み）</h3>
+        <p>施工計画、起工測量、関係者協議。特記仕様書は工事着手前の三者会議（受発注者の情報共有）と、完全週休2日（土日）を求めています。</p>
+        <p class="q num">実施工程表：7/10〜8/21</p></li>
+      <li><h3>［A150］ポケット式落石防護網（施工済み）</h3>
+        <p>道路の山側の路肩に敷鉄板（11枚）を敷き、仮設昇降用階段（L=118.8m）で斜面の上に上がって、支柱（H形鋼）とアンカーを据え、吊ロープ・縦横のロープ・金網を張りました。</p>
+        <p class="q num">当初 1,782m²・支柱23本／変更の展開図 1,855m²・支柱25本／掘削 5m³／ロックネット資材の小運搬 13.5t／交通誘導警備員B 78人日</p>
+        <p class="pt">網の上の斜面に不安定な浮石がある場合は、施工時に除去すること（平面図の注記）。</p></li>
+      <li><h3>［覆道］滝の下覆道2 → 板橋覆道 → 滝の下覆道7 → 第三塩釜 → 浦和1 → 板橋（2回目）→ 滝の下覆道1・2（2回目）</h3>
+        <p>どの覆道も L側車線（海側）を規制した片側交互通行で、高所作業車を使います（施工計画図・参考図）。断面修復は はつり（約70mm）→ 下地処理 → 防錆処理 → ポリマーセメントモルタルの左官。漏水防止板は 目地の下に受部とパネルを付け、フレキシブル管で下ろします。吹付防水は 覆土を床掘りして既設の防水シートをはがし、目地充填・プライマー・超速硬化ウレタンを吹き付けて埋め戻します。</p>
+        <p class="q num">滝の下2：漏水防止板2・撤去3・断面修復0.1m²・吹付16m²・床掘20m³／板橋：主梁と受台の断面修復0.07m³・ひび割れ充填11m・注入15m・漏水防止板17・縦断排水管58m・樋排水40m／滝の下7：吹付6m²・床掘10m³／第三塩釜：排水管7か所／浦和1：断面修復0.001m³・繊維シート0.25m²／滝の下1：断面修復0.02m³</p>
+        <p class="pt">断面修復材は外気温5〜30℃で施工します（図面の特記事項）。覆道の上に重機を載せる作業（滝の下7・板橋の2回目）は、ラフタークレーン16tで吊り上げます。板橋は掘った土とフィルター材を大型土のうに詰めて上げ下ろしします。</p></li>
+      <li><h3>［A140］仮設柵の撤去・掘削 → 削孔足場・敷鉄板・クレーン</h3>
+        <p>柵の岩部側の路肩にある簡易落石防護柵（20m、ブロック10個）を撤去し、柵の位置の土山を設計の高さ（EL=5.27〜5.50）まで掘ります（110m³）。路肩に敷鉄板6枚を敷き、25t級ラフテレーンクレーン（アウトリガ張出 6.6m）を据え、幅2.5m・高さ約2.1m・長さ39m の削孔足場を組みます。</p>
+        <p class="q num">掘削 110m³（10tダンプ 9.6km）／敷鉄板 56m²／大口径ボーリングマシン足場 205空m³／交通誘導警備員B 50人日</p></li>
+      <li><h3>［A140］削孔（ダウンザホールハンマ）→ 支柱建込み・グラウト → 金網・ロープ</h3>
+        <p>支柱6本の位置を削孔し（やぐら・削孔機 約5t）、支柱（φ216.3、1本 約0.8t）を建て込んでグラウトで固めます。養生のあと、高強度金網（119m²）、横ロープ・クロスロープ、緩衝装置を取り付けます。</p>
+        <p class="q num">場所打杭 6本／グラウト 2m³／支柱 総重量8.5t／金網 119m²・ワイヤロープ取付 8本</p>
+        <p class="pt">11月〜12月のグラウトになります。寒中の保温養生と強度確認の段取りを見込んでください。</p></li>
+      <li><h3>［A170］土のう・敷鉄板・削孔足場 → 削孔・支柱3本の建込み</h3>
+        <p>路肩に大型土のう（20袋）を並べ、敷鉄板（約3枚）と支柱ごとの削孔足場（幅2.5m・高さ約2.0m・長さ3.0m）を組みます。支柱まわりの掘削（軟岩 8m³）と法面整形（17m²）のあと、3本を削孔して建て込み、グラウトで固めます。金網・ロープと残りの支柱3本は今回の工事に入っていません。</p>
+        <p class="q num">場所打杭 3本／やぐら設置・撤去 3回／グラウト 1m³／仮設階段 14m／交通誘導警備員B 22人日</p>
+        <p class="pt">12月の施工で、防寒養生の時期（監督員の参考工程表では 12/3〜）にかかります。年末（12/29〜）までに足場と土のうを片付ける並びにしてください。</p></li>
+      <li><h3>出来形の確認・後片付け</h3>
+        <p>構造物履歴板（覆道ごと）、現場発生品（仮設落石防護柵・ブロック・既設樋・排水管）の運搬、敷鉄板の返却。</p>
+        <p class="q num">業者の実施工程表：3/9〜3/13</p></li>
+    </ol>
+  </section>
+
+  <section aria-label="確認しておきたい点">
+    <h2>確認しておきたい点</h2>
+    <div class="warn">
+      <h3>後片付け（3/9〜3/13）が工期末（3/10）を越えている</h3>
+      <p>特記仕様書の工期は 2027年3月10日まで（フレックス工期の上限は 3月23日）。業者の実施工程表は 後片付けを 3/9〜3/13 に置き、全体工程の線も 3月下旬まで延びています。契約上の工期末がどちらになっているか（フレックスで延ばしているか）を確かめてください。A170 の完了（12月下旬）から後片付けまでの約2か月半は現場作業がありません。</p>
+    </div>
+    <ul class="notes">
+      <li>A150：施工は変更の展開図（支柱25本・架設面積1,855m²・高さ3.0〜4.0m の混在）どおりと思われます。総括表は当初（23本・1,782m²）なので、変更の数量（ロープ・金網・アンカーの本数）を確かめてください。</li>
+      <li>A170：平面図は「支柱建込 N=3本、L=13.37m」、一般図・展開図は柵全体（支柱6本・L=34.0m）を描いています。今回は支柱3本だけで、金網・ロープはありません。一般図の「金網切断部処理（縦ロープ8本・横ロープ2本、ピンアンカー φ25×1000 10本、ワイヤクリップ、結合コイル40個）」は総括表に見当たりません。</li>
+      <li>A140：図面名は「撤去工・仮設工・伐開工平面図」ですが、総括表に伐開（伐木・除根）の項目がありません。伐開の範囲が図に描かれていないかも含めて確かめてください。</li>
+      <li>滝の下覆道7：床掘・埋戻しの断面積 1.424m² × 延長 9.99m ＝ 約14m³ に対して、総括表は床掘10m³・埋戻10m³ です。</li>
+      <li>板橋覆道：はつりの面積は 主梁 400×400×9か所（1.44m²）＋ 受台 650×100/150×4×3か所（0.91m²）＝ 2.35m² で、総括表は「コンクリートはつり 2m²」です（体積 0.07m³ は合います）。細目名の「t=300mm」は 3cm の誤記と思われます。</li>
+      <li>特記仕様書（PDF）の1ページ目に、別の工事（網走建設管理部 知布泊漁港 水産物供給基盤機能保全工事、2022年度）の表紙が入っています。</li>
+      <li>漏水対策工・断面修復工の数量は「現地調査後、詳細寸法を決定」「現地漏水の状況で延長を決定」と図面にあり、設計変更の対象になりやすい項目です。</li>
+      <li>交通誘導警備員B は 計350人日（A140 50・A150 78・A170 22・滝の下1 14・滝の下2 36・滝の下7 10・浦和1 2・板橋 126・第三塩釜 12）。</li>
+      <li>日数は業者の実施工程表のバーの長さ（予定）と、総括表の数量から私が置いたものです（養生日数は想定）。協力会社の実績に置き換えてください。</li>
+    </ul>
+  </section>
+
+  <section aria-label="数量">
+    <h2>主な数量</h2>
+    <div class="twrap"><table class="q">
+      <thead><tr><th>工区・覆道</th><th>細目</th><th>規格</th><th>数量</th></tr></thead>
+      <tbody>
+        <tr><td>A140</td><td>高エネルギー吸収型落石防護柵</td><td>H=3.0m・L=36.0m、E=400kJ、支柱 φ216.3</td><td class="r num">6 本</td></tr>
+        <tr><td></td><td>高強度金網</td><td>ZAST300 φ4.0-40×40</td><td class="r num">119 m²</td></tr>
+        <tr><td></td><td>場所打杭（ダウンザホールハンマ）</td><td>グラウト 2m³</td><td class="r num">6 本</td></tr>
+        <tr><td></td><td>掘削（土砂）</td><td>10tダンプ 9.6km</td><td class="r num">110 m³</td></tr>
+        <tr><td></td><td>仮設落石防護柵の撤去</td><td>ブロック10個（2.2t）</td><td class="r num">20 m</td></tr>
+        <tr><td>A150</td><td>ポケット式落石防護網</td><td>TPH-4.0ZA、当初 支柱23本</td><td class="r num">1,780 m²</td></tr>
+        <tr><td></td><td>仮設昇降用階段</td><td>単管・鋼製足場板</td><td class="r num">119 m</td></tr>
+        <tr><td>A170</td><td>落石防護柵の支柱</td><td>H=4.5m、E=200kJ、支柱 φ165.2</td><td class="r num">3 本</td></tr>
+        <tr><td></td><td>場所打杭・大型土のう</td><td>グラウト 1m³</td><td class="r num">3 本・20 袋</td></tr>
+        <tr><td>滝の下覆道1</td><td>断面修復（主梁）</td><td>ポリマーセメント σ28≧60</td><td class="r num">0.02 m³</td></tr>
+        <tr><td>滝の下覆道2</td><td>漏水防止板（設置・撤去）</td><td>アルミ積層複合板 L=1,300・W=500</td><td class="r num">2・3 か所</td></tr>
+        <tr><td></td><td>吹付防水</td><td>超速硬化ウレタン 5.5kg/m²</td><td class="r num">16 m²</td></tr>
+        <tr><td>滝の下覆道7</td><td>吹付防水</td><td>胸壁との目地</td><td class="r num">6 m²</td></tr>
+        <tr><td>浦和覆道1</td><td>断面修復・繊維シート</td><td>主梁 No.22</td><td class="r num">0.25 m²</td></tr>
+        <tr><td>板橋覆道</td><td>断面修復・ひび割れ補修</td><td>主梁9・受台3、充填11m・注入15m</td><td class="r num">0.07 m³</td></tr>
+        <tr><td></td><td>漏水防止板・縦断排水管・樋排水</td><td>φ100 有孔管、塩ビ樋 100×100</td><td class="r num">17か所・58m・40m</td></tr>
+        <tr><td>第三塩釜覆道</td><td>排水管の取替</td><td>SGP100A L=3.72m</td><td class="r num">7 か所</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+(function(){
+"use strict";
+let DW=8; const KEY="iwabe-kotei-v1", DEADLINE="2027-03-10", FLEX="2027-03-23";
+const GROUPS={pre:"準備",a150:"A150 ポケット式落石防護網（施工済み）",shed:"覆道の補修（滝の下・板橋・第三塩釜・浦和）",a140:"A140 高エネルギー吸収型落石防護柵（H=3.0m・L=36m）",a170:"A170 落石防護柵の支柱（3本）",out:"後片付け"};
+// type: out = 現場作業（稼働率が掛かる） / cure = 養生（暦日） / prep = 準備・片付け
+// done = 実績（業者の実施工程表、9月末時点）、nb = 業者の予定の開始日（「業者の予定に合わせる」のとき、これより前には始めない）
+// one = 「1班で回す」のときだけ加わる先行作業
+const TASKS=[
+ {id:1, g:"pre", n:"準備工（施工計画・起工測量・協議）", q:"設計図書の見込みは準備40日", d:30,t:"prep",pre:[],done:["2026-07-10","2026-08-21"]},
+ {id:2, g:"a150",n:"仮設工（敷鉄板11枚・仮設昇降用階段119m）", q:"実施 8/17〜9/30", d:22,t:"out",pre:[1],done:["2026-08-17","2026-09-30"]},
+ {id:3, g:"a150",n:"道路土工（掘削5m³・人力運搬）", q:"予定 8/24〜8/28（実施欄の記入なし）", d:5,t:"out",pre:[1],done:["2026-08-24","2026-08-28"]},
+ {id:4, g:"a150",n:"ポケット式落石防護網（支柱25本・金網1,855m²）", q:"実施 8/31〜9/25", d:20,t:"out",pre:[1],done:["2026-08-31","2026-09-25"]},
+ {id:5, g:"shed",n:"滝の下覆道2：漏水防止板2か所・断面修復2か所", q:"予定 10/15〜10/23", d:7,t:"out",pre:[1],nb:"2026-10-15"},
+ {id:6, g:"shed",n:"板橋覆道（1回目）：断面修復・ひび割れ補修・漏水防止板17か所", q:"予定 10/19〜10/30", d:10,t:"out",pre:[1],nb:"2026-10-19",one:[5]},
+ {id:7, g:"shed",n:"滝の下覆道7：吹付防水（胸壁の目地、床掘・埋戻し）", q:"予定 10/26〜10/30・6m²", d:5,t:"out",pre:[1],nb:"2026-10-26",one:[6]},
+ {id:8, g:"shed",n:"第三塩釜覆道：排水管の取替7か所", q:"予定 11/2〜11/6", d:5,t:"out",pre:[1],nb:"2026-11-02",one:[7]},
+ {id:9, g:"shed",n:"浦和覆道1：断面修復・繊維シート接着（No.22）", q:"予定 11/9〜11/13・0.25m²", d:5,t:"out",pre:[1],nb:"2026-11-09",one:[8]},
+ {id:10,g:"shed",n:"板橋覆道（2回目）：縦断排水管58m・樋排水40m", q:"予定 11/9〜11/20", d:10,t:"out",pre:[6],nb:"2026-11-09",one:[9]},
+ {id:11,g:"shed",n:"滝の下覆道1：断面修復2か所", q:"予定 11/16〜11/18・0.3m²", d:3,t:"out",pre:[1],nb:"2026-11-16",one:[10]},
+ {id:12,g:"shed",n:"滝の下覆道2（2回目）：吹付防水3か所", q:"予定 11/19〜11/20・16m²", d:2,t:"out",pre:[5],nb:"2026-11-19",one:[11]},
+ {id:13,g:"shed",n:"滝の下覆道2：既設漏水防止板の撤去・発生材の運搬", q:"予定 11/24 ごろ・3か所", d:1,t:"out",pre:[12],nb:"2026-11-24",ms:"覆道の補修 完了"},
+ {id:14,g:"a140",n:"仮設柵の撤去（20m・ブロック10個）・敷鉄板・削孔足場", q:"予定 11/2〜（仮設工は12/4まで）", d:5,t:"out",pre:[4],nb:"2026-11-02",one:[13]},
+ {id:15,g:"a140",n:"掘削（柵の位置の土山 110m³）", q:"予定 11/2〜11/6", d:5,t:"out",pre:[4],nb:"2026-11-02",one:[13]},
+ {id:16,g:"a140",n:"削孔（ダウンザホールハンマ）・場所打杭6本・支柱建込み・グラウト", q:"予定 11/9〜（落石防護柵工 11/9〜12/4）", d:8,t:"out",pre:[14,15],nb:"2026-11-09"},
+ {id:17,g:"a140",n:"グラウトの養生", q:"日数は想定（寒中は保温）", d:3,t:"cure",pre:[16]},
+ {id:18,g:"a140",n:"金網119m²・横ロープ・クロスロープ・緩衝装置の取付", q:"", d:7,t:"out",pre:[17]},
+ {id:19,g:"a140",n:"削孔足場・敷鉄板の撤去", q:"敷鉄板は A170 へ運搬", d:1,t:"out",pre:[18],ms:"A140 完了"},
+ {id:20,g:"a170",n:"大型土のう20袋・敷鉄板・削孔足場・仮設階段／掘削・法面整形", q:"予定 12/7〜12/11", d:5,t:"out",pre:[19],nb:"2026-12-07"},
+ {id:21,g:"a170",n:"削孔・場所打杭3本・支柱建込み・グラウト", q:"予定 12/14〜（落石防護柵工 12/14〜12/25）", d:7,t:"out",pre:[20],nb:"2026-12-14"},
+ {id:22,g:"a170",n:"グラウトの養生（防寒）", q:"日数は想定", d:3,t:"cure",pre:[21]},
+ {id:23,g:"a170",n:"削孔足場・土のう・敷鉄板の撤去", q:"敷鉄板は福島町役場へ", d:1,t:"out",pre:[22],ms:"A170 完了"},
+ {id:24,g:"out", n:"出来形の確認・後片付け", q:"業者の予定 3/9〜3/13・設計図書の見込みは後片付け20日", d:5,t:"prep",pre:[2,3,4,13,19,23],nb:"2027-03-09"}
+];
+const DEF={start:"2026-07-09",rest:"satsun",rate:"1",crews:"2",plan:"1",today:"2026-10-12"};
+const RATES=["1","0.9","0.8","0.7","0.6"];
+const state={start:DEF.start,rest:DEF.rest,rate:DEF.rate,crews:DEF.crews,plan:DEF.plan,today:DEF.today,days:{}};
+TASKS.forEach(t=>state.days[t.id]=t.d);
+try{ const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s){ if(/^\d{4}-\d\d-\d\d$/.test(s.start||""))state.start=s.start; if(s.rest==="sun"||s.rest==="satsun")state.rest=s.rest; if(RATES.includes(s.rate))state.rate=s.rate;
+  if(s.crews==="1"||s.crews==="2")state.crews=s.crews; if(s.plan==="0"||s.plan==="1")state.plan=s.plan; if(/^\d{4}-\d\d-\d\d$/.test(s.today||""))state.today=s.today;
+  if(s.days)TASKS.forEach(t=>{const v=parseInt(s.days[t.id],10); if(v>=1&&v<=200)state.days[t.id]=v;}); } }catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}};
+
+const $=id=>document.getElementById(id);
+const WD=["日","月","火","水","木","金","土"];
+const utc=s=>{const p=s.split("-").map(Number);return Date.UTC(p[0],p[1]-1,p[2]);};
+const base=()=>utc(state.start);
+const dt=i=>new Date(base()+i*864e5);
+const md=i=>{const d=dt(i);return (d.getUTCMonth()+1)+"/"+d.getUTCDate();};
+const mdw=i=>md(i)+"（"+WD[dt(i).getUTCDay()]+"）";
+const ymd=i=>{const d=dt(i);return d.getUTCFullYear()+"年"+(d.getUTCMonth()+1)+"月"+d.getUTCDate()+"日";};
+function isWork(i){const d=dt(i),w=d.getUTCDay(),m=d.getUTCMonth()+1,day=d.getUTCDate();
+  if(w===0)return false; if(state.rest==="satsun"&&w===6)return false; if((m===12&&day>=29)||(m===1&&day<=3))return false; return true;}
+// 冬期（11月〜3月）: 色を付けるだけで、作業は止めない
+function isCold(i){const m=dt(i).getUTCMonth()+1;return m>=11||m<=3;}
+const isNY=i=>{const d=dt(i),m=d.getUTCMonth()+1,day=d.getUTCDate();return (m===12&&day>=29)||(m===1&&day<=3);};
+const canWork=(t,i)=>isWork(i);
+
+const idx=s=>Math.round((utc(s)-base())/864e5);
+function schedule(){
+  const r={}, rate=parseFloat(state.rate), td=idx(state.today);
+  let left=TASKS.slice(), guard=0;
+  while(left.length&&guard++<200){
+    left=left.filter(t=>{
+      if(t.done){ r[t.id]={start:idx(t.done[0]),end:idx(t.done[1]),need:state.days[t.id],done:true}; return false; }
+      const pre=t.pre.concat(state.crews==="1"&&t.one?t.one:[]);
+      if(!pre.every(p=>r[p]))return true;
+      let es=Math.max(0,td); pre.forEach(p=>{es=Math.max(es,r[p].end+1);});
+      if(state.plan==="1"&&t.nb) es=Math.max(es,idx(t.nb));
+      const d=state.days[t.id]; let start,end,need=d;
+      if(t.t==="cure"){start=es;end=es+d-1;}
+      else{ need=t.t==="out"?Math.ceil(d/rate-1e-9):d; let i=es; while(!canWork(t,i))i++; start=i; let c=0;
+        for(;;){ if(canWork(t,i)){c++; if(c>=need)break;} i++; } end=i; }
+      r[t.id]={start,end,need}; return false;
+    });
+  }
+  return r;
+}
+
+const table=$("gantt"); let headTl;
+function build(){
+  let h='<thead><tr><th class="c-task">作業</th><th class="c-d">実働日数</th><th>開始</th><th>終了</th><th class="tl" id="htl"></th></tr></thead><tbody>';
+  let g=null;
+  TASKS.forEach(t=>{
+    if(t.g!==g){g=t.g;h+='<tr class="grp"><th class="c-task" scope="rowgroup">'+GROUPS[g]+'</th><td></td><td></td><td></td><td class="tl" id="g-'+g+'"></td></tr>';}
+    h+='<tr><th class="c-task" scope="row"><b>'+t.n+'</b>'+(t.q?'<small class="num">'+t.q+'</small>':'')+'</th>'
+      +(t.done?'<td class="c-d"><span class="jis">実績</span><span class="unit"></span></td>':'<td class="c-d"><input class="days" type="number" min="1" max="200" step="1" id="d-'+t.id+'" value="'+state.days[t.id]+'" aria-label="'+t.n+' の日数"><span class="unit">'+(t.t==="cure"?"暦日":"日")+'</span></td>')
+      +'<td class="num" id="s-'+t.id+'"></td><td class="num" id="e-'+t.id+'"></td><td class="tl" id="t-'+t.id+'"><div class="bar '+(t.done?"done":t.t)+'" id="b-'+t.id+'"></div></td></tr>';
+  });
+  table.innerHTML=h+'</tbody>';
+  headTl=$("htl");
+  TASKS.forEach(t=>{
+    if(!t.done) $("d-"+t.id).addEventListener("change",e=>{let v=parseInt(e.target.value,10); if(!(v>=1))v=1; if(v>200)v=200; e.target.value=v; state.days[t.id]=v; save(); render();});
+    const b=$("b-"+t.id); b.addEventListener("pointerenter",e=>showTip(t,e)); b.addEventListener("pointermove",moveTip); b.addEventListener("pointerleave",hideTip);
+  });
+}
+let R={};
+function render(){
+  R=schedule();
+  const last=Math.max(...TASKS.map(t=>R[t.id].end)), dl=Math.round((utc(DEADLINE)-base())/864e5), fx=Math.round((utc(FLEX)-base())/864e5), showDl=dl>=0&&dl<=last+150;
+  const N=Math.max(last,showDl?dl:0)+5;
+  const lead=headTl.offsetLeft, avail=$("gwrap").clientWidth-lead-2;
+  DW=Math.max(2.4,Math.min(13,Math.floor(avail/N*10)/10));
+  const W=N*DW;
+  const runs=(fn,color)=>{const st=["transparent 0"];let i=0;
+    while(i<N){ if(fn(i)){let j=i; while(j<N&&fn(j))j++; st.push("transparent "+i*DW+"px",color+" "+i*DW+"px",color+" "+j*DW+"px","transparent "+j*DW+"px"); i=j;} else i++; }
+    return "linear-gradient(to right,"+st.join(",")+")";};
+  const dow0=dt(0).getUTCDay(), firstMon=(8-dow0)%7;
+  table.style.setProperty("--offbg",runs(i=>!isWork(i),"var(--off)"));
+  table.style.setProperty("--holdbg",runs(i=>isCold(i)&&isWork(i),"var(--hold)"));
+  table.style.setProperty("--wk","repeating-linear-gradient(to right,var(--line) 0 1px,transparent 1px "+7*DW+"px)");
+  const dx=(dl+1)*DW-1;
+  const ti=idx(state.today), tx=ti*DW-1, ln=[]; if(ti>=0&&ti<N) ln.push([tx,"var(--ink)"]); if(showDl) ln.push([dx,"var(--accent)"]); ln.sort((a,b)=>a[0]-b[0]);
+  table.style.setProperty("--dl",ln.length?"linear-gradient(to right,"+ln.map(q=>"transparent "+q[0]+"px,"+q[1]+" "+q[0]+"px,"+q[1]+" "+(q[0]+2)+"px,transparent "+(q[0]+2)+"px").join(",")+")":"none");
+  table.querySelectorAll(".tl").forEach(c=>{c.style.width=W+"px";c.style.minWidth=W+"px";c.style.backgroundPosition="0 0, "+(firstMon*DW)+"px 0, 0 0, 0 0";c.style.backgroundSize=W+"px 100%, "+(W-firstMon*DW)+"px 100%, "+W+"px 100%, "+W+"px 100%";});
+  let hh="";
+  let k1=1; while(k1<N&&dt(k1).getUTCDate()!==1)k1++;
+  const skip0=dt(0).getUTCDate()!==1&&k1*DW<74;
+  for(let k=0;k<N;k++){const d=dt(k); if(k===0||d.getUTCDate()===1){ if(N-k>3&&!(k===0&&skip0)) hh+='<span class="mon" style="left:'+(k*DW+4)+'px">'+(k===0||d.getUTCMonth()===0||(skip0&&k===k1)?d.getUTCFullYear()+"年":"")+(d.getUTCMonth()+1)+'月</span>'; } }
+  const wstep=7*DW>=34?7:14*DW>=34?14:28*DW>=34?28:56;
+  for(let k=firstMon;k<N-2;k+=wstep) hh+='<span class="wk" style="left:'+(k*DW+3)+'px">'+md(k)+'</span>';
+  if(showDl) hh+='<span class="dl" style="left:'+Math.max(0,dx-44)+'px">工期末</span>';
+  if(ti>=0&&ti<N) hh+='<span class="td" style="left:'+Math.max(0,tx-40)+'px">基準日</span>';
+  headTl.innerHTML=hh;
+  const span={};
+  TASKS.forEach(t=>{const r=R[t.id],b=$("b-"+t.id); b.style.left=(r.start*DW+1)+"px"; b.style.width=Math.max(2,(r.end-r.start+1)*DW-2)+"px";
+    $("s-"+t.id).textContent=md(r.start); $("e-"+t.id).textContent=md(r.end);
+    const s=span[t.g]||(span[t.g]=[r.start,r.end]); s[0]=Math.min(s[0],r.start); s[1]=Math.max(s[1],r.end);});
+  Object.keys(span).forEach(g=>{$("g-"+g).innerHTML='<div class="span" style="left:'+(span[g][0]*DW+1)+'px;width:'+((span[g][1]-span[g][0]+1)*DW-2)+'px"></div>';});
+  let wk=0; for(let k=0;k<=last;k++) if(isWork(k)) wk++;
+  const fl=dl-last, ff=fx-last;
+  $("s-end").textContent=ymd(last); $("s-cal").textContent=(last+1)+"日"; $("s-work").textContent=wk+"日";
+  $("s-float").textContent=fl>=0?fl+"日":"超過 "+(-fl)+"日";
+  const fieldLast=Math.max(...TASKS.filter(t=>t.t!=="prep").map(t=>R[t.id].end));
+  const ms=[["契約工期の初日",mdw(0)]].concat(TASKS.filter(t=>t.ms).map(t=>[t.ms,mdw(R[t.id].end)]),
+    [["現場作業の最終日",mdw(fieldLast)],["フレックスの上限（令和9年3月23日）まで",ff>=0?"余裕 "+ff+"日":"超過 "+(-ff)+"日"],["9月末の出来高（実施工程表）","予定31.7%・実施32.3%"]]);
+  $("miles").innerHTML=ms.map(m=>'<div><dt>'+m[0]+'</dt><dd class="num">'+m[1]+'</dd></div>').join("");
+  const msg=[];
+  if(fl<0) msg.push("完成見込みが工期末（令和9年3月10日）を"+(-fl)+"日過ぎます"+(ff>=0?"（フレックス工期の上限 3月23日には収まります）":"")+"。業者の実施工程表も後片付けを 3/9〜3/13 に置いているので、契約上の工期末と後片付けの時期を確かめてください。");
+  const td=idx(state.today), late=TASKS.filter(t=>!t.done&&t.nb&&R[t.id].start>idx(t.nb)+2).map(t=>t.n.split("：")[0]);
+  if(late.length) msg.push("業者の予定より遅れて始まる作業があります："+late.slice(0,4).join("、")+(late.length>4?" ほか":"")+"。");
+  const coldG=[[16,"A140"],[21,"A170"]].filter(c=>{const m=dt(R[c[0]].end).getUTCMonth()+1;return m>=11||m<=3;}).map(c=>c[1]);
+  if(coldG.length) msg.push(coldG.join("・")+"のグラウトが11月以降になります。監督員の参考工程表では福島町の冬期加熱は11/1〜、防寒養生は12/3〜です。グラウトの保温養生と、養生中の削孔足場・クレーンの段取りを見込んでください。");
+  const ny=TASKS.filter(t=>!t.done&&t.t!=="prep").filter(t=>{for(let k=R[t.id].start;k<=R[t.id].end;k++)if(isNY(k))return true;return false;}).map(t=>t.n.split("：")[0]);
+  if(ny.length) msg.push("年末年始（12/29〜1/3）をまたぐ作業があります："+ny.slice(0,3).join("、")+"。足場や土のうを残して休みに入らない並びにしてください。");
+  const a=$("alert"); a.hidden=!msg.length; a.innerHTML=msg.join("<br>");
+}
+const tip=$("tip");
+const TN={reg:"手配",out:"現場作業",prep:"準備・片付け"};
+function showTip(t,e){const r=R[t.id],cal=r.end-r.start+1;
+  tip.innerHTML='<b>'+t.n+'</b>'+mdw(r.start)+' 〜 '+mdw(r.end)+'<br>'+(t.done?"実績（業者の実施工程表）、暦日 "+cal+"日":t.t==="cure"?"養生 "+cal+"暦日":TN[t.t]+"　実働 "+state.days[t.id]+"日"+(t.t==="out"&&r.need>state.days[t.id]?"（天候を見込んで "+r.need+"日）":"")+"、暦日 "+cal+"日");
+  tip.hidden=false; moveTip(e);}
+function moveTip(e){const w=tip.offsetWidth,h=tip.offsetHeight; let x=e.clientX+14,y=e.clientY+16; if(x+w>window.innerWidth-8)x=e.clientX-w-10; if(x<8)x=8; if(y+h>window.innerHeight-8)y=e.clientY-h-12; tip.style.left=x+"px"; tip.style.top=y+"px";}
+function hideTip(){tip.hidden=true;}
+$("gwrap").addEventListener("scroll",hideTip);
+
+function syncInputs(){ $("start").value=state.start; $("today").value=state.today; $("rest").value=state.rest; $("rate").value=state.rate; $("crews").value=state.crews; $("plan").value=state.plan; TASKS.forEach(t=>{if(!t.done)$("d-"+t.id).value=state.days[t.id];}); }
+$("start").addEventListener("change",e=>{ if(/^\d{4}-\d\d-\d\d$/.test(e.target.value)){state.start=e.target.value;save();render();} else e.target.value=state.start; });
+$("today").addEventListener("change",e=>{ if(/^\d{4}-\d\d-\d\d$/.test(e.target.value)){state.today=e.target.value;save();render();} else e.target.value=state.today; });
+["rest","rate","crews","plan"].forEach(k=>$(k).addEventListener("change",e=>{state[k]=e.target.value;save();render();}));
+$("reset").addEventListener("click",()=>{Object.assign(state,DEF);TASKS.forEach(t=>state.days[t.id]=t.d);save();syncInputs();render();});
+
+build(); syncInputs(); render();
+let lastW=0; new ResizeObserver(()=>{const w=$("gwrap").clientWidth; if(w!==lastW){lastW=w;render();}}).observe($("gwrap"));
+window.__kotei={state,schedule,TASKS,render};
+})();
+</script>
+
+</body></html>
