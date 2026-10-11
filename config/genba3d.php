@@ -33,7 +33,7 @@ return [
         'r07-20' => ['name' => 'R07-20重内', 'sites' => ['omonai-koren', 'omonai-omonai', 'omonai-shinma', 'omonai-haraguchi', 'omonai-hatsukami', 'omonai-toranosawa']],
         'r08-01' => ['name' => 'R08-01福島トンネル', 'sites' => ['fukushima-tunnel']],
         'r08-02' => ['name' => 'R08-02魚礁', 'sites' => []],
-        'r08-03' => ['name' => 'R08-03桧倉', 'sites' => []],
+        'r08-03' => ['name' => 'R08-03桧倉', 'sites' => ['hinokura-shisen']],
         'r08-04' => ['name' => 'R08-04軌道施設', 'sites' => []],
         'r08-06' => ['name' => 'R08-06桧倉維持', 'sites' => ['hinokura-rindo']],
         'r08-08' => ['name' => 'R08-08滝ノ下', 'sites' => ['takinoshita-chisan']],
@@ -218,6 +218,13 @@ return [
             'file' => 'hinokura-rindo.html',
             'schedule_file' => 'hinokura-kotei.html',
             'knowledge_file' => 'hinokura-rindo.md',
+        ],
+        'hinokura-shisen' => [
+            'name' => '桧倉川支線 開設工事（SP1051〜SP1580）',
+            'summary' => '林道の開設区間 約524m（掘削7,370m³・アスファルト表層1,910.5m²・補強土壁L=26.4m）。補強土壁は法面崩壊で中断し、路線スライドの設計変更を協議中。',
+            'file' => 'hinokura-shisen.html',
+            'schedule_file' => 'hinokura-shisen-kotei.html',
+            'knowledge_file' => 'hinokura-shisen.md',
         ],
     ],
 
