@@ -35,7 +35,7 @@ return [
         'r08-02' => ['name' => 'R08-02魚礁', 'sites' => []],
         'r08-03' => ['name' => 'R08-03桧倉', 'sites' => []],
         'r08-04' => ['name' => 'R08-04軌道施設', 'sites' => []],
-        'r08-06' => ['name' => 'R08-06桧倉維持', 'sites' => []],
+        'r08-06' => ['name' => 'R08-06桧倉維持', 'sites' => ['hinokura-rindo']],
         'r08-08' => ['name' => 'R08-08滝ノ下', 'sites' => ['takinoshita-chisan']],
         'r08-11' => ['name' => 'R08-11吉岡', 'sites' => ['yoshioka-ganpeki', 'yoshioka-funaage', 'yoshioka-sokkou']],
         'r08-12' => ['name' => 'R08-12岩部線', 'sites' => ['iwabe-a140', 'iwabe-a150', 'iwabe-a170', 'iwabe-takinoshita', 'iwabe-urawa', 'iwabe-itahashi', 'iwabe-shiogama']],
@@ -211,6 +211,13 @@ return [
             'file' => 'iwabe-shiogama.html',
             'schedule_file' => 'iwabe-kotei.html',
             'knowledge_file' => 'iwabe-shiogama.md',
+        ],
+        'hinokura-rindo' => [
+            'name' => '桧倉川林道（路盤工・伐開）',
+            'summary' => '桧倉川林道の路盤工3か所（計360m、再生骨材RC-40 厚さ10cm）とSP1188.3〜1620のチェンソー伐開（1,912m²）。',
+            'file' => 'hinokura-rindo.html',
+            'schedule_file' => 'hinokura-kotei.html',
+            'knowledge_file' => 'hinokura-rindo.md',
         ],
     ],
 

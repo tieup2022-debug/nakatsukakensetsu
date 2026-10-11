@@ -1,0 +1,370 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>桧倉川林道 工程表</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a working schedule sheet. Settings and key dates on top, the bar chart as the centrepiece, then the step-by-step procedure and the points to confirm. */
+:root{
+  --bg:#EEF1F2; --panel:#F8FAFA; --ink:#1C2A33; --muted:#5A6A74; --line:#CBD4D9; --chip:#E3E9EC; --off:#E1E7EA; --hold:#F3D9D6;
+  --accent:#C2302A; --warn-bg:#FBEFD9; --warn-line:#D9A441;
+  --s-reg:#2a78d6; --s-out:#eb6834; --s-cure:#1baf7a; --s-prep:#75858F;
+  --font-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A; --off:#1D2830; --hold:#3A2422;
+  --accent:#F0766E; --warn-bg:#2E2717; --warn-line:#A57E2E;
+  --s-reg:#3987e5; --s-out:#d95926; --s-cure:#199e70; --s-prep:#8797A1;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A; --off:#1D2830; --hold:#3A2422;
+  --accent:#F0766E; --warn-bg:#2E2717; --warn-line:#A57E2E;
+  --s-reg:#3987e5; --s-out:#d95926; --s-cure:#199e70; --s-prep:#8797A1;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.65}
+.page{max-width:1240px;margin:0 auto;padding-inline:20px;padding-block:24px 56px;display:flex;flex-direction:column;gap:28px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+h1{font-size:22px;font-weight:700;margin:0;letter-spacing:.02em;text-wrap:balance;line-height:1.35}
+h2{font-size:16px;font-weight:700;margin:0;text-wrap:balance}
+.eyebrow{margin:0;font-size:12px;color:var(--muted);letter-spacing:.06em}
+.lead{margin:0;max-width:46em;color:var(--muted)}
+header.top{display:flex;flex-direction:column;gap:6px}
+section{display:flex;flex-direction:column;gap:12px;min-width:0}
+
+.setup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;align-items:start}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 14px}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field label{font-size:12px;color:var(--muted)}
+.field input,.field select{border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:5px 8px;width:100%;min-width:0}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:5px 12px;cursor:pointer;font-size:13px;align-self:flex-start}
+.btn:hover{border-color:var(--muted)}
+.small{font-size:12px;color:var(--muted);margin:0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{display:flex;flex-direction:column;gap:1px;min-width:0}
+.stat span{font-size:12px;color:var(--muted)}
+.stat b{font-size:18px;font-weight:500;font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.02em;overflow-wrap:anywhere}
+.miles{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:2px 18px;font-size:13px;border-top:1px solid var(--line);padding-top:10px}
+.miles div{display:flex;justify-content:space-between;gap:8px}
+.miles dt{color:var(--muted)}
+.miles dd{margin:0}
+#alert{color:var(--ink);background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:3px;padding:7px 10px}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.key{display:inline-block;width:22px;height:10px;border-radius:3px}
+.k-reg{background:var(--s-reg)} .k-out{background:var(--s-out)} .k-prep{background:var(--s-prep)}
+.k-cure,.bar.cure{background:repeating-linear-gradient(135deg,var(--s-cure) 0 4px,color-mix(in srgb,var(--s-cure) 45%,var(--panel)) 4px 7px)}
+.k-off{background:var(--off);border:1px solid var(--line)}
+.k-hold{background:var(--hold);border:1px solid var(--line)}
+.k-dl{width:3px;height:14px;border-radius:0;background:var(--accent)}
+
+.gwrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:var(--panel)}
+table.gantt{border-collapse:separate;border-spacing:0;font-size:12.5px}
+.gantt th,.gantt td{border-bottom:1px solid var(--line);padding:0 8px;height:36px;white-space:nowrap;text-align:left;font-weight:400;vertical-align:middle}
+.gantt thead th{height:44px;font-size:11.5px;color:var(--muted);font-weight:500;vertical-align:bottom;padding-bottom:5px}
+.gantt .c-task{position:sticky;left:0;z-index:2;background:var(--panel);border-right:1px solid var(--line);width:268px;min-width:268px;max-width:268px;white-space:normal;line-height:1.3;padding-block:4px}
+.gantt .c-task b{font-weight:500;display:block}
+.gantt .c-task small{color:var(--muted);font-size:11px;display:block}
+.gantt .c-d{text-align:right}
+.gantt input.days{width:46px;text-align:right;border:1px solid var(--line);background:var(--bg);border-radius:3px;padding:2px 5px;font-family:var(--font-data)}
+.gantt .unit{font-size:11px;color:var(--muted);margin-left:3px;display:inline-block;width:2em;text-align:left}
+.gantt tr.grp th,.gantt tr.grp td{height:28px;background:var(--chip)}
+.gantt tr.grp .c-task{background:var(--chip);font-weight:700;font-size:12px;letter-spacing:.04em}
+.gantt td.tl,.gantt th.tl{padding:0;position:relative;background-image:var(--dl),var(--wk),var(--holdbg),var(--offbg);background-repeat:no-repeat}
+.gantt th.tl{vertical-align:top}
+.tl .mon,.tl .wk,.tl .dl{position:absolute;white-space:nowrap;font-family:var(--font-data);font-size:11px}
+.tl .mon{top:5px;font-weight:500;color:var(--ink);font-family:var(--font-ui);font-size:12px}
+.tl .wk{bottom:5px;color:var(--muted)}
+.tl .dl{bottom:4px;z-index:1;color:var(--accent);font-family:var(--font-ui);font-weight:700;background:var(--panel);padding:0 3px}
+.bar{position:absolute;top:11px;height:14px;border-radius:4px;cursor:default}
+.bar.reg{background:var(--s-reg)} .bar.out{background:var(--s-out)} .bar.prep{background:var(--s-prep)}
+.span{position:absolute;top:12px;height:4px;border-radius:2px;background:var(--muted);opacity:.7}
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--panel);border-radius:4px;padding:7px 10px;font-size:12px;line-height:1.5;max-width:280px}
+#tip b{display:block;font-weight:700}
+
+ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;counter-reset:st}
+ol.steps li{counter-increment:st;display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 12px;padding:14px 0;border-top:1px solid var(--line)}
+ol.steps li::before{content:counter(st);font-family:var(--font-data);font-size:15px;color:var(--accent);font-weight:500;grid-row:1 / span 4;padding-top:1px}
+ol.steps h3{margin:0;font-size:14.5px;font-weight:700;grid-column:2}
+ol.steps p{margin:0;grid-column:2;max-width:52em}
+ol.steps p.q{font-size:12.5px;color:var(--muted)}
+ol.steps p.pt{font-size:13px}
+ol.steps p.pt::before{content:"留意点　";color:var(--accent);font-weight:700;font-size:12px}
+
+.warn{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.warn h3{margin:0;font-size:14px;font-weight:700}
+.warn p{margin:0;max-width:56em}
+ul.notes{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;max-width:58em}
+.twrap{overflow-x:auto}
+table.q{border-collapse:collapse;font-size:13px;min-width:520px}
+table.q th,table.q td{border-bottom:1px solid var(--line);padding:5px 14px 5px 0;text-align:left;vertical-align:top}
+table.q th{font-size:12px;color:var(--muted);font-weight:500}
+table.q td.r{text-align:right;white-space:nowrap}
+
+@media (max-width:760px){
+  .page{padding-inline:16px}
+  .setup{grid-template-columns:minmax(0,1fr)}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gantt .c-task{width:168px;min-width:168px;max-width:168px}
+  ol.steps li{grid-template-columns:24px minmax(0,1fr)}
+}
+</style>
+
+<div class="page">
+  <header class="top">
+    <p class="eyebrow">北海道 渡島総合振興局 西部森林室　令和8年度 第351号（松前郡福島町字桧倉）</p>
+    <h1>桧倉川林道維持工事　施工工程表（案）</h1>
+    <p class="lead">桧倉川林道の路盤工（3か所 計360m）と伐開（SP1188.3〜1620）の、考えられる施工手順と工程です。日数は見積用設計書の人工・機械の運転時間を、私が仮定した班の人数で割って出したものです。表の中の数字を書き換えると工程が引き直されます。</p>
+  </header>
+
+  <section class="setup" aria-label="条件と結果">
+    <div class="box">
+      <h2>条件</h2>
+      <div class="fields">
+        <div class="field"><label for="start">着手日（仮）</label><input type="date" id="start"></div>
+        <div class="field"><label for="rest">休日</label><select id="rest"><option value="satsun">土日休み（完全週休2日）</option><option value="sun">日曜のみ休み</option></select></div>
+        <div class="field"><label for="rate">現場作業の稼働率（天候）</label><select id="rate"><option value="1">100%</option><option value="0.9">90%</option><option value="0.8">80%</option><option value="0.7">70%</option><option value="0.6">60%</option></select></div>
+        <div class="field"><label for="crews">班の組み方</label><select id="crews"><option value="1">1班で 伐開 → 路盤工 の順</option><option value="2">伐開班と路盤班を並行</option></select></div>
+      </div>
+      <p class="small">契約工期は令和8年5月15日〜11月30日（見積用設計書）です。フォルダには着手日や進み具合の記録が無いので、着手日の初期値は「まだ現場に入っていない」と仮定して 2026年10月13日 に置いています。実際の着手日に合わせて変えてください。稼働率は現場作業（オレンジのバー）にだけ掛かります。祝日は稼働日として計算し、12/29〜1/3は休みにしています。</p>
+      <button class="btn" id="reset" type="button">日数と条件を初期値に戻す</button>
+    </div>
+    <div class="box">
+      <h2>この条件での見込み</h2>
+      <div class="stats">
+        <div class="stat"><span>完了見込み</span><b id="s-end">—</b></div>
+        <div class="stat"><span>全体の暦日数</span><b id="s-cal">—</b></div>
+        <div class="stat"><span>うち稼働日</span><b id="s-work">—</b></div>
+        <div class="stat"><span>工期末までの余裕</span><b id="s-float">—</b></div>
+      </div>
+      <dl class="miles" id="miles"></dl>
+      <p class="small" id="alert" hidden></p>
+    </div>
+  </section>
+
+  <section aria-label="工程表">
+    <h2>工程表</h2>
+    <div class="legend" aria-label="凡例">
+      <span><i class="key k-out"></i>現場作業（稼働率が掛かる）</span>
+      <span><i class="key k-reg"></i>材料の手配</span>
+      <span><i class="key k-prep"></i>準備・確認・片付け</span>
+      <span><i class="key k-off"></i>休日</span>
+      <span><i class="key k-hold"></i>11月以降（冬期補正の期間）</span>
+      <span><i class="key k-dl"></i>工期末 令和8年11月30日</span>
+    </div>
+    <div class="gwrap" id="gwrap" tabindex="0" aria-label="工程表（横にスクロールできます）"><table class="gantt" id="gantt"></table></div>
+    <p class="small">バーにカーソルを合わせると期間が出ます。同じ行の「開始」「終了」にも日付があります。</p>
+  </section>
+
+  <section aria-label="施工手順">
+    <h2>施工手順</h2>
+    <ol class="steps">
+      <li><h3>準備（施工計画・起工測量・再生骨材の在庫確認）</h3>
+        <p>施工計画書に週休2日の計画工程表を付けて提出します。起工測量をして、路盤工の3か所と伐開の範囲を現地で確かめます（段階確認：起工測量結果の確認）。路盤材の再生骨材は各プラントの在庫を確認してから使うこと、と特記仕様書にあります。</p>
+        <p class="q num">段階確認：準備工＝起工測量結果（測量後）／伐開＝施工範囲等（伐開物処理前）／路盤工＝掘削状況（幅・高さ、適宜連絡）</p>
+        <p class="pt">平面図に伐開の範囲は描かれていません。数量調書の測点と巾を現地に落として、監督員と範囲を確かめてから伐倒に入ります。熊の出没は確認されていないとしてハンターは計上されていません。地元の出没情報で必要になったら監督員と協議します。</p></li>
+      <li><h3>［伐開］チェンソー伐開（SP1188.3〜1620）</h3>
+        <p>伐開する範囲の立木をチェンソーで伐倒します。胸高直径によらず、すべての伐倒木に受け口を付けます。指定された立木以外を切る必要が出たら監督員と協議します。</p>
+        <p class="q num">チェンソー伐開（Ⅰ）1,912m²／伐開除根工の人工（集積・積込を含む）：世話役 約2.7・特殊作業員 約2.7・普通作業員 約15.2 人日、チェンソー 約8.7日</p>
+        <p class="pt">世話役1・特殊作業員1・普通作業員5〜6人の班で約3日としています。</p></li>
+      <li><h3>［伐開］段階確認（伐開物処理前）→ 伐開物の集積・積込</h3>
+        <p>伐開物を処理する前に施工範囲の段階確認を受け、そのあとバックホウ（0.8m³）のつかみ装置で伐木を集めて積み込みます（伐木物のみ）。</p>
+        <p class="q num">伐開物集積積込作業（機械）1,912m²／バックホウ 約2.7時間</p></li>
+      <li><h3>［路盤工］SP500〜600 → SP700〜800 → SP1,000〜1,160</h3>
+        <p>再生骨材 RC-40（0〜40mm級、再生コンクリート100%）をダンプで運び、ブルドーザ 3t級で敷き均し、タイヤローラ（8〜20t）で締め固めます。</p>
+        <p class="q num">延長 360m×幅3.0m×厚さ0.10m＝108m³（材料 131.76m³、10tダンプで約22台分）／ブルドーザ 約5.2時間・タイヤローラ 約1.5時間</p>
+        <p class="pt">一層の仕上り厚は20cm以下（今回は10cmなので1層）。材料の運搬が工程を決めるので、プラントからの距離と台数で日数を置き換えてください。ここでは100mの区間を1日、160mの区間を2日としています。</p></li>
+      <li><h3>出来形の確認・後片付け</h3>
+        <p>路盤の幅・厚さの出来形を確認し、完成写真（施工前・完成）を整理して、工事完成報告書を出します。</p></li>
+    </ol>
+  </section>
+
+  <section aria-label="確認しておきたい点">
+    <h2>確認しておきたい点</h2>
+    <div class="warn">
+      <h3>伐開の面積が、数量調書（5,532m²）と見積用設計書（1,912m²）で合わない</h3>
+      <p>伐開除根数量調書の合計は 伐開面積（笹・潅木）5,532m²、除根面積 458m²、伐根積込面積 除根物有り 3,620m²・除根物無し 1,912m² です。見積用設計書に入っているのは チェンソー伐開（Ⅰ）1,912m² と 伐開物集積積込（伐木物のみ）1,912m² だけで、笹・潅木の刈払いや除根に当たる項目がありません。どこまでが今回の施工か、監督員に確かめてください。</p>
+    </div>
+    <ul class="notes">
+      <li>路盤工の3か所目：平面図の注記は「SP1,000〜1,150」、数量の表は「SP1,000〜1,160（160m）」です。モデルと工程は160mにしています。</li>
+      <li>伐開除根数量調書の区間距離：SP1230→1240 が 距離2.4m、SP1280→1290 が 距離5.1m になっています（測点の差はどちらも10m）。面積はこの短い距離で計算されています。</li>
+      <li>平面図に伐開の範囲は描かれておらず、図面は位置図と平面図（どちらも画像）だけです。横断図・縦断図はありません。</li>
+      <li>フォルダの「デキスパート」の機械データは令和7年度（5/23〜12/10）のもので、令和8年度の進み具合や実績はフォルダにありません。</li>
+      <li>積算データの契約工期が 2026-05-15〜2026-05-15 になっていて、終わりの日が入っていません（見積用設計書は 〜11月30日）。</li>
+      <li>冬期の現場管理費の補正は11月1日から（特記仕様書）です。11月に入ると降雪や路盤の凍結で、転圧の品質と運搬に影響が出ます。</li>
+      <li>週休2日は受注者の希望で行う試行工事です（積算は 4週8休以上・月単位）。完全週休2日（土日）の現場閉所なら成績評定で加点があります。</li>
+      <li>日数は見積用設計書の人工と機械の時間を、私が仮定した班で割ったものです。協力会社の実績に置き換えてください。着手日と稼働率も仮の値です。</li>
+    </ul>
+  </section>
+
+  <section aria-label="数量">
+    <h2>主な数量</h2>
+    <div class="twrap"><table class="q">
+      <thead><tr><th>工種</th><th>細目</th><th>規格</th><th>数量</th></tr></thead>
+      <tbody>
+        <tr><td>路盤工</td><td>上層路盤（SP500〜600）</td><td>再生骨材 RC-40、幅3.0m・厚さ0.10m</td><td class="r num">100 m</td></tr>
+        <tr><td></td><td>上層路盤（SP700〜800）</td><td>同上</td><td class="r num">100 m</td></tr>
+        <tr><td></td><td>上層路盤（SP1,000〜1,160）</td><td>同上</td><td class="r num">160 m</td></tr>
+        <tr><td></td><td>計</td><td>補正係数1.22 で材料 131.76m³</td><td class="r num">108 m³</td></tr>
+        <tr><td>伐開除根工</td><td>チェンソー伐開（Ⅰ）</td><td>SP1188.3〜1620</td><td class="r num">1,912 m²</td></tr>
+        <tr><td></td><td>伐開物集積積込作業（機械）</td><td>伐木物のみ、バックホウ0.8m³＋つかみ装置</td><td class="r num">1,912 m²</td></tr>
+        <tr><td>参考</td><td>伐開除根数量調書の伐開面積</td><td>笹・潅木</td><td class="r num">5,532 m²</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+(function(){
+"use strict";
+let DW=8; const KEY="hinokura-kotei-v1", DEADLINE="2026-11-30";
+const GROUPS={pre:"準備",bk:"伐開（SP1188.3〜1620）",rb:"路盤工（3か所 計360m）",out:"完成"};
+// type: out = 現場作業（稼働率が掛かる） / reg = 材料の手配 / prep = 準備・確認・片付け
+// one = 「1班で順に」のときだけ加わる先行作業
+const TASKS=[
+ {id:1, g:"pre",n:"施工計画書・週休2日の計画工程表", q:"契約後すみやかに提出", d:5,t:"prep",pre:[]},
+ {id:2, g:"pre",n:"起工測量・伐開範囲の確認", q:"段階確認：起工測量結果", d:2,t:"out",pre:[1]},
+ {id:3, g:"pre",n:"再生骨材の在庫確認・手配", q:"RC-40 131.76m³（各プラントの在庫を確認）", d:5,t:"reg",pre:[1]},
+ {id:4, g:"bk", n:"チェンソー伐開（Ⅰ）", q:"1,912m²", d:3,t:"out",pre:[2],ms:"伐開 完了"},
+ {id:5, g:"bk", n:"段階確認（伐開物処理前）", q:"施工範囲等", d:1,t:"prep",pre:[4]},
+ {id:6, g:"bk", n:"伐開物の集積・積込（機械）", q:"1,912m²（伐木物のみ）", d:1,t:"out",pre:[5]},
+ {id:7, g:"rb", n:"路盤工 SP500〜600", q:"100m・30m³", d:1,t:"out",pre:[2,3],one:[6]},
+ {id:8, g:"rb", n:"路盤工 SP700〜800", q:"100m・30m³", d:1,t:"out",pre:[7]},
+ {id:9, g:"rb", n:"路盤工 SP1,000〜1,160", q:"160m・48m³", d:2,t:"out",pre:[8],ms:"路盤工 完了"},
+ {id:10,g:"out",n:"出来形の確認・後片付け", q:"完成写真・工事完成報告書", d:3,t:"prep",pre:[6,9]}
+];
+const DEF={start:"2026-10-13",rest:"satsun",rate:"0.8",crews:"1"};
+const RATES=["1","0.9","0.8","0.7","0.6"];
+const state={start:DEF.start,rest:DEF.rest,rate:DEF.rate,crews:DEF.crews,days:{}};
+TASKS.forEach(t=>state.days[t.id]=t.d);
+try{ const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s){ if(/^\d{4}-\d\d-\d\d$/.test(s.start||""))state.start=s.start; if(s.rest==="sun"||s.rest==="satsun")state.rest=s.rest; if(RATES.includes(s.rate))state.rate=s.rate;
+  if(s.crews==="1"||s.crews==="2")state.crews=s.crews;
+  if(s.days)TASKS.forEach(t=>{const v=parseInt(s.days[t.id],10); if(v>=1&&v<=200)state.days[t.id]=v;}); } }catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}};
+
+const $=id=>document.getElementById(id);
+const WD=["日","月","火","水","木","金","土"];
+const utc=s=>{const p=s.split("-").map(Number);return Date.UTC(p[0],p[1]-1,p[2]);};
+const base=()=>utc(state.start);
+const dt=i=>new Date(base()+i*864e5);
+const md=i=>{const d=dt(i);return (d.getUTCMonth()+1)+"/"+d.getUTCDate();};
+const mdw=i=>md(i)+"（"+WD[dt(i).getUTCDay()]+"）";
+const ymd=i=>{const d=dt(i);return d.getUTCFullYear()+"年"+(d.getUTCMonth()+1)+"月"+d.getUTCDate()+"日";};
+function isWork(i){const d=dt(i),w=d.getUTCDay(),m=d.getUTCMonth()+1,day=d.getUTCDate();
+  if(w===0)return false; if(state.rest==="satsun"&&w===6)return false; if((m===12&&day>=29)||(m===1&&day<=3))return false; return true;}
+// 11月以降（冬期の現場管理費補正 11/1〜）: 色を付けるだけで、作業は止めない
+function isCold(i){const m=dt(i).getUTCMonth()+1;return m>=11||m<=3;}
+const isNY=i=>{const d=dt(i),m=d.getUTCMonth()+1,day=d.getUTCDate();return (m===12&&day>=29)||(m===1&&day<=3);};
+const canWork=(t,i)=>isWork(i);
+
+function schedule(){
+  const r={}, rate=parseFloat(state.rate), byId={}; TASKS.forEach(t=>byId[t.id]=t);
+  const done={}, order=[];
+  // 先行作業が後ろの行にあることがあるので、先行がそろった作業から順に計算する
+  let left=TASKS.slice(), guard=0;
+  while(left.length&&guard++<200){
+    left=left.filter(t=>{
+      const pre=t.pre.concat(state.crews==="1"&&t.one?t.one:[]), need0=pre.concat(t.ss?[t.ss[0]]:[]);
+      if(!need0.every(p=>r[p]))return true;
+      let es=0; pre.forEach(p=>{es=Math.max(es,r[p].end+1);});
+      if(t.ss) es=Math.max(es,r[t.ss[0]].start+t.ss[1]);
+      const d=state.days[t.id]; let start,end,need=d;
+      if(t.t==="cure"){start=es;end=es+d-1;}
+      else{ need=t.t==="out"?Math.ceil(d/rate-1e-9):d; let i=es; while(!canWork(t,i))i++; start=i; let c=0;
+        for(;;){ if(canWork(t,i)){c++; if(c>=need)break;} i++; } end=i; }
+      r[t.id]={start,end,need}; return false;
+    });
+  }
+  return r;
+}
+
+const table=$("gantt"); let headTl;
+function build(){
+  let h='<thead><tr><th class="c-task">作業</th><th class="c-d">実働日数</th><th>開始</th><th>終了</th><th class="tl" id="htl"></th></tr></thead><tbody>';
+  let g=null;
+  TASKS.forEach(t=>{
+    if(t.g!==g){g=t.g;h+='<tr class="grp"><th class="c-task" scope="rowgroup">'+GROUPS[g]+'</th><td></td><td></td><td></td><td class="tl" id="g-'+g+'"></td></tr>';}
+    h+='<tr><th class="c-task" scope="row"><b>'+t.n+'</b>'+(t.q?'<small class="num">'+t.q+'</small>':'')+'</th>'
+      +'<td class="c-d"><input class="days" type="number" min="1" max="200" step="1" id="d-'+t.id+'" value="'+state.days[t.id]+'" aria-label="'+t.n+' の日数"><span class="unit">'+(t.t==="cure"?"暦日":"日")+'</span></td>'
+      +'<td class="num" id="s-'+t.id+'"></td><td class="num" id="e-'+t.id+'"></td><td class="tl" id="t-'+t.id+'"><div class="bar '+t.t+'" id="b-'+t.id+'"></div></td></tr>';
+  });
+  table.innerHTML=h+'</tbody>';
+  headTl=$("htl");
+  TASKS.forEach(t=>{
+    $("d-"+t.id).addEventListener("change",e=>{let v=parseInt(e.target.value,10); if(!(v>=1))v=1; if(v>200)v=200; e.target.value=v; state.days[t.id]=v; save(); render();});
+    const b=$("b-"+t.id); b.addEventListener("pointerenter",e=>showTip(t,e)); b.addEventListener("pointermove",moveTip); b.addEventListener("pointerleave",hideTip);
+  });
+}
+let R={};
+function render(){
+  R=schedule();
+  const last=Math.max(...TASKS.map(t=>R[t.id].end)), dl=Math.round((utc(DEADLINE)-base())/864e5), showDl=dl>=0&&dl<=last+150;
+  const N=Math.max(last,showDl?dl:0)+5;
+  const lead=headTl.offsetLeft, avail=$("gwrap").clientWidth-lead-2;
+  DW=Math.max(2.4,Math.min(13,Math.floor(avail/N*10)/10));
+  const W=N*DW;
+  const runs=(fn,color)=>{const st=["transparent 0"];let i=0;
+    while(i<N){ if(fn(i)){let j=i; while(j<N&&fn(j))j++; st.push("transparent "+i*DW+"px",color+" "+i*DW+"px",color+" "+j*DW+"px","transparent "+j*DW+"px"); i=j;} else i++; }
+    return "linear-gradient(to right,"+st.join(",")+")";};
+  const dow0=dt(0).getUTCDay(), firstMon=(8-dow0)%7;
+  table.style.setProperty("--offbg",runs(i=>!isWork(i),"var(--off)"));
+  table.style.setProperty("--holdbg",runs(i=>isCold(i)&&isWork(i),"var(--hold)"));
+  table.style.setProperty("--wk","repeating-linear-gradient(to right,var(--line) 0 1px,transparent 1px "+7*DW+"px)");
+  const dx=(dl+1)*DW-1;
+  table.style.setProperty("--dl",showDl?"linear-gradient(to right,transparent "+dx+"px,var(--accent) "+dx+"px,var(--accent) "+(dx+2)+"px,transparent "+(dx+2)+"px)":"none");
+  table.querySelectorAll(".tl").forEach(c=>{c.style.width=W+"px";c.style.minWidth=W+"px";c.style.backgroundPosition="0 0, "+(firstMon*DW)+"px 0, 0 0, 0 0";c.style.backgroundSize=W+"px 100%, "+(W-firstMon*DW)+"px 100%, "+W+"px 100%, "+W+"px 100%";});
+  let hh="";
+  let k1=1; while(k1<N&&dt(k1).getUTCDate()!==1)k1++;
+  const skip0=dt(0).getUTCDate()!==1&&k1*DW<74;
+  for(let k=0;k<N;k++){const d=dt(k); if(k===0||d.getUTCDate()===1){ if(N-k>3&&!(k===0&&skip0)) hh+='<span class="mon" style="left:'+(k*DW+4)+'px">'+(k===0||d.getUTCMonth()===0||(skip0&&k===k1)?d.getUTCFullYear()+"年":"")+(d.getUTCMonth()+1)+'月</span>'; } }
+  const wstep=7*DW>=34?7:14*DW>=34?14:28*DW>=34?28:56;
+  for(let k=firstMon;k<N-2;k+=wstep) hh+='<span class="wk" style="left:'+(k*DW+3)+'px">'+md(k)+'</span>';
+  if(showDl) hh+='<span class="dl" style="left:'+Math.max(0,dx-44)+'px">工期末</span>';
+  headTl.innerHTML=hh;
+  const span={};
+  TASKS.forEach(t=>{const r=R[t.id],b=$("b-"+t.id); b.style.left=(r.start*DW+1)+"px"; b.style.width=Math.max(2,(r.end-r.start+1)*DW-2)+"px";
+    $("s-"+t.id).textContent=md(r.start); $("e-"+t.id).textContent=md(r.end);
+    const s=span[t.g]||(span[t.g]=[r.start,r.end]); s[0]=Math.min(s[0],r.start); s[1]=Math.max(s[1],r.end);});
+  Object.keys(span).forEach(g=>{$("g-"+g).innerHTML='<div class="span" style="left:'+(span[g][0]*DW+1)+'px;width:'+((span[g][1]-span[g][0]+1)*DW-2)+'px"></div>';});
+  let wk=0; for(let k=0;k<=last;k++) if(isWork(k)) wk++;
+  const fl=dl-last;
+  $("s-end").textContent=ymd(last); $("s-cal").textContent=(last+1)+"日"; $("s-work").textContent=wk+"日";
+  $("s-float").textContent=fl>=0?fl+"日":"超過 "+(-fl)+"日";
+  const outs=TASKS.filter(t=>t.t==="out"); let coldDays=0;
+  for(let k=0;k<=last;k++) if(isWork(k)&&isCold(k)&&outs.some(t=>R[t.id].start<=k&&k<=R[t.id].end)) coldDays++;
+  const ms=[["着手",mdw(0)]].concat(TASKS.filter(t=>t.ms).map(t=>[t.ms,mdw(R[t.id].end)]),
+    [["11月以降の現場作業日",coldDays?coldDays+"日":"なし"]]);
+  $("miles").innerHTML=ms.map(m=>'<div><dt>'+m[0]+'</dt><dd class="num">'+m[1]+'</dd></div>').join("");
+  const msg=[];
+  if(fl<0) msg.push("完了見込みが、工期末（令和8年11月30日）を"+(-fl)+"日過ぎます。伐開班と路盤班を並行させる、着手を早めるなどしてください。工期の延長は監督員との協議になります。");
+  if(dl<0) msg.push("着手日が工期末（令和8年11月30日）より後になっています。");
+  const rb=[7,8,9].filter(id=>isCold(R[id].end));
+  if(rb.length) msg.push("路盤工が11月以降にかかります。降雪や凍結で転圧の品質が落ちやすく、ダンプの運搬にも影響が出るので、天気を見て早めに入れてください。");
+  const a=$("alert"); a.hidden=!msg.length; a.innerHTML=msg.join("<br>");
+}
+const tip=$("tip");
+const TN={reg:"材料の手配",out:"現場作業",prep:"準備・確認・片付け"};
+function showTip(t,e){const r=R[t.id],cal=r.end-r.start+1;
+  tip.innerHTML='<b>'+t.n+'</b>'+mdw(r.start)+' 〜 '+mdw(r.end)+'<br>'+(t.t==="cure"?"養生 "+cal+"暦日":TN[t.t]+"　実働 "+state.days[t.id]+"日"+(t.t==="out"&&r.need>state.days[t.id]?"（天候を見込んで "+r.need+"日）":"")+"、暦日 "+cal+"日");
+  tip.hidden=false; moveTip(e);}
+function moveTip(e){const w=tip.offsetWidth,h=tip.offsetHeight; let x=e.clientX+14,y=e.clientY+16; if(x+w>window.innerWidth-8)x=e.clientX-w-10; if(x<8)x=8; if(y+h>window.innerHeight-8)y=e.clientY-h-12; tip.style.left=x+"px"; tip.style.top=y+"px";}
+function hideTip(){tip.hidden=true;}
+$("gwrap").addEventListener("scroll",hideTip);
+
+function syncInputs(){ $("start").value=state.start; $("rest").value=state.rest; $("rate").value=state.rate; $("crews").value=state.crews; TASKS.forEach(t=>{$("d-"+t.id).value=state.days[t.id];}); }
+$("start").addEventListener("change",e=>{ if(/^\d{4}-\d\d-\d\d$/.test(e.target.value)){state.start=e.target.value;save();render();} else e.target.value=state.start; });
+["rest","rate","crews"].forEach(k=>$(k).addEventListener("change",e=>{state[k]=e.target.value;save();render();}));
+$("reset").addEventListener("click",()=>{Object.assign(state,DEF);TASKS.forEach(t=>state.days[t.id]=t.d);save();syncInputs();render();});
+
+build(); syncInputs(); render();
+let lastW=0; new ResizeObserver(()=>{const w=$("gwrap").clientWidth; if(w!==lastW){lastW=w;render();}}).observe($("gwrap"));
+window.__kotei={state,schedule,TASKS,render};
+})();
+</script>
+
+</body></html>

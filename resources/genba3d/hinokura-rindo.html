@@ -1,0 +1,438 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>桧倉川林道 維持工事 3D</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one-screen viewer. 3D stage fills the left, a narrow instrument panel sits on the right; on phones the stage stacks above the panel. */
+:root{
+  --bg:#EEF1F2; --panel:#F8FAFA; --ink:#1C2A33; --muted:#5A6A74; --line:#CBD4D9; --chip:#E3E9EC;
+  --accent:#C2302A; --accent-ink:#FFFFFF;
+  --scene:#E2E9EC;
+  --c-forest:#B9C4A0; --c-gravel:#A39C8C; --c-roadhalo:#F2E8C9; --c-new:#D9453F; --c-brush:#D9D06A; --c-tree:#3E7A45; --c-trunk:#7A5A3A; --c-machine:#E8B923; --c-secline:#5A6A74;
+  --c-edge:#2A343B;
+  --font-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A;
+  --accent:#F0766E; --accent-ink:#1A0E0D;
+  --scene:#0D1418;
+  --c-forest:#4A5640; --c-gravel:#8C8576; --c-roadhalo:#6B6550; --c-new:#EC6A63; --c-brush:#9C9440; --c-tree:#7DC08B; --c-trunk:#A9805A; --c-machine:#F0CF4E; --c-secline:#93A3AD;
+  --c-edge:#0A0F12;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#10171C; --panel:#172027; --ink:#E3E9EC; --muted:#93A3AD; --line:#2C3942; --chip:#22303A;
+  --accent:#F0766E; --accent-ink:#1A0E0D;
+  --scene:#0D1418;
+  --c-forest:#4A5640; --c-gravel:#8C8576; --c-roadhalo:#6B6550; --c-new:#EC6A63; --c-brush:#9C9440; --c-tree:#7DC08B; --c-trunk:#A9805A; --c-machine:#F0CF4E; --c-secline:#93A3AD;
+  --c-edge:#0A0F12;
+  color-scheme:dark }
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.55;display:flex;flex-direction:column;overflow:hidden}
+*{box-sizing:border-box}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--font-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+header.bar{display:flex;align-items:baseline;gap:8px 16px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header.bar h1{font-size:16px;font-weight:700;margin:0;letter-spacing:.02em;text-wrap:balance}
+header.bar p{margin:0;color:var(--muted);font-size:12px}
+
+main{flex:1;min-height:0;display:flex}
+.stage{position:relative;flex:1;min-width:0;min-height:0;background:var(--scene)}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.views{position:absolute;top:12px;left:16px;right:16px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.views button{pointer-events:auto}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:3px;padding:5px 10px;font-size:12.5px;font-weight:500;cursor:pointer;line-height:1.3}
+.btn:hover{border-color:var(--muted)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.dir{position:absolute;left:16px;bottom:14px;margin:0;font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:4px 8px;pointer-events:none}
+.hint{position:absolute;right:16px;bottom:14px;margin:0;max-width:calc(100% - 400px);font-size:11.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:4px 8px;pointer-events:none;text-align:right}
+.nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+aside.panel{width:340px;flex:none;border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;overscroll-behavior:contain}
+.sec{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.sec h2{margin:0;font-size:11.5px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.info h3{margin:0;font-size:15px;font-weight:700}
+.info p{margin:0;font-size:13px}
+.info .src{color:var(--muted);font-size:12px}
+.swatch{display:inline-block;width:11px;height:11px;border-radius:2px;flex:none;border:1px solid var(--line)}
+.layers{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.layers label{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px;min-width:0}
+.layers label span.t{min-width:0}
+.layers small{color:var(--muted);font-size:11.5px}
+.grp{font-size:11.5px;color:var(--muted);margin-top:6px}
+input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);flex:none;margin:0}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chips .btn{padding:3px 7px;font-size:12px}
+.read{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0;font-size:12.5px}
+.read dt{color:var(--muted)}
+.read dd{margin:0;text-align:right}
+.works{display:grid;grid-template-columns:1fr;gap:5px}
+.works .btn{text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.works .btn span.w{display:flex;align-items:center;gap:8px;min-width:0}
+.works .btn span.q{color:var(--muted);font-size:11.5px;white-space:nowrap}
+.works .btn[aria-pressed="true"] span.q{color:inherit;opacity:.8}
+details summary{cursor:pointer;font-size:11.5px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+details ul{margin:10px 0 0;padding-left:1.2em;font-size:12.5px;display:flex;flex-direction:column;gap:5px}
+.toggle{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500}
+
+@media (max-width:820px){
+  body{overflow:auto}
+  main{flex-direction:column;flex:none}
+  .stage{height:56vh;min-height:300px;flex:none}
+  aside.panel{width:auto;border-left:0;border-top:1px solid var(--line);overflow:visible}
+  .hint{display:none}
+}
+</style>
+
+<header class="bar">
+  <h1>桧倉川林道 維持工事（路盤工・伐開）</h1>
+  <p>桧倉川林道維持工事（渡島総合振興局 西部森林室、令和8年度 第351号） ／ 2次元の平面図から組み立てた3Dモデル</p>
+</header>
+
+<main>
+  <div class="stage" id="stage">
+    <canvas id="gl" aria-label="桧倉川林道の3Dモデル。ドラッグで回転できます"></canvas>
+    <div class="views" id="views" role="group" aria-label="視点"></div>
+    <p class="dir">上が北（平面図の向き）。標高は描いていません</p>
+    <p class="hint">ドラッグで回転・ホイールで拡大・右ドラッグで移動。クリックで説明</p>
+  </div>
+
+  <aside class="panel">
+    <section class="sec info" aria-live="polite">
+      <h2>選択中の部材</h2>
+      <h3 id="info-name">部材をクリックしてください</h3>
+      <p id="info-body"></p>
+      <p class="src" id="info-src"></p>
+    </section>
+
+    <section class="sec">
+      <h2>工種から探す</h2>
+      <div class="works" id="works" role="group" aria-label="工種"></div>
+    </section>
+
+    <section class="sec">
+      <h2>断面を切る</h2>
+      <label class="toggle"><input type="checkbox" id="cut-on"> 測点で横に切って断面を見る</label>
+      <input type="range" id="cut-s" min="300" max="1700" step="0.5" value="1080" aria-label="切る位置（測点 SP）">
+      <div class="chips" id="cut-chips" role="group" aria-label="代表の断面"></div>
+      <dl class="read">
+        <dt>切る位置</dt><dd class="num" id="r-pos">—</dd>
+        <dt>路盤工</dt><dd id="r-a">—</dd>
+        <dt>伐開</dt><dd id="r-b">—</dd>
+      </dl>
+    </section>
+
+    <section class="sec">
+      <h2>表示するもの</h2>
+      <ul class="layers" id="layers"></ul>
+      <label class="toggle"><input type="checkbox" id="xray"> 地面を半透明にする</label>
+    </section>
+
+
+    <section class="sec">
+      <details>
+        <summary>このモデルの作り方と注意</summary>
+        <ul>
+          <li>フォルダの図面は 位置図と平面図（どちらも画像）の2枚だけで、横断図・縦断図はありません。3Dの設計データもありません。</li>
+          <li>平面図の赤線を色で拾って座標にしました。図面に縮尺が無いので、路盤工の3つの黄色い印を SP550・750・1,080 として、1画素≈1.31m で測点を割り付けた目安です（印の位置で±25mほどずれます）。平面図の上を北としています。</li>
+          <li>標高は描いていません（地面は平ら）。林道の幅は3.5m、路盤は幅3.0m・厚さ0.10m で描き、見やすいように帯を付けています。</li>
+          <li>伐開の範囲は数量調書の巾を道路の中心から左右均等に振り分けた目安で、木の位置と本数は面積から置いた記号です。</li>
+          <li>平面図の画像そのものは、このページには載せていません。</li>
+        </ul>
+      </details>
+    </section>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+"use strict";
+/* ================= shared viewer core ================= */
+const $=id=>document.getElementById(id);
+const stage=$("stage"), canvas=$("gl");
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fm=(v,d)=>v.toFixed(d===undefined?1:d);
+const state={cut:false,s:0,xray:false,vis:{}};
+let INFO={}, DEFAULT_INFO=["部材をクリックしてください","",""], LAYERS=[], WORKS=[], VIEWS=[], PRI={};
+function showInfo(key,extra){
+  if(!key||!INFO[key]){$("info-name").textContent=DEFAULT_INFO[0];$("info-body").textContent=DEFAULT_INFO[1];$("info-src").textContent="";return;}
+  const inf=INFO[key]; $("info-name").textContent=inf.n; $("info-body").textContent=inf.b+(extra?" ／ "+extra:""); $("info-src").textContent="出典："+inf.s;
+}
+let renderer;
+try{ renderer=new THREE.WebGLRenderer({canvas,antialias:true}); }
+catch(e){ const d=document.createElement("div");d.className="nogl";d.textContent="この環境では3D表示（WebGL）が使えません。別のブラウザで開いてください。";stage.appendChild(d);return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(38,1,0.2,3000);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true; controls.dampingFactor=0.12; controls.maxPolarAngle=Math.PI*0.97; controls.minDistance=0.8; controls.maxDistance=900;
+scene.add(new THREE.HemisphereLight(0xffffff,0x7c838a,0.62));
+const sun=new THREE.DirectionalLight(0xffffff,0.48); sun.position.set(-70,120,-90); scene.add(sun);
+const fill=new THREE.DirectionalLight(0xffffff,0.14); fill.position.set(90,50,80); scene.add(fill);
+const cutPlane=new THREE.Plane(new THREE.Vector3(1,0,0),0);
+renderer.localClippingEnabled=true;
+let root=null, capGroup=null, groups={}, pick=[], selected=null, nearLabels=[], edgeMat;
+
+class Tris{
+  constructor(){this.p=[];}
+  tri(a,b,c){this.p.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z);}
+  quad(a,b,c,d){this.tri(a,b,c);this.tri(a,c,d);}
+  geom(){const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(this.p,3));g.computeVertexNormals();return g;}
+}
+function mat(token,o){
+  o=o||{};
+  const m=new THREE.MeshLambertMaterial({color:new THREE.Color(css(token)),side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:o.po===undefined?1:o.po,polygonOffsetUnits:o.po===undefined?1:o.po});
+  if(o.opacity!==undefined&&o.opacity<1){m.transparent=true;m.opacity=o.opacity;m.depthWrite=false;}
+  return m;
+}
+function solid(grp,geom,material,info,extra,edges){
+  const mesh=new THREE.Mesh(geom,material); mesh.userData.info=info; mesh.userData.extra=extra||""; grp.add(mesh); pick.push(mesh);
+  if(edges!==false){const l=new THREE.LineSegments(new THREE.EdgesGeometry(geom,28),edgeMat); grp.add(l);}
+  return mesh;
+}
+function label(text,pos,o){
+  o=o||{};
+  const pad=10,fs=30,cv=document.createElement("canvas"),c=cv.getContext("2d");
+  const font="500 "+fs+"px "+(o.mono?'"IBM Plex Mono",ui-monospace,Menlo,monospace':'"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif');
+  c.font=font; const w=Math.ceil(c.measureText(text).width)+pad*2,h=fs+pad*1.4;
+  cv.width=w;cv.height=h; c.font=font;
+  c.fillStyle=o.bg||css("--panel"); c.globalAlpha=0.92; c.fillRect(0,0,w,h); c.globalAlpha=1;
+  c.strokeStyle=o.fg||css("--line"); c.lineWidth=2; c.strokeRect(1,1,w-2,h-2);
+  c.fillStyle=o.fg||css("--ink"); c.textBaseline="middle"; c.fillText(text,pad,h/2+1);
+  const tx=new THREE.CanvasTexture(cv); tx.minFilter=THREE.LinearFilter;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:!!o.depth,sizeAttenuation:false,transparent:true}));
+  const k=(o.size||0.022); sp.scale.set(k*w/h,k,1); sp.position.copy(pos); sp.renderOrder=10; return sp;
+}
+function near(sp,dist){sp.userData.near=dist;nearLabels.push(sp);return sp;}
+function dispose(o){o.traverse(c=>{if(c.geometry)c.geometry.dispose();if(c.material){(Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{if(m.map)m.map.dispose();m.dispose();});}});}
+function lineOf(pts,color,o){o=o||{};const g=new THREE.BufferGeometry().setFromPoints(pts);
+  const m=o.dash?new THREE.LineDashedMaterial({color:new THREE.Color(color),dashSize:o.dash,gapSize:o.dash*0.6}):new THREE.LineBasicMaterial({color:new THREE.Color(color)});
+  const l=new THREE.Line(g,m); if(o.dash)l.computeLineDistances(); return l;}
+/* a polygon [[u,v],…] pushed from station a to b; map(s,u,v) gives the 3D point */
+function prism(poly,a,b,map){
+  const T=new Tris(), A=poly.map(p=>map(a,p[0],p[1])), B=poly.map(p=>map(b,p[0],p[1])), n=poly.length;
+  for(let i=0;i<n;i++){const k=(i+1)%n;T.quad(A[i],B[i],B[k],A[k]);}
+  THREE.ShapeUtils.triangulateShape(poly.map(p=>new THREE.Vector2(p[0],p[1])),[]).forEach(t=>{T.tri(A[t[0]],A[t[1]],A[t[2]]);T.tri(B[t[0]],B[t[1]],B[t[2]]);});
+  return T.geom();
+}
+/* same number of points at every station */
+function loft(sts,fn,map){
+  const T=new Tris(), polys=sts.map(fn), R=polys.map((pl,i)=>pl.map(p=>map(sts[i],p[0],p[1])));
+  for(let i=0;i<R.length-1;i++){const A=R[i],B=R[i+1],n=A.length;for(let j=0;j<n;j++){const k=(j+1)%n;T.quad(A[j],B[j],B[k],A[k]);}}
+  [0,R.length-1].forEach(e=>THREE.ShapeUtils.triangulateShape(polys[e].map(p=>new THREE.Vector2(p[0],p[1])),[]).forEach(t=>T.tri(R[e][t[0]],R[e][t[1]],R[e][t[2]])));
+  return T.geom();
+}
+const rect=(u0,u1,v0,v1)=>[[u0,v0],[u1,v0],[u1,v1],[u0,v1]];
+/* a flat polygon in the cutting plane: poly in (u,v), place(u,v) gives the 3D point */
+function capPoly(poly,place,token,info,extra){
+  if(poly.length<3)return;
+  const g=new THREE.ShapeGeometry(new THREE.Shape(poly.map(p=>new THREE.Vector2(p[0],p[1])))), pa=g.attributes.position;
+  for(let i=0;i<pa.count;i++){const q=place(pa.getX(i),pa.getY(i));pa.setXYZ(i,q.x,q.y,q.z);}
+  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:new THREE.Color(css(token)),side:THREE.DoubleSide})); m.userData.info=info; m.userData.extra=extra||""; capGroup.add(m); pick.push(m);
+  capGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(poly.concat([poly[0]]).map(p=>place(p[0],p[1]))),new THREE.LineBasicMaterial({color:new THREE.Color(css("--c-edge"))})));
+}
+function setView(pos,tgt){
+  const a=camera.aspect, k=Math.max(1,1.25/a), t=new THREE.Vector3(tgt[0],tgt[1],tgt[2]), p=new THREE.Vector3(pos[0],pos[1],pos[2]);
+  p.sub(t).multiplyScalar(k).add(t); camera.position.copy(p); controls.target.copy(t); controls.update();
+  const b=$("view-sec"); if(b)b.setAttribute("aria-pressed","false");
+}
+const secOn=()=>{const b=$("view-sec");return !!b&&b.getAttribute("aria-pressed")==="true";};
+let SITE={build(){},cut(){},readout(){},pickExtra(){return null;},labelOk(){return true;},keep(){return true;}};
+
+/* ================= site ================= */
+const DATA={"route":[[282.4,993.2,604.5],[290.3,985.3,604.5],[298.1,977.4,604.5],[306.0,969.5,604.5],[313.9,961.6,604.5],[321.8,953.8,604.5],[329.7,945.9,604.4],[337.5,938.1,603.2],[345.4,930.5,601.0],[353.3,923.4,597.7],[361.1,916.6,593.8],[369.1,910.0,589.3],[376.9,904.0,584.3],[384.8,898.6,578.5],[392.7,894.5,571.8],[400.4,892.5,564.3],[408.3,893.5,556.5],[416.2,894.6,548.7],[424.1,895.7,540.8],[431.9,894.9,533.1],[439.9,891.9,525.7],[447.6,887.4,519.4],[455.5,881.2,514.4],[463.3,874.2,511.1],[471.2,866.4,510.0],[479.1,858.5,510.5],[487.0,850.9,512.5],[494.8,843.7,515.5],[502.7,836.8,519.4],[510.7,830.1,523.7],[518.5,823.3,527.7],[526.4,816.1,530.8],[534.2,809.0,534.1],[542.1,802.2,538.1],[550.0,796.0,542.9],[557.8,790.5,548.4],[565.8,784.8,554.1],[573.6,778.9,559.2],[581.5,772.2,563.4],[589.4,764.9,566.3],[597.2,757.6,569.3],[605.0,751.1,573.5],[613.1,744.9,578.7],[620.8,738.6,583.1],[628.7,731.2,586.1],[636.6,723.5,587.3],[644.5,715.6,587.5],[652.3,707.7,587.5],[660.2,699.8,587.5],[668.1,692.0,587.5],[676.0,684.1,586.9],[683.8,676.5,585.4],[691.6,669.4,581.9],[699.5,662.5,578.0],[707.4,655.3,574.8],[715.2,647.7,573.1],[723.1,639.8,573.0],[731.0,631.9,573.0],[738.9,624.1,573.0],[746.8,616.2,572.6],[754.6,608.9,569.5],[762.5,603.0,564.3],[770.4,597.9,558.3],[778.2,592.8,552.4],[786.1,586.5,547.7],[794.0,579.4,544.2],[801.8,571.6,542.8],[809.7,563.8,542.8],[817.6,555.9,542.5],[825.4,548.3,540.8],[833.4,541.0,537.5],[841.2,534.6,533.1],[849.0,528.4,528.2],[857.0,522.5,523.0],[864.9,516.6,517.7],[872.7,511.0,512.3],[880.6,505.3,506.8],[888.4,499.8,501.3],[896.4,494.1,495.6],[904.2,488.9,489.9],[912.0,484.2,483.6],[919.9,480.5,476.6],[927.9,478.8,468.8],[935.6,478.0,461.1],[943.6,477.3,453.2],[951.4,476.0,445.5],[959.3,473.4,438.0],[967.2,469.5,431.1],[975.0,464.7,425.0],[983.0,459.3,419.1],[990.8,454.0,413.4],[998.8,448.3,407.8],[1006.6,442.8,402.2],[1014.4,437.0,397.0],[1022.4,430.2,392.9],[1030.1,422.6,391.3],[1038.0,414.9,393.1],[1045.9,407.3,395.3],[1053.7,399.6,396.1],[1061.4,392.2,393.6],[1069.3,385.6,389.2],[1077.2,379.7,384.0],[1085.1,373.3,379.4],[1093.0,366.2,376.0],[1100.9,358.5,374.5],[1108.7,350.8,372.7],[1116.5,344.3,368.5],[1124.4,339.4,362.3],[1132.2,335.3,355.6],[1140.2,331.3,348.8],[1148.1,326.5,342.5],[1155.9,321.4,336.6],[1163.8,316.0,330.8],[1171.7,310.5,325.1],[1179.6,304.9,319.6],[1187.4,298.8,314.6],[1195.3,292.1,310.4],[1203.1,284.9,307.4],[1211.0,277.3,305.7],[1218.9,269.5,304.0],[1226.8,261.8,302.3],[1234.7,254.2,300.3],[1242.5,246.7,298.2],[1250.4,239.2,295.7],[1258.3,232.0,292.4],[1266.2,225.3,288.2],[1274.0,219.2,283.4],[1282.0,213.6,277.7],[1289.8,209.1,271.3],[1297.7,206.0,264.1],[1305.4,205.3,256.3],[1313.4,206.0,248.4],[1321.2,207.4,240.7],[1329.1,209.8,233.2],[1337.0,213.0,226.0],[1344.9,216.5,218.9],[1352.7,220.0,211.9],[1360.6,222.9,204.6],[1368.5,225.0,196.9],[1376.5,225.9,189.1],[1384.2,226.1,181.3],[1392.1,226.1,173.4],[1400.0,226.1,165.5],[1407.8,225.9,157.7],[1415.8,225.3,149.8],[1423.7,224.2,141.9],[1431.5,222.8,134.3],[1439.4,221.6,126.4],[1447.4,220.8,118.5],[1455.2,220.8,110.6],[1463.1,220.8,102.8],[1471.0,220.8,94.9],[1478.9,220.7,87.0],[1486.7,220.0,79.2],[1494.5,218.8,71.5],[1502.5,215.7,64.1],[1510.3,211.5,57.6],[1518.2,206.3,51.5],[1526.0,200.8,46.0],[1534.0,195.2,40.4],[1541.8,189.7,34.8],[1549.8,184.0,29.2],[1557.6,178.5,23.7],[1565.5,172.3,18.8],[1573.4,165.2,15.3],[1581.2,157.6,13.4],[1589.1,149.7,13.4],[1597.0,141.9,14.0],[1604.9,134.1,15.4],[1612.7,126.6,17.6],[1620.6,119.1,20.0],[1628.5,111.4,21.7],[1636.4,103.5,22.4],[1644.2,96.0,20.1],[1652.1,89.2,16.2],[1660.0,83.1,11.1],[1667.8,77.6,5.6],[1675.8,72.1,-0.2],[1683.7,67.2,-6.4],[1691.4,63.3,-13.1],[1699.4,60.5,-20.6],[1707.3,58.7,-28.2],[1715.2,56.6,-35.8],[1723.0,54.6,-43.4],[1730.9,53.3,-51.2],[1738.8,52.7,-59.1],[1746.7,52.7,-67.0],[1754.6,52.7,-74.8],[1762.4,52.5,-82.7],[1770.2,51.6,-90.5],[1778.2,49.4,-98.1],[1786.0,45.4,-104.8],[1793.8,40.7,-111.1],[1801.7,35.3,-116.9],[1809.6,29.7,-122.4],[1817.6,23.5,-127.4],[1825.4,16.9,-131.6],[1833.2,9.8,-135.0],[1841.1,2.5,-137.9],[1849.0,-4.7,-140.9],[1856.8,-12.1,-143.7],[1864.7,-19.7,-145.6],[1872.6,-27.6,-146.6],[1880.5,-35.5,-146.8],[1888.4,-43.4,-146.8],[1896.3,-51.2,-146.8],[1904.2,-59.1,-146.8],[1911.9,-66.9,-147.5],[1919.8,-74.2,-150.4],[1927.7,-80.8,-154.7],[1935.5,-86.2,-160.3],[1943.5,-90.3,-167.2],[1951.2,-92.7,-174.5],[1959.1,-93.1,-182.4],[1967.0,-93.1,-190.3],[1974.9,-93.1,-198.2],[1982.8,-93.1,-206.1],[1990.7,-93.1,-213.9],[1998.5,-93.1,-221.8],[2006.4,-93.1,-229.7],[2014.3,-93.1,-237.6],[2022.2,-93.1,-245.5],[2030.1,-93.1,-253.3],[2037.9,-93.1,-261.2],[2045.8,-93.1,-269.1],[2053.7,-93.1,-277.0],[2061.6,-93.1,-284.9],[2069.5,-93.1,-292.8],[2077.4,-93.4,-300.6],[2085.2,-94.7,-308.4],[2093.1,-97.6,-315.7],[2101.0,-101.7,-322.4],[2108.8,-106.4,-328.7],[2116.7,-111.8,-334.5],[2124.6,-117.2,-340.3],[2132.4,-122.7,-345.8],[2140.4,-128.3,-351.5],[2148.3,-134.0,-357.0],[2156.1,-140.0,-361.8],[2164.0,-146.9,-365.9],[2171.8,-154.4,-368.1],[2179.7,-162.2,-368.8],[2187.6,-170.1,-368.8],[2195.5,-178.0,-368.4],[2203.4,-185.9,-367.6],[2211.3,-193.6,-366.4],[2219.1,-201.4,-365.1],[2227.0,-209.1,-363.9],[2235.0,-217.0,-362.8],[2242.8,-224.8,-361.6],[2250.6,-232.5,-360.4],[2258.6,-240.4,-359.2],[2266.4,-248.1,-358.0],[2274.3,-255.9,-356.9],[2282.1,-263.6,-355.5],[2290.1,-271.5,-354.2],[2298.0,-279.3,-352.9],[2305.8,-286.9,-351.3],[2313.7,-294.6,-349.5],[2321.5,-302.1,-347.3],[2329.5,-309.7,-345.2],[2337.4,-317.4,-342.9],[2345.2,-324.8,-340.7],[2353.0,-332.5,-338.9],[2361.0,-340.3,-337.7],[2368.9,-348.2,-337.3],[2376.8,-356.1,-337.3],[2384.7,-364.0,-337.3],[2392.5,-371.9,-337.3],[2400.4,-379.8,-337.3],[2408.3,-387.6,-337.5],[2416.2,-395.5,-337.9],[2424.0,-403.3,-338.6],[2432.0,-411.1,-339.8],[2439.8,-418.6,-342.0],[2447.6,-425.5,-345.8],[2455.5,-431.8,-350.7],[2463.4,-437.6,-355.9],[2471.3,-443.2,-361.6],[2479.1,-448.7,-367.1],[2487.0,-454.0,-372.9],[2494.9,-458.8,-379.2],[2502.9,-463.3,-385.7],[2510.7,-467.1,-392.6],[2518.6,-471.2,-399.4],[2526.4,-475.8,-405.7],[2534.3,-480.8,-411.8],[2542.2,-486.2,-417.5],[2550.1,-491.7,-423.2],[2558.0,-497.2,-428.8],[2565.8,-502.3,-434.7],[2573.7,-507.0,-441.0],[2581.5,-511.8,-447.4],[2589.4,-517.2,-453.0],[2597.2,-524.1,-456.7],[2605.1,-531.9,-457.9],[2613.0,-539.5,-455.8],[2620.8,-546.6,-452.3],[2628.7,-553.7,-449.1],[2636.5,-561.3,-447.2],[2644.3,-568.8,-449.5],[2652.1,-575.3,-453.7],[2660.0,-581.4,-458.8],[2667.9,-587.7,-463.5],[2675.7,-594.4,-467.6],[2683.7,-601.7,-470.5],[2691.5,-609.1,-473.1],[2699.4,-616.5,-476.0],[2707.2,-623.7,-479.1],[2715.1,-630.8,-482.6],[2723.1,-638.0,-485.8],[2730.9,-645.1,-489.3],[2738.7,-652.1,-492.8],[2746.7,-659.0,-496.7],[2754.6,-666.2,-499.9],[2762.4,-673.7,-502.1],[2770.3,-681.6,-502.8],[2778.2,-689.5,-502.8],[2786.1,-697.4,-502.8],[2793.9,-705.1,-502.1],[2801.8,-712.7,-500.0],[2809.6,-719.6,-496.2],[2817.5,-725.7,-491.2],[2825.4,-731.4,-485.8],[2833.3,-737.0,-480.2],[2841.2,-743.1,-475.2],[2849.0,-749.8,-471.1],[2856.8,-757.1,-468.5],[2864.8,-765.0,-467.6],[2872.6,-772.8,-466.3],[2880.4,-780.1,-463.6],[2888.3,-786.8,-459.4],[2896.2,-792.9,-454.4],[2904.1,-798.5,-448.9],[2912.1,-804.2,-443.3],[2919.9,-809.7,-437.8],[2927.9,-815.3,-432.1],[2935.7,-821.1,-426.9],[2943.5,-827.3,-422.0],[2951.4,-833.3,-417.0],[2959.3,-838.7,-411.2],[2967.0,-842.1,-404.3],[2975.0,-843.3,-396.4],[2982.8,-844.6,-388.6],[2990.7,-848.0,-381.5],[2998.6,-852.8,-375.2],[3006.4,-858.1,-369.6],[3014.2,-864.2,-364.6],[3022.1,-871.0,-360.7],[3030.0,-878.6,-358.6],[3037.8,-886.4,-359.1],[3045.7,-894.0,-361.1],[3053.6,-901.1,-364.6],[3061.5,-907.5,-369.2],[3069.4,-913.7,-374.1],[3077.3,-919.6,-379.3],[3085.1,-925.4,-384.6],[3093.0,-931.2,-390.0],[3100.9,-936.8,-395.5],[3108.7,-942.3,-401.0],[3116.7,-948.0,-406.6],[3124.5,-953.5,-412.2],[3132.5,-959.2,-417.8],[3140.3,-964.4,-423.6],[3148.1,-969.5,-429.5],[3156.0,-974.3,-435.8],[3164.0,-979.0,-442.2],[3171.7,-983.9,-448.3],[3179.6,-989.1,-454.2],[3187.5,-995.0,-459.4],[3195.4,-1001.8,-463.4],[3203.3,-1009.3,-465.7],[3211.2,-1017.2,-466.0],[3219.0,-1025.1,-466.0],[3226.9,-1033.0,-466.0],[3234.8,-1040.9,-466.0]],"bakkai":[{"sp":1188.3,"W":20.2,"Wa":18.2},{"sp":1195.5,"dist":7.2,"W":19.3,"Wav":19.8,"A":143.0,"Wa":17.3,"Waav":17.8,"Aa":128.0,"An":15.0},{"sp":1200.0,"dist":4.5,"W":18.6,"Wav":19.0,"A":86.0,"Wa":16.6,"Waav":17.0,"Aa":77.0,"An":9.0},{"sp":1209.0,"dist":9.0,"W":15.8,"Wav":17.2,"A":155.0,"Wa":13.8,"Waav":15.2,"Aa":137.0,"An":18.0},{"sp":1216.0,"dist":7.0,"W":12.0,"Wav":13.9,"A":97.0,"Wa":10.0,"Waav":11.9,"Aa":83.0,"An":14.0},{"sp":1220.0,"dist":4.0,"W":9.5,"Wav":10.8,"A":43.0,"Wr":0.7,"Wrav":0.4,"Ar":2.0,"Wa":7.5,"Waav":8.8,"Aa":35.0,"An":8.0},{"sp":1223.5,"dist":3.5,"W":12.7,"Wav":11.1,"A":39.0,"Wr":1.1,"Wrav":0.9,"Ar":3.0,"Wa":9.1,"Waav":8.3,"Aa":29.0,"An":10.0},{"sp":1230.0,"dist":6.5,"W":13.0,"Wav":12.9,"A":84.0,"Wrav":0.6,"Ar":4.0,"Wa":11.0,"Waav":10.1,"Aa":66.0,"An":18.0},{"sp":1240.0,"dist":2.4,"W":11.2,"Wav":12.1,"A":29.0,"Wa":9.2,"Waav":10.1,"Aa":24.0,"An":5.0},{"sp":1244.0,"dist":4.0,"W":11.9,"Wav":11.6,"A":46.0,"Wa":9.9,"Waav":9.6,"Aa":38.0,"An":8.0},{"sp":1248.0,"dist":4.0,"W":11.7,"Wav":11.8,"A":47.0,"Wa":9.7,"Waav":9.8,"Aa":39.0,"An":8.0},{"sp":1260.0,"dist":12.0,"W":14.1,"Wav":12.9,"A":155.0,"Wa":12.1,"Waav":10.9,"Aa":131.0,"An":24.0},{"sp":1263.0,"dist":3.0,"W":14.6,"Wav":14.4,"A":43.0,"Wa":12.6,"Waav":12.4,"Aa":37.0,"An":6.0},{"sp":1268.0,"dist":5.0,"W":14.1,"Wav":14.4,"A":72.0,"Wa":12.1,"Waav":12.4,"Aa":62.0,"An":10.0},{"sp":1280.0,"dist":12.0,"W":11.1,"Wav":12.6,"A":151.0,"Wa":9.1,"Waav":10.6,"Aa":127.0,"An":24.0},{"sp":1290.0,"dist":5.1,"W":10.0,"Wav":10.6,"A":54.0,"Wa":8.0,"Waav":8.6,"Aa":44.0,"An":10.0},{"sp":1294.9,"dist":4.9,"W":10.5,"Wav":10.3,"A":51.0,"Wa":8.5,"Waav":8.3,"Aa":41.0,"An":10.0},{"sp":1300.0,"dist":5.1,"W":12.0,"Wav":11.3,"A":58.0,"Wa":10.0,"Waav":9.3,"Aa":47.0,"An":11.0},{"sp":1304.9,"dist":4.9,"W":13.5,"Wav":12.8,"A":63.0,"Wa":12.5,"Waav":11.3,"Aa":55.0,"An":8.0},{"sp":1312.0,"dist":7.1,"W":12.9,"Wav":13.2,"A":94.0,"Wa":11.9,"Waav":12.2,"Aa":87.0,"An":7.0},{"sp":1317.0,"dist":5.0,"W":15.5,"Wav":14.2,"A":71.0,"Wr":1.9,"Wrav":1.0,"Ar":5.0,"Wa":7.2,"Waav":9.6,"Aa":48.0,"An":23.0},{"sp":1320.0,"dist":3.0,"W":12.3,"Wav":13.9,"A":42.0,"Wr":1.8,"Wrav":1.9,"Ar":6.0,"Wa":6.3,"Waav":6.8,"Aa":20.0,"An":22.0},{"sp":1321.5,"dist":1.5,"W":10.3,"Wav":11.3,"A":17.0,"Wr":2.3,"Wrav":2.1,"Ar":3.0,"Wa":3.7,"Waav":5.0,"Aa":8.0,"An":9.0},{"sp":1326.0,"dist":4.5,"W":10.2,"Wav":10.3,"A":46.0,"Wrav":1.2,"Ar":5.0,"Wa":8.2,"Waav":6.0,"Aa":27.0,"An":19.0},{"sp":1335.0,"dist":9.0,"W":13.0,"Wav":11.6,"A":104.0,"Wa":11.0,"Waav":9.6,"Aa":86.0,"An":18.0},{"sp":1340.0,"dist":5.0,"W":12.7,"Wav":12.9,"A":65.0,"Wa":10.7,"Waav":10.9,"Aa":55.0,"An":10.0},{"sp":1350.0,"dist":10.0,"W":14.6,"Wav":13.7,"A":137.0,"Wa":12.6,"Waav":11.7,"Aa":117.0,"An":20.0},{"sp":1360.0,"dist":10.0,"W":12.4,"Wav":13.5,"A":135.0,"Wa":10.4,"Waav":11.5,"Aa":115.0,"An":20.0},{"sp":1368.0,"dist":8.0,"W":12.3,"Wav":12.4,"A":99.0,"Wa":10.3,"Waav":10.4,"Aa":83.0,"An":16.0},{"sp":1374.0,"dist":6.0,"W":13.9,"Wav":13.1,"A":79.0,"Wr":3.0,"Wrav":1.5,"Ar":9.0,"Wa":11.2,"Waav":10.8,"Aa":65.0,"An":14.0},{"sp":1380.0,"dist":6.0,"W":13.3,"Wav":13.6,"A":82.0,"Wr":1.5,"Wrav":2.3,"Ar":14.0,"Wa":9.1,"Waav":10.2,"Aa":61.0,"An":21.0},{"sp":1393.5,"dist":13.5,"W":11.5,"Wav":12.4,"A":167.0,"Wrav":0.8,"Ar":11.0,"Wa":9.5,"Waav":9.3,"Aa":126.0,"An":41.0},{"sp":1400.0,"dist":6.5,"W":11.6,"Wav":11.6,"A":75.0,"Wr":1.8,"Wrav":0.9,"Ar":6.0,"Wa":9.1,"Waav":9.3,"Aa":60.0,"An":15.0},{"sp":1407.0,"dist":7.0,"W":15.3,"Wav":13.5,"A":95.0,"Wr":3.0,"Wrav":2.4,"Ar":17.0,"Wa":7.6,"Waav":8.4,"Aa":59.0,"An":36.0},{"sp":1417.0,"dist":10.0,"W":14.6,"Wav":15.0,"A":150.0,"Wr":1.6,"Wrav":2.3,"Ar":23.0,"Wa":1.6,"Waav":4.6,"Aa":46.0,"An":104.0},{"sp":1420.0,"dist":3.0,"W":15.1,"Wav":14.9,"A":45.0,"Wr":2.9,"Wrav":2.3,"Ar":7.0,"Wa":6.0,"Waav":3.8,"Aa":11.0,"An":34.0},{"sp":1426.0,"dist":6.0,"W":9.9,"Wav":12.5,"A":75.0,"Wr":1.5,"Wrav":2.2,"Ar":13.0,"Wa":7.9,"Waav":7.0,"Aa":42.0,"An":33.0},{"sp":1432.0,"dist":6.0,"W":13.8,"Wav":11.9,"A":71.0,"Wr":5.3,"Wrav":3.4,"Ar":20.0,"Wa":11.8,"Waav":9.9,"Aa":59.0,"An":12.0},{"sp":1440.0,"dist":8.0,"W":9.4,"Wav":11.6,"A":93.0,"Wrav":2.7,"Ar":22.0,"Wa":7.4,"Waav":9.6,"Aa":77.0,"An":16.0},{"sp":1452.0,"dist":12.0,"W":8.4,"Wav":8.9,"A":107.0,"Wa":6.4,"Waav":6.9,"Aa":83.0,"An":24.0},{"sp":1460.0,"dist":8.0,"W":10.7,"Wav":9.6,"A":77.0,"Wa":8.7,"Waav":7.6,"Aa":61.0,"An":16.0},{"sp":1470.0,"dist":10.0,"W":9.5,"Wav":10.1,"A":101.0,"Wa":7.5,"Waav":8.1,"Aa":81.0,"An":20.0},{"sp":1480.0,"dist":10.0,"W":9.1,"Wav":9.3,"A":93.0,"Wa":7.1,"Waav":7.3,"Aa":73.0,"An":20.0},{"sp":1487.6,"dist":7.6,"W":11.2,"Wav":10.2,"A":78.0,"Wa":9.2,"Waav":8.2,"Aa":62.0,"An":16.0},{"sp":1492.0,"dist":4.4,"W":10.7,"Wav":11.0,"A":48.0,"Wa":8.7,"Waav":9.0,"Aa":40.0,"An":8.0},{"sp":1500.0,"dist":8.0,"W":22.8,"Wav":16.8,"A":134.0,"Wr":2.5,"Wrav":1.3,"Ar":10.0,"Wa":2.5,"Waav":5.6,"Aa":45.0,"An":89.0},{"sp":1504.0,"dist":4.0,"W":23.3,"Wav":23.1,"A":92.0,"Wr":1.7,"Wrav":2.1,"Ar":8.0,"Wa":1.7,"Waav":2.1,"Aa":8.0,"An":84.0},{"sp":1510.6,"dist":6.6,"W":19.9,"Wav":21.6,"A":143.0,"Wr":2.0,"Wrav":1.9,"Ar":13.0,"Wa":2.0,"Waav":1.9,"Aa":13.0,"An":130.0},{"sp":1520.0,"dist":9.4,"W":17.8,"Wav":18.9,"A":178.0,"Wr":4.5,"Wrav":3.3,"Ar":31.0,"Wa":4.5,"Waav":3.3,"Aa":31.0,"An":147.0},{"sp":1530.0,"dist":10.0,"W":10.2,"Wav":14.0,"A":140.0,"Wr":5.2,"Wrav":4.9,"Ar":49.0,"Wa":5.5,"Waav":5.0,"Aa":50.0,"An":90.0},{"sp":1533.7,"dist":3.7,"W":10.3,"Wav":10.3,"A":38.0,"Wr":2.5,"Wrav":3.9,"Ar":14.0,"Wa":7.5,"Waav":6.5,"Aa":24.0,"An":14.0},{"sp":1540.0,"dist":6.3,"W":8.6,"Wav":9.5,"A":60.0,"Wrav":1.3,"Ar":8.0,"Wa":6.6,"Waav":7.1,"Aa":45.0,"An":15.0},{"sp":1543.7,"dist":3.7,"W":8.8,"Wav":8.7,"A":32.0,"Wa":6.8,"Waav":6.7,"Aa":25.0,"An":7.0},{"sp":1558.0,"dist":14.3,"W":10.6,"Wav":9.7,"A":139.0,"Wa":8.6,"Waav":7.7,"Aa":110.0,"An":29.0},{"sp":1560.0,"dist":2.0,"W":10.4,"Wav":10.5,"A":21.0,"Wa":8.4,"Waav":8.5,"Aa":17.0,"An":4.0},{"sp":1570.0,"dist":10.0,"W":9.1,"Wav":9.8,"A":98.0,"Wa":7.1,"Waav":7.8,"Aa":78.0,"An":20.0},{"sp":1580.0,"dist":10.0,"W":8.7,"Wav":8.9,"A":89.0,"Wa":6.7,"Waav":6.9,"Aa":69.0,"An":20.0},{"sp":1590.0,"dist":10.0,"W":8.4,"Wav":8.6,"A":86.0,"Wa":6.4,"Waav":6.6,"Aa":66.0,"An":20.0},{"sp":1600.0,"dist":10.0,"W":15.6,"Wav":12.0,"A":120.0,"Wr":13.6,"Wrav":6.8,"Ar":68.0,"Wa":13.6,"Waav":10.0,"Aa":100.0,"An":20.0},{"sp":1602.0,"dist":2.0,"W":16.5,"Wav":16.1,"A":32.0,"Wr":5.6,"Wrav":9.6,"Ar":19.0,"Wa":5.6,"Waav":9.6,"Aa":19.0,"An":13.0},{"sp":1607.9,"dist":5.9,"W":23.6,"Wav":20.1,"A":119.0,"Wr":6.1,"Wrav":5.9,"Ar":35.0,"Wa":6.1,"Waav":5.9,"Aa":35.0,"An":84.0},{"sp":1612.0,"dist":4.1,"W":28.8,"Wav":26.2,"A":107.0,"Wr":1.9,"Wrav":4.0,"Ar":16.0,"Wa":1.9,"Waav":4.0,"Aa":16.0,"An":91.0},{"sp":1620.0,"dist":8.0,"W":31.5,"Wav":30.2,"A":242.0,"Wr":2.2,"Wrav":2.1,"Ar":17.0,"Wa":2.2,"Waav":2.1,"Aa":17.0,"An":225.0}],"INFO":{"rouban":{"n":"路盤工（非舗装前提の上層路盤）","b":"林道の路面に再生骨材（RC-40、0〜40mm級・再生コンクリート100%）を敷いて締め固めます。延長 360m（SP500〜600 100m、SP700〜800 100m、SP1,000〜1,160 160m）×幅3.0m×厚さ0.10m＝108m³。材料は補正係数1.22 を掛けて 131.76m³（10tダンプで約22台分の目安）。ブルドーザ 3t級で敷き均し、タイヤローラ（8〜20t）で所定の支持力・密度が出るまで転圧します。一層の仕上り厚は20cm以下。再生骨材は各プラントの在庫を確認して使うこと（特記仕様書）。","s":"平面図・数量計算書（各種計算表）・見積用設計書・特記仕様書"},"bakkai":{"n":"伐開の範囲（伐開除根数量調書）","b":"SP1188.3〜1620 の約430m、伐開の巾は 9〜31m です。数量調書の合計は 伐開面積（笹・潅木）5,532m²、除根面積（疎林）458m²、伐根積込面積 除根物有り 3,620m²・除根物無し 1,912m²。見積用設計書の数量は チェンソー伐開（Ⅰ）1,912m² と 伐開物集積積込作業（機械・伐木物のみ）1,912m² だけで、残りの面積に当たる項目はありません。モデルでは道路の中心から左右に均等に広げています（どちら側に広いかは図面にありません）。","s":"数量計算書（伐開除根数量調書）・見積用設計書"},"tree":{"n":"伐木（チェンソー伐開）","b":"チェンソーで伐倒し、バックホウ（0.8m³）のつかみ装置で集積・積込みします（伐木物のみ）。チェンソーで伐倒するときは胸高直径によらず全ての伐倒木に受け口を付けること、伐採を指定された立木以外を切る必要が出たら監督員と協議すること（特記仕様書）。木の本数と位置は、除根物無しの面積（1,912m²）に合わせて置いた記号です。","s":"特記仕様書・見積用設計書・数量計算書"},"machine":{"n":"主な機械（目安の位置）","b":"見積用設計書の機械：ブルドーザ 3t級（排対型1次）、タイヤローラ 8〜20t、バックホウ（クローラ型・排対型2次、山積0.8m³）＋つかみ装置（開口幅1,700〜2,000mm）、チェンソー（鋸長500mm）。置いている位置は目安です。","s":"見積用設計書（機械器具集計一覧表）"},"road":{"n":"桧倉川林道","b":"松前郡福島町字桧倉の林道です（道有林 渡島西部管理区 21林班ほか）。平面図の赤線の範囲は SP≈280〜3,240 の約2.95km（目安）。林道の幅は 3〜4m（設計書の作業幅員 3.0≦W<4.0m）として、幅3.5mで描いています。全体の見え方のため、まわりに薄い帯を付けています。","s":"平面図・位置図・見積用設計書"},"ground":{"n":"地面（標高なし）","b":"図面に標高・横断図が無いので、地面は平らにしています。実際は山の斜面です。","s":""}},"DEF":["部材をクリックしてください","桧倉川林道の路盤工（赤、3か所 計360m）と伐開（SP1188.3〜1620）の位置です。平面図の赤線から作った平面で、標高は描いていません。",""],"LAYERS":[{"id":"rouban","t":"路盤工","sub":"360m・108m³","c":"--c-new","on":true,"grp":"今回の工事"},{"id":"tree","t":"伐木（伐開）","sub":"1,912m²","c":"--c-tree","on":true},{"id":"bakkai","t":"伐開の範囲（数量調書）","sub":"5,532m²","c":"--c-brush","on":true},{"id":"machine","t":"機械（目安）","sub":"","c":"--c-machine","on":true},{"id":"road","t":"林道","sub":"","c":"--c-gravel","on":true,"grp":"まわり"},{"id":"ground","t":"地面","sub":"","c":"--c-forest","on":true},{"id":"label","t":"ラベルと測点","sub":"","c":"--panel","on":true}],"WORKS":[{"id":"tree","t":"チェンソー伐開","q":"1,912m²","c":"--c-tree","v":[1300,-40,60,-50]},{"id":"machine","inf":"machine","t":"伐開物の集積・積込","q":"1,912m²","c":"--c-machine","v":[1420,-25,14,-14]},{"id":"rouban","t":"路盤工 SP500〜600","q":"100m","c":"--c-new","v":[550,-40,45,-40]},{"id":"rouban","t":"路盤工 SP700〜800","q":"100m","c":"--c-new","v":[750,-40,45,-40]},{"id":"rouban","t":"路盤工 SP1,000〜1,160","q":"160m","c":"--c-new","v":[1080,-45,30,-40]}],"roadW":3.5,"segs":[[500,600],[700,800],[1000,1160]],"cut0":1080,"chips":[["SP550",550],["SP750",750],["SP1080",1080],["SP1250 伐開",1250],["SP1600 伐開",1600]],"ext":[-1290.9,1243.2,-752.8,854.5]};
+/* 桧倉川林道維持工事：林道の平面（平面図の赤線を座標にしたもの）と、路盤工・伐開の範囲
+   SP = 林道の測点（m）。x = 東へ＋、z = 南へ＋（平面図の上を北として）。標高は図面に無いので描かず、平らにしている。 */
+const RT=DATA.route, SP0=RT[0][0], SP1=RT[RT.length-1][0];
+function at(sp){ sp=Math.max(SP0,Math.min(SP1-1e-6,sp)); let i=1; while(i<RT.length-1&&RT[i][0]<sp)i++;
+  const a=RT[i-1],b=RT[i],L=(b[0]-a[0])||1,t=(sp-a[0])/L,tx=(b[1]-a[1])/L,tz=(b[2]-a[2])/L;
+  return {x:a[1]+(b[1]-a[1])*t,z:a[2]+(b[2]-a[2])*t,tx,tz,nx:-tz,nz:tx}; }
+// u = 進行方向（SPが増える向き）の左へ＋
+const M=(sp,u,y)=>{const f=at(sp);return new THREE.Vector3(f.x+f.nx*u,y,f.z+f.nz*u);};
+const BK=DATA.bakkai, ROAD=DATA.roadW;
+const bk=sp=>{ if(sp<BK[0].sp||sp>BK[BK.length-1].sp)return null; let i=1; while(i<BK.length-1&&BK[i].sp<sp)i++; const a=BK[i-1],b=BK[i],t=(sp-a.sp)/((b.sp-a.sp)||1);
+  return {W:a.W+(b.W-a.W)*t, Wa:a.Wa+(b.Wa-a.Wa)*t}; };
+const segOf=sp=>DATA.segs.find(s=>sp>=s[0]-1e-6&&sp<=s[1]+1e-6)||null;
+controls.maxDistance=5000; camera.far=9000; camera.updateProjectionMatrix();
+INFO=DATA.INFO; DEFAULT_INFO=DATA.DEF; state.s=DATA.cut0; state.cut=false;
+LAYERS=DATA.LAYERS; PRI={rouban:1,tree:1,machine:2,bakkai:3,road:4,label:9,ground:9};
+const vAt=(sp,back,up,side)=>{const f=at(sp);return [[f.x-f.tx*back+f.nx*side,up,f.z-f.tz*back+f.nz*side],[f.x,0,f.z]];};
+WORKS=DATA.WORKS.map(w=>Object.assign({},w,{v:w.v?vAt.apply(null,w.v):null}));
+VIEWS=[
+  {id:"all",t:"全体",go:()=>setView([40,2500,1500],[40,0,80])},
+  {id:"rb",t:"路盤工（3か所）",go:()=>{const f=at(800);setView([f.x+180,240,f.z+260],[f.x,0,f.z]);}},
+  {id:"bk",t:"伐開の範囲",go:()=>{const f=at(1400);setView([f.x+160,230,f.z+240],[f.x,0,f.z]);}},
+  {id:"top",t:"真上から",go:()=>setView([0,2500,1],[0,0,60])},
+  {id:"sec",t:"断面を正面から",go:()=>SITE.viewSec()}
+];
+const lam=(tok,op,po)=>{const m=new THREE.MeshLambertMaterial({color:new THREE.Color(css(tok)),side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:po||1,polygonOffsetUnits:po||1});if(op!==undefined&&op<1){m.transparent=true;m.opacity=op;m.depthWrite=false;}return m;};
+function add(grp,g,m,info,extra){const o=new THREE.Mesh(g,m);o.userData.info=info;o.userData.extra=extra||"";grp.add(o);pick.push(o);return o;}
+function ribbon(s0,s1,u0,u1,y,step){ const T=new Tris(); step=step||2; for(let s=s0;s<s1-1e-6;s+=step){const b=Math.min(s1,s+step); T.quad(M(s,u0(s),y),M(b,u0(b),y),M(b,u1(b),y),M(s,u1(s),y));} return T.geom(); }
+function slab(s0,s1,w,y0,y1,step){ const T=new Tris(); step=step||2; const P=(s,u,y)=>M(s,u,y);
+  for(let s=s0;s<s1-1e-6;s+=step){const b=Math.min(s1,s+step);
+    T.quad(P(s,-w/2,y1),P(b,-w/2,y1),P(b,w/2,y1),P(s,w/2,y1));
+    T.quad(P(s,-w/2,y0),P(b,-w/2,y0),P(b,-w/2,y1),P(s,-w/2,y1)); T.quad(P(s,w/2,y0),P(b,w/2,y0),P(b,w/2,y1),P(s,w/2,y1)); }
+  [s0,s1].forEach(s=>T.quad(P(s,-w/2,y0),P(s,w/2,y0),P(s,w/2,y1),P(s,-w/2,y1))); return T.geom(); }
+let rnd=7; const R=()=>{rnd=(rnd*16807)%2147483647;return (rnd-1)/2147483646;};
+function tree(grp,p,h,info,extra){ const tr=add(grp,new THREE.CylinderGeometry(0.18,0.25,h*0.45,6),lam("--c-trunk"),info,extra); tr.position.set(p.x,h*0.225,p.z);
+  const cr=add(grp,new THREE.ConeGeometry(h*0.22,h*0.7,8),lam("--c-tree"),info,extra); cr.position.set(p.x,h*0.62,p.z); }
+function machine(grp,sp,u,kind,label2){ const f=at(sp), g=new THREE.Group(); const mm=lam("--c-machine");
+  const box=(lx,ly,lz,x,y,z,tok)=>{const m=add(g,new THREE.BoxGeometry(lx,ly,lz),tok?lam(tok):mm,"machine",label2);m.position.set(x,y,z);return m;};
+  if(kind==="dozer"){box(3.6,1.2,2.0,0,0.9,0);box(1.4,1.1,1.5,-0.4,2.0,0);box(0.3,0.9,2.4,2.0,0.6,0,"--c-edge");}
+  if(kind==="roller"){box(4.2,1.4,2.0,0,1.3,0);box(1.4,1.2,1.6,-0.6,2.6,0);for(const x of[-1.4,1.4])for(const z of[-0.8,0.8]){const w=add(g,new THREE.CylinderGeometry(0.55,0.55,0.4,10),lam("--c-edge"),"machine",label2);w.rotation.x=Math.PI/2;w.position.set(x,0.55,z);}}
+  if(kind==="bh"){box(3.6,0.8,2.5,0,0.4,0,"--c-edge");box(3.0,1.2,2.4,0,1.4,0);box(1.0,1.4,1.0,0.6,2.6,0.6);const a=add(g,new THREE.BoxGeometry(5.0,0.35,0.35),mm,"machine",label2);a.position.set(3.4,2.6,0);a.rotation.z=-0.35;}
+  if(kind==="dump"){box(2.0,1.8,2.2,2.6,1.4,0);box(4.6,1.4,2.3,-0.9,1.5,0,"--c-gravel");box(7.0,0.5,2.2,0,0.5,0,"--c-edge");}
+  g.position.set(f.x+f.nx*u,0,f.z+f.nz*u); g.rotation.y=-Math.atan2(f.tz,f.tx); groups.machine.add(g); }
+
+SITE.build=function(){
+  const xo=state.xray?0.4:1;
+  // 地面（林）
+  const G=new Tris(); const E=DATA.ext; G.quad(new THREE.Vector3(E[0],-0.05,E[2]),new THREE.Vector3(E[1],-0.05,E[2]),new THREE.Vector3(E[1],-0.05,E[3]),new THREE.Vector3(E[0],-0.05,E[3]));
+  add(groups.ground,G.geom(),lam("--c-forest",xo,3),"ground","").userData.nohl=true;
+  // 林道（全体）と見やすくする帯
+  add(groups.road,ribbon(SP0,SP1,()=>-ROAD/2,()=>ROAD/2,0.02,6),lam("--c-gravel",1,2),"road","");
+  add(groups.road,ribbon(SP0,SP1,()=>-9,()=>9,0.01,6),lam("--c-roadhalo",0.45,2),"road","（見やすくするための帯。実際の幅は約3.5m）");
+  // 路盤工
+  DATA.segs.forEach(s=>{ const g=slab(s[0],s[1],3.0,0.02,0.12,1); add(groups.rouban,g,lam("--c-new"),"rouban","SP"+s[0]+"〜"+s[1]+"（"+(s[1]-s[0])+"m）");
+    add(groups.rouban,ribbon(s[0],s[1],()=>-14,()=>14,0.03,2),lam("--c-new",0.35,-1),"rouban","SP"+s[0]+"〜"+s[1]+"（見やすくするための帯）"); });
+  // 伐開の範囲（数量調書）と伐木（設計書の 1,912m²）
+  const s0=BK[0].sp, s1=BK[BK.length-1].sp;
+  add(groups.bakkai,ribbon(s0,s1,s=>-bk(s).W/2,s=>bk(s).W/2,0.04,1),lam("--c-brush",0.55,-2),"bakkai","");
+  for(let i=1;i<BK.length;i++){ const a=BK[i-1],b=BK[i], n=Math.round((b.An||0)/22);
+    for(let k=0;k<n;k++){ const sp=a.sp+(b.sp-a.sp)*R(), w=bk(sp).W/2, side=R()<0.5?-1:1, u=side*(ROAD/2+0.8+R()*Math.max(0.5,w-ROAD/2-0.8));
+      tree(groups.tree,M(sp,u,0),6+R()*7,"tree","SP"+fm(sp,0)+"付近"); } }
+  // 機械（目安の位置）
+  machine(groups.machine,1050,-1.5,"dozer","ブルドーザ 3t級（敷均し）");
+  machine(groups.machine,1085,0,"roller","タイヤローラ 8〜20t（転圧）");
+  machine(groups.machine,1020,0,"dump","ダンプ（再生骨材の運搬）");
+  machine(groups.machine,1430,0,"bh","バックホウ 0.8m³＋つかみ装置（集積・積込）");
+  // ラベル
+  const g=groups.label;
+  for(let sp=Math.ceil(SP0/100)*100;sp<=SP1;sp+=100){ if(sp%500===0||sp<1700) g.add(near(label("SP"+sp,M(sp,0,6),{mono:true,size:0.012}),sp%500===0?4000:900)); }
+  DATA.segs.forEach(s=>g.add(near(label("路盤工 SP"+s[0]+"〜"+s[1],M((s[0]+s[1])/2,s[0]===500?70:s[0]===700?-45:22,14),{size:0.016,fg:css("--accent")}),4000)));
+  g.add(near(label("伐開 SP1188.3〜1620",M(1400,30,18),{size:0.016,fg:css("--c-tree")}),4000));
+  g.add(near(label("● 平面図の起点側（SP≈"+Math.round(SP0)+"）",M(SP0,0,10),{size:0.014}),5000));
+  g.add(near(label("● 平面図の終点側（SP≈"+Math.round(SP1/10)*10+"）",M(SP1,0,10),{size:0.014}),5000));
+  g.add(near(label("N ↑",new THREE.Vector3(DATA.ext[1]-80,5,DATA.ext[2]+60),{size:0.02}),9000));
+};
+/* ---------- 断面 ---------- */
+SITE.snap=v=>Math.round(v*2)/2;
+const dirAt=sp=>{const f=at(sp);return new THREE.Vector3(f.tx,0,f.tz);};
+SITE.keep=p=>{const d=dirAt(state.s),o=M(state.s,0,0);return (p.x-o.x)*d.x+(p.z-o.z)*d.z>=-1e-3;};
+SITE.readout=function(){ const s=state.s, sg=segOf(s), b=bk(s);
+  $("r-pos").textContent="SP "+fm(s,1);
+  $("r-a").textContent=sg?("路盤工 SP"+sg[0]+"〜"+sg[1]):"なし";
+  $("r-b").textContent=b?("伐開 巾"+fm(b.W,1)+"m（うち除根物有り "+fm(b.Wa,1)+"m）"):"なし"; };
+SITE.cut=function(){ const s=state.s, d=dirAt(s), o=M(s,0,0);
+  cutPlane.normal.copy(d); cutPlane.constant=-(d.x*o.x+d.z*o.z);
+  const f=at(s), place=(u,v)=>M(s,u,v).add(new THREE.Vector3(-f.tx*0.02,0,-f.tz*0.02)), sg=segOf(s), b=bk(s);
+  capPoly([[-30,-0.6],[30,-0.6],[30,-0.05],[-30,-0.05]],place,"--c-forest","ground","");
+  capPoly([[-ROAD/2,-0.05],[ROAD/2,-0.05],[ROAD/2,0.02],[-ROAD/2,0.02]],place,"--c-gravel","road","");
+  if(sg&&state.vis.rouban) capPoly([[-1.5,0.02],[1.5,0.02],[1.5,0.12],[-1.5,0.12]],place,"--c-new","rouban","");
+  const L=(t,u,v,o2)=>capGroup.add(label(t,place(u,v),Object.assign({size:0.02,mono:true},o2||{})));
+  if(b&&state.vis.bakkai){ capGroup.add(lineOf([place(-b.W/2,0.3),place(-b.W/2,4),place(b.W/2,4),place(b.W/2,0.3)],css("--c-tree"))); if(state.vis.label)L("伐開 巾 "+fm(b.W,1)+"m",0,4.6,{fg:css("--c-tree")}); }
+  if(state.vis.label){ L("SP "+fm(s,1),0,6.2,{fg:css("--accent"),size:0.024,mono:false}); L(sg?"路盤 幅3.0m・厚さ0.10m":"林道（幅 約3〜4m）",0,1.1,{mono:false}); L("← 左",-12,1.2,{mono:false}); L("右 →",12,1.2,{mono:false}); }
+};
+SITE.viewSec=function(){ if(!state.cut){state.cut=true;$("cut-on").checked=true;updateCut();}
+  const f=at(state.s), p=M(state.s,0,1.2); setView([p.x-f.tx*26,p.y+2,p.z-f.tz*26],[p.x,p.y,p.z]); $("view-sec").setAttribute("aria-pressed","true"); };
+SITE.pickExtra=(o,hit)=>{ if(o.userData.info==="road"||o.userData.info==="ground"){ let best=null,bd=1e9; RT.forEach(r=>{const dd=Math.hypot(r[1]-hit.point.x,r[2]-hit.point.z); if(dd<bd){bd=dd;best=r;}}); return best&&bd<60?"SP"+Math.round(best[0])+"付近":null; } return null; };
+SITE.home=()=>VIEWS[0].go();
+(function(){ const ch=$("cut-chips");
+  DATA.chips.forEach(q=>{const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=q[0];
+    b.addEventListener("click",()=>{state.s=q[1];$("cut-s").value=q[1];if(!state.cut){state.cut=true;$("cut-on").checked=true;}updateCut();if(secOn())SITE.viewSec();});ch.appendChild(b);});
+})();
+
+/* ================= shared: panel, cut, picking, loop ================= */
+LAYERS.forEach(l=>state.vis[l.id]=l.on);
+showInfo(null);
+(function buildPanel(){
+  const ul=$("layers");
+  LAYERS.forEach(l=>{
+    if(l.grp){const g=document.createElement("li");g.className="grp";g.textContent=l.grp;ul.appendChild(g);}
+    const li=document.createElement("li");
+    li.innerHTML='<label><input type="checkbox" id="ly-'+l.id+'"'+(l.on?" checked":"")+'><span class="swatch" style="background:var('+l.c+')"></span><span class="t">'+l.t+(l.sub?' <small class="num">'+l.sub+'</small>':'')+'</span></label>';
+    ul.appendChild(li);
+    li.querySelector("input").addEventListener("change",e=>{state.vis[l.id]=e.target.checked;applyVis();updateCut();});
+  });
+  const wk=$("works");
+  WORKS.forEach((w,i)=>{
+    const b=document.createElement("button");b.type="button";b.className="btn";b.id="work-"+i;b.setAttribute("aria-pressed","false");
+    b.innerHTML='<span class="w"><span class="swatch" style="background:var('+w.c+')"></span>'+w.t+'</span><span class="q num">'+w.q+'</span>';
+    b.addEventListener("click",()=>{
+      (w.on||(w.id?[w.id]:[])).forEach(id=>{ if(!state.vis[id]){state.vis[id]=true;$("ly-"+id).checked=true;} }); applyVis();
+      if(w.v){ if(state.cut){state.cut=false;$("cut-on").checked=false;updateCut();} setView(w.v[0],w.v[1]); }
+      showInfo(w.inf||w.id);
+      [...wk.children].forEach(c=>c.setAttribute("aria-pressed",String(c===b)));
+    });
+    wk.appendChild(b);
+  });
+  const vw=$("views");
+  VIEWS.forEach(v=>{const b=document.createElement("button");b.type="button";b.className="btn";b.id="view-"+v.id;b.textContent=v.t;if(v.id==="sec")b.setAttribute("aria-pressed","false");b.addEventListener("click",v.go);vw.appendChild(b);});
+})();
+function rebuild(){
+  if(root){scene.remove(root);dispose(root);}
+  root=new THREE.Group(); scene.add(root); pick=[]; groups={}; selected=null; nearLabels=[];
+  LAYERS.forEach(l=>{groups[l.id]=new THREE.Group();root.add(groups[l.id]);});
+  capGroup=new THREE.Group(); root.add(capGroup);
+  renderer.setClearColor(new THREE.Color(css("--scene")),1);
+  edgeMat=new THREE.LineBasicMaterial({color:new THREE.Color(css("--c-edge")),transparent:true,opacity:0.5});
+  SITE.build();
+  applyVis(); updateCut();
+}
+function applyVis(){ LAYERS.forEach(l=>{groups[l.id].visible=state.vis[l.id];}); }
+function updateCut(){
+  if(!capGroup)return;
+  pick=pick.filter(m=>m.parent!==capGroup);
+  while(capGroup.children.length){const c=capGroup.children.pop();dispose(c);}
+  SITE.readout();
+  const planes=state.cut?[cutPlane]:null;
+  root.traverse(o=>{ if(o.material&&!o.isSprite&&o.parent!==capGroup&&(o.material.clippingPlanes?1:0)!==(planes?1:0)){o.material.clippingPlanes=planes;o.material.needsUpdate=true;} });
+  if(state.cut) SITE.cut();
+}
+$("cut-on").addEventListener("change",e=>{state.cut=e.target.checked;updateCut();});
+$("cut-s").addEventListener("input",e=>{state.s=SITE.snap?SITE.snap(parseFloat(e.target.value)):parseFloat(e.target.value);updateCut();if(secOn())SITE.viewSec();});
+$("xray").addEventListener("change",e=>{state.xray=e.target.checked;rebuild();});
+controls.addEventListener("start",()=>{const b=$("view-sec");if(b)b.setAttribute("aria-pressed","false");[...$("works").children].forEach(c=>c.setAttribute("aria-pressed","false"));});
+
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2(); let down=null;
+const shown=o=>{for(let p=o;p;p=p.parent)if(!p.visible)return false;return true;};
+canvas.addEventListener("pointerdown",e=>{down=[e.clientX,e.clientY];});
+canvas.addEventListener("pointerup",e=>{
+  if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
+  const r=canvas.getBoundingClientRect(); ptr.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1));
+  ray.setFromCamera(ptr,camera);
+  const hits=ray.intersectObjects(pick,false).filter(h=>shown(h.object)&&(!state.cut||h.object.parent===capGroup||SITE.keep(h.point)));
+  const pri=h=>{const v=PRI[h.object.userData.info];return v===undefined?5:v;};
+  let hit=hits[0]; if(hit) hits.forEach(h=>{ if(h.distance<=hits[0].distance+0.35&&pri(h)<pri(hit)) hit=h; });
+  if(selected){selected.material=selected.userData.base;selected=null;}
+  if(!hit){showInfo(null);return;}
+  const o=hit.object;
+  if(o.material.emissive&&!o.isInstancedMesh&&!o.userData.nohl){o.userData.base=o.material;o.material=o.material.clone();o.material.emissive=new THREE.Color(0x3a3a12);selected=o;}
+  showInfo(o.userData.info,SITE.pickExtra(o,hit)||o.userData.extra);
+});
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(stage);
+function tick(){
+  controls.update();
+  const cp=camera.position, front=state.cut&&secOn();
+  for(let i=0;i<nearLabels.length;i++){const sp=nearLabels[i],d=cp.distanceTo(sp.position);
+    sp.visible=!front&&d<sp.userData.near&&(!state.cut||SITE.keep(sp.position));}
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+const retheme=()=>rebuild();
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",retheme);
+new MutationObserver(retheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+resize(); rebuild(); SITE.home(); tick();
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>rebuild());
+window.__viewer={state,setView,updateCut,rebuild,applyVis,camera,controls,scene,SITE};
+})();
+</script>
+
+</body></html>
