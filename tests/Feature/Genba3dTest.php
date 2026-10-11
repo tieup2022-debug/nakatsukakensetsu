@@ -280,9 +280,33 @@ class Genba3dTest extends TestCase
                 ->assertSee(route('genba3d.page', ['site' => $site, 'page' => 'ashiba']), false);
         }
         $this->withSession(['login_user_id' => 1])
-            ->get(route('genba3d.show', ['site' => 'asahi-funaageba']))
+            ->get(route('genba3d.show', ['site' => 'fukushima-tunnel']))
             ->assertOk()
             ->assertDontSee('/shiryo/', false);
+    }
+
+    public function test_osawa_sites_have_the_construction_management_tab_third(): void
+    {
+        foreach (['asahi-funaageba', 'asahi-higashi-gogan', 'osawa-kaigan-gogan'] as $site) {
+            $this->assertSame('sekokanri', array_key_first(config("genba3d.sites.{$site}.pages")));
+            $this->assertFileExists(resource_path('genba3d/'.config("genba3d.sites.{$site}.pages.sekokanri.file")));
+
+            $tab = $this->withSession(['login_user_id' => 1])
+                ->get(route('genba3d.page', ['site' => $site, 'page' => 'sekokanri']));
+            $tab->assertOk()->assertSee('is-document', false);
+            $this->assertMatchesRegularExpression('/aria-current="page"\s*>施工管理<\/a>/u', (string) $tab->getContent());
+            // タブの並び: 3Dモデル → 施工手順と工程表 → 施工管理
+            $html = (string) $tab->getContent();
+            $this->assertTrue(mb_strpos($html, '>施工手順と工程表</a>') < mb_strpos($html, '>施工管理</a>'));
+
+            $raw = $this->withSession(['login_user_id' => 1])
+                ->get(route('genba3d.page.raw', ['site' => $site, 'page' => 'sekokanri']));
+            $raw->assertOk()
+                ->assertSee('北海道建設部土木工事共通仕様書')
+                ->assertSee('出来形管理')
+                ->assertSee('品質管理')
+                ->assertSee('段階確認');
+        }
     }
 
     public function test_unknown_extra_page_is_not_found(): void

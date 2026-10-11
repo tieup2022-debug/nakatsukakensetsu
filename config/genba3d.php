@@ -91,6 +91,13 @@ return [
             'summary' => '大沢朝日漁港（朝日地区）船揚場。張コンクリート打替えと滑り材の撤去・新設（P8.49〜P33.06、L=24.5m）。',
             'file' => 'asahi-funaageba.html',
             'schedule_file' => 'asahi-funaageba-kotei.html',
+            'pages' => [
+                'sekokanri' => [
+                    'label' => '施工管理',
+                    'note' => '特記仕様書で指定された北海道建設部土木工事共通仕様書・土木工事施工管理基準から、施工計画書の項目、段階確認、出来形・品質・写真の管理項目と規格値を抜き出し、図面の設計値と並べた資料です。規格値と準用の扱いは監督員と確かめてください。',
+                    'file' => 'asahi-funaageba-sekokanri.html',
+                ],
+            ],
             'knowledge_file' => 'asahi-funaageba.md',
         ],
         'asahi-higashi-gogan' => [
@@ -99,6 +106,11 @@ return [
             'file' => 'asahi-higashi-gogan.html',
             'schedule_file' => 'asahi-higashi-gogan-kotei.html',
             'pages' => [
+                'sekokanri' => [
+                    'label' => '施工管理',
+                    'note' => '特記仕様書で指定された北海道建設部土木工事共通仕様書・土木工事施工管理基準から、施工計画書の項目、段階確認、出来形・品質・写真の管理項目と規格値を抜き出し、図面の設計値と並べた資料です。規格値と準用の扱いは監督員と確かめてください。',
+                    'file' => 'asahi-higashi-gogan-sekokanri.html',
+                ],
                 'ashiba' => [
                     'label' => '重機用足場',
                     'note' => '仮設工平面図と工事用道路詳細図（どちらも参考図）から、重機用足場の形・数量とクレーンの位置をまとめた資料です。寸法や数量は元の図面で確かめてください。',
@@ -112,6 +124,13 @@ return [
             'summary' => '大沢漁港海岸 護岸工（SP 0.00〜10.39、護岸工 L=10.39m／打止工 L=12.85m）。',
             'file' => 'osawa-kaigan-gogan.html',
             'schedule_file' => 'osawa-kaigan-gogan-kotei.html',
+            'pages' => [
+                'sekokanri' => [
+                    'label' => '施工管理',
+                    'note' => '特記仕様書で指定された北海道建設部土木工事共通仕様書・土木工事施工管理基準から、施工計画書の項目、段階確認、出来形・品質・写真の管理項目と規格値を抜き出し、図面の設計値と並べた資料です。規格値と準用の扱いは監督員と確かめてください。',
+                    'file' => 'osawa-kaigan-gogan-sekokanri.html',
+                ],
+            ],
             'knowledge_file' => 'osawa-kaigan-gogan.md',
         ],
         'fukushima-tunnel' => [
