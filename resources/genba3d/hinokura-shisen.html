@@ -118,6 +118,18 @@ details ul{margin:10px 0 0;padding-left:1.2em;font-size:12.5px;display:flex;flex
       <h2>断面を切る</h2>
       <label class="toggle"><input type="checkbox" id="cut-on"> 測点で横に切って断面を見る</label>
       <input type="range" id="cut-s" min="1051" max="1580" step="0.5" value="1350" aria-label="切る位置（測点 SP）">
+      <style>.cut-step{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;gap:5px;margin:8px 0 4px}
+      .cut-step .btn{min-height:38px;padding:4px 8px;font-size:13px;white-space:nowrap}
+      .cut-step input{min-width:0;width:100%;min-height:38px;box-sizing:border-box;border:1px solid var(--line);border-radius:3px;background:var(--bg);color:var(--ink);font:inherit;font-size:16px;text-align:center;font-variant-numeric:tabular-nums}
+      .cut-note{margin:0 0 8px;font-size:11.5px;color:var(--muted)}</style>
+      <div class="cut-step" role="group" aria-label="切る位置を細かく動かす">
+        <button type="button" class="btn" id="cs-prev" aria-label="前の横断図の測点へ">◀ 横断</button>
+        <button type="button" class="btn" id="cs-m" aria-label="0.5m戻す">−0.5</button>
+        <input type="text" id="cs-num" inputmode="decimal" autocomplete="off" aria-label="測点（SP）を数字で入力">
+        <button type="button" class="btn" id="cs-p" aria-label="0.5m進める">+0.5</button>
+        <button type="button" class="btn" id="cs-next" aria-label="次の横断図の測点へ">横断 ▶</button>
+      </div>
+      <p class="cut-note" id="cs-note" aria-live="polite"></p>
       <div class="chips" id="cut-chips" role="group" aria-label="代表の断面"></div>
       <dl class="read">
         <dt>切る位置</dt><dd class="num" id="r-pos">—</dd>
@@ -381,7 +393,9 @@ SITE.build=function(){
   g.add(near(label("N ↑",new THREE.Vector3(70,40,-150),{size:0.02}),3000));
 };
 /* ---------- 断面 ---------- */
-SITE.snap=v=>Math.round(v*2)/2;
+// 横断図のある測点（図面の断面）。スライダーはその±1m以内なら断面の位置に吸い付き、それ以外は0.5mきざみ
+const XS=SEC.map(q=>q.sp).filter(v=>v>=SP0&&v<=SP1);
+SITE.snap=v=>{let b=null,bd=1.0001;XS.forEach(x=>{const d=Math.abs(x-v);if(d<bd){bd=d;b=x;}});return b!==null?b:Math.round(v*2)/2;};
 const dirAt=sp=>{const f=at(sp);return new THREE.Vector3(f.tx,0,f.tz);};
 SITE.keep=p=>{const d=dirAt(state.s),o=M(state.s,0,0);return (p.x-o.x)*d.x+(p.z-o.z)*d.z>=-1e-3;};
 SITE.readout=function(){ const s=state.s, q=secAt(s), gh=(q.A.gh+(q.B.gh-q.A.gh)*q.t)+Y0, fh=FH(s)+Y0, d=gh-fh;
@@ -409,6 +423,25 @@ SITE.home=()=>VIEWS[0].go();
 (function(){ const ch=$("cut-chips");
   DATA.chips.forEach(q=>{const b=document.createElement("button");b.type="button";b.className="btn";b.textContent=q[0];
     b.addEventListener("click",()=>{state.s=q[1];$("cut-s").value=q[1];if(!state.cut){state.cut=true;$("cut-on").checked=true;}updateCut();if(secOn())SITE.viewSec();});ch.appendChild(b);});
+})();
+
+// スマホでも測点を合わせやすく：前後の横断図へ飛ぶ・0.5mずつ動かす・数字で入れる
+(function(){ const num=$("cs-num"), rng=$("cut-s"), note=$("cs-note"); let last=null;
+  const f=v=>Number.isInteger(v*2)?v.toFixed(1):v.toFixed(2);
+  function sync(){ if(state.s===last) return; last=state.s; rng.value=state.s;
+    if(document.activeElement!==num) num.value=f(state.s);
+    note.textContent=XS.some(x=>Math.abs(x-state.s)<1e-6)?"SP"+f(state.s)+"：横断図のある測点です":"SP"+f(state.s)+"：横断図なし（前後の断面の間をつないだ形）"; }
+  function go(v){ v=Math.min(SP1,Math.max(SP0,v)); state.s=Math.round(v*100)/100; rng.value=state.s;
+    if(!state.cut){state.cut=true;$("cut-on").checked=true;} updateCut(); if(secOn())SITE.viewSec(); sync(); }
+  $("cs-m").addEventListener("click",()=>go(Math.ceil(state.s*2-1e-6)/2-0.5));
+  $("cs-p").addEventListener("click",()=>go(Math.floor(state.s*2+1e-6)/2+0.5));
+  $("cs-prev").addEventListener("click",()=>{const a=XS.filter(x=>x<state.s-1e-6);go(a.length?a[a.length-1]:XS[0]);});
+  $("cs-next").addEventListener("click",()=>{const b=XS.find(x=>x>state.s+1e-6);go(b!==undefined?b:XS[XS.length-1]);});
+  num.addEventListener("change",()=>{const v=parseFloat(String(num.value).replace(/[^0-9.]/g,""));if(isFinite(v))go(v);else{last=null;sync();}});
+  num.addEventListener("keydown",e=>{if(e.key==="Enter")num.blur();});
+  num.addEventListener("blur",()=>{last=null;sync();});
+  rng.addEventListener("input",()=>setTimeout(()=>{last=null;sync();},0));
+  setInterval(sync,250); sync();
 })();
 
 /* ================= shared: panel, cut, picking, loop ================= */
