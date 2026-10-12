@@ -735,7 +735,7 @@ new MutationObserver(paint).observe(document.documentElement, {attributes:true, 
 
 (function start(){ const v = VIEWS.all(); camera.position.fromArray(v[0]); controls.target.fromArray(v[1]); controls.update(); })();
 resize(); paint(); setStage(4); requestAnimationFrame(tick);
-window.__viewer = {setStage, setView, flyTo, state:() => ({workState, secOn, secP, tide}), set:(o) => { if('secOn' in o) secOn = o.secOn; if('secP' in o){ secP = o.secP; $('#secP').value = secP; } if('tide' in o) tide = o.tide; if('xray' in o) xray = o.xray; if(o.layers) Object.assign(layerOn, o.layers); if(o.work) workState = o.work; applyVisibility(); }, solids, sectionOf, camera, controls, redraw};
+window.__viewer = {setStage, setView, flyTo, state:() => ({workState, secOn, secP, tide}), set:(o) => { if('secOn' in o) secOn = o.secOn; if('secP' in o){ secP = o.secP; $('#secP').value = secP; } if('tide' in o) tide = o.tide; if('xray' in o) xray = o.xray; if(o.layers) Object.assign(layerOn, o.layers); if(o.work) workState = o.work; applyVisibility(); }, solids, sectionOf, camera, controls, scene, redraw};
 })();
 </script>
 

@@ -15,11 +15,19 @@
 @endpush
 
 @section('content')
-    <div class="mb-4">
-        <h1 class="h4 mb-1 fw-semibold">現場3D</h1>
-        <div class="text-muted small">
-            設計図から組み立てた3Dモデルと、施工手順・工程表を、工事ごとにまとめています。見たいものを押すと、その画面が開きます。
+    <div class="mb-4 d-flex flex-wrap align-items-start justify-content-between gap-2">
+        <div>
+            <h1 class="h4 mb-1 fw-semibold">現場3D</h1>
+            <div class="text-muted small">
+                設計図から組み立てた3Dモデルと、施工手順・工程表を、工事ごとにまとめています。見たいものを押すと、その画面が開きます。
+            </div>
         </div>
+        <a href="{{ route('genba3d.koe.index') }}" class="btn btn-outline-primary btn-sm flex-shrink-0">
+            📌 現場の声
+            @if (($koeOpen ?? 0) > 0)
+                <span class="badge rounded-pill text-bg-danger">{{ $koeOpen }}</span>
+            @endif
+        </a>
     </div>
 
     @foreach ($projects as $key => $project)

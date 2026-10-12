@@ -275,6 +275,8 @@
             </div>
         </div>
     @endif
+
+    @include('genba3d.partials.koe')
 @endsection
 
 @if ($isDocument)

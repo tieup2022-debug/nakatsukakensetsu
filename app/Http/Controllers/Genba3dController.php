@@ -28,7 +28,18 @@ class Genba3dController extends Controller
             'title' => '現場3D',
             'projects' => array_filter($projects, fn (array $project): bool => $project['sites'] !== []),
             'upcoming' => array_filter($projects, fn (array $project): bool => $project['sites'] === []),
+            'koeOpen' => $this->koeOpenCount(),
         ]);
+    }
+
+    /** 現場の声の未対応・対応中の件数（表が無い・読めないときは 0）。 */
+    private function koeOpenCount(): int
+    {
+        try {
+            return array_sum(app(\App\Services\Genba3dFeedbackService::class)->openCounts());
+        } catch (\Throwable $e) {
+            return 0;
+        }
     }
 
     /** 3Dモデルのタブ。 */

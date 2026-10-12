@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\Genba3dController;
+use App\Http\Controllers\Genba3dFeedbackController;
 use App\Http\Controllers\GratitudePointController;
 use App\Http\Controllers\InAppNotificationController;
 use App\Http\Controllers\MachineScheduleController;
@@ -188,6 +189,12 @@ Route::post('/notifications/read-all', [InAppNotificationController::class, 'mar
 // 現場3D（設計図から組み立てた3Dモデルと、施工手順・工程表の閲覧。本体は resources/genba3d/、一覧は config/genba3d.php）
 Route::middleware('nakatsuka.auth')->group(function (): void {
     Route::get('/genba3d', [Genba3dController::class, 'index'])->name('genba3d.index');
+    // 現場の声（要望・現場の情報の書き込み）。{site} より先に置く
+    Route::get('/genba3d/koe', [Genba3dFeedbackController::class, 'index'])->name('genba3d.koe.index');
+    Route::get('/genba3d/koe/list', [Genba3dFeedbackController::class, 'list'])->name('genba3d.koe.list');
+    Route::post('/genba3d/koe/{id}/replies', [Genba3dFeedbackController::class, 'reply'])->name('genba3d.koe.reply')->where('id', '[0-9]+');
+    Route::patch('/genba3d/koe/{id}/status', [Genba3dFeedbackController::class, 'status'])->name('genba3d.koe.status')->where('id', '[0-9]+');
+    Route::delete('/genba3d/koe/{id}', [Genba3dFeedbackController::class, 'destroy'])->name('genba3d.koe.destroy')->where('id', '[0-9]+');
     Route::get('/genba3d/{site}', [Genba3dController::class, 'show'])->name('genba3d.show')->where('site', '[a-z0-9-]+');
     Route::get('/genba3d/{site}/model', [Genba3dController::class, 'model'])->name('genba3d.model')->where('site', '[a-z0-9-]+');
     Route::get('/genba3d/{site}/kotei', [Genba3dController::class, 'schedule'])->name('genba3d.schedule')->where('site', '[a-z0-9-]+');
@@ -195,6 +202,7 @@ Route::middleware('nakatsuka.auth')->group(function (): void {
     Route::get('/genba3d/{site}/shiryo/{page}', [Genba3dController::class, 'extra'])->name('genba3d.page')->where(['site' => '[a-z0-9-]+', 'page' => '[a-z0-9-]+']);
     Route::get('/genba3d/{site}/shiryo/{page}/page', [Genba3dController::class, 'extraPage'])->name('genba3d.page.raw')->where(['site' => '[a-z0-9-]+', 'page' => '[a-z0-9-]+']);
     Route::post('/genba3d/{site}/ask', [Genba3dController::class, 'ask'])->name('genba3d.ask')->where('site', '[a-z0-9-]+');
+    Route::post('/genba3d/{site}/koe', [Genba3dFeedbackController::class, 'store'])->name('genba3d.koe.store')->where('site', '[a-z0-9-]+');
 });
 
 // お問い合わせ（不具合・追加要望）

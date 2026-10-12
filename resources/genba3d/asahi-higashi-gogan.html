@@ -610,7 +610,7 @@ new MutationObserver(retheme).observe(document.documentElement,{attributes:true,
 
 resize(); rebuild(); viewAll(); tick();
 if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>rebuild());
-window.__viewer={state,setView,updateCut,rebuild,applyVis};
+window.__viewer={state,setView,updateCut,rebuild,applyVis,camera,controls,scene};
 })();
 </script>
 

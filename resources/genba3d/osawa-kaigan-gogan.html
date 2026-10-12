@@ -572,7 +572,7 @@ new ResizeObserver(resize).observe(wrap);
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', theme);
 new MutationObserver(theme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 theme(); resize(); setView('all'); select(null); applySection();
-window.__viewer = { setView, state, applySection, applyGhost, layer, render, select, items: M.items };
+window.__viewer = { setView, state, applySection, applyGhost, layer, render, select, items: M.items, camera, controls, scene };
 })();
 </script>
 
