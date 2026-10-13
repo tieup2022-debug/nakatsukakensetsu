@@ -136,7 +136,17 @@ details li{margin:3px 0}
       <div class="chips" id="secChips">
         <button data-p="5">P5.00 施工外</button><button data-p="13.5">P13.50 No.2</button><button data-p="23.5">P23.50 No.3</button><button data-p="30.5">P30.50 No.4</button><button data-p="32.22">SP32.22</button>
       </div>
-      <p class="note">P23.50 は標準断面図(1)、P30.50 は標準断面図(2) と同じ形になります。</p>
+      <p class="note">P23.50 は標準断面図(1)、P30.50 は標準断面図(2) と同じ形になります。</p><!--dekigata:start--><style>
+.dkx-h{margin:10px 0 4px;font-size:12.5px;font-weight:700}
+.dkx{font-size:12.5px;line-height:1.55}
+.dkx table{width:100%;border-collapse:collapse}
+.dkx table{table-layout:fixed}
+.dkx th{width:44%;text-align:left;font-weight:400;padding:2px 6px 2px 0;vertical-align:top}
+.dkx td{text-align:right;padding:2px 0 2px 4px;font-variant-numeric:tabular-nums;vertical-align:top;overflow-wrap:anywhere}
+.dkx td.sp{color:var(--muted,#566870);font-size:11.5px}
+.dkx tr.g th{width:auto;padding-top:6px;font-weight:700}
+.dkx p{margin:4px 0 0;color:var(--muted,#566870);font-size:11.5px}
+</style><h3 class="dkx-h">出来形で測る寸法（設計値・規格値）</h3><div class="dkx" id="dkx" aria-live="polite"><p>断面で切ると、その測点で測る寸法が出ます。</p></div><!--dekigata:end-->
     </section>
 
     <section>
@@ -739,4 +749,68 @@ window.__viewer = {setStage, setView, flyTo, state:() => ({workState, secOn, sec
 })();
 </script>
 
+<script>/*dekigata*/(function(){
+
+const fz=v=>(v>0.0005?"+":v<-0.0005?"−":"±")+Math.abs(v).toFixed(2);
+const CFG={
+  state:()=>{ const t=window.__viewer.state(); return {on:!!t.secOn, s:+t.secP, k:t.workState}; },
+  world:(s,u,z)=>new THREE.Vector3(s-0.03,z,u),
+  redraw:()=>{ const v=window.__viewer; if(v.redraw) v.redraw(); },
+  dims:(s,D,st)=>{
+    const v=window.__viewer;
+    if(s<8.49||s>33.06) return {rows:[], empty:"P8.49〜P33.06（No.2〜No.4スパン）が打替えの範囲です。"};
+    if(st.k!=="new") return {rows:[], empty:"「完成後」の表示にすると寸法が出ます。"};
+    const rows=[], cuts=[];
+    v.solids.filter(o=>o.panel).forEach(o=>{ v.sectionOf(o,s).forEach(poly=>{ const ys=poly.map(p=>p[0]); cuts.push({o,y0:Math.min(...ys),y1:Math.max(...ys)}); }); });
+    cuts.sort((a,b)=>a.y0-b.y0); let j=0;
+    if(cuts.length){ const c=cuts[cuts.length-1]; D.note([c.y1+3.2,c.o.top(c.y1)-0.1],"張コン t=0.20"); }
+    cuts.forEach((c,i)=>{ const o=c.o, t0=o.top(c.y0), t1=o.top(c.y1), L=Math.hypot(c.y1-c.y0,t1-t0), m=(c.y0+c.y1)/2, k=(c.y1-c.y0)/(t1-t0);
+      // 図の上は、目地で細く切れた端の版（1.5m未満）には文字を付けない
+      const big=L>=1.5; if(big) j++;
+      D.dim([c.y0,t0+0.3],[c.y1,t1+0.3],big?"版"+o.panel+" "+L.toFixed(2)+"m":null,[m,o.top(m)+(j%2?0.95:-0.95)]);
+      rows.push({g:"張コンクリート 版"+o.panel});
+      rows.push(["厚さ","0.20 m","−10mm（社内 −8mm）"]);
+      rows.push(["長さ（勾配方向・この断面）",L.toFixed(2)+" m","版の幅・延長は詳細図の値で −25mm（社内 −20mm）"]);
+      rows.push(["天端高（下端〜上端）",fz(t0)+" 〜 "+fz(t1),"協議"]);
+      rows.push(["勾配","1 : "+k.toFixed(1),"協議"]);
+      rows.push(["基礎（栗石均し）天端高",fz(t0-0.20)+" 〜 "+fz(t1-0.20),"±50mm（社内 ±40mm）"]);
+    });
+    if(!rows.length) return {rows:[], empty:"この位置には打ち替える版がありません。"};
+    return {rows, note:"設計値は張コンクリート詳細図・標準断面図から組んだモデルの値。張コンクリートの規格値は漁港編に項目が無いため、コンクリート舗装に準ずる案（要協議）。社内規格値は80%。"};
+  }
+};
+
+const $d=id=>document.getElementById(id), box=$d("dkx");
+const ACC="#c2410c";
+let grp=null, last="";
+function sprite(text){ const fs=30,pad=9,cv=document.createElement("canvas"),c=cv.getContext("2d"),font="600 "+fs+"px system-ui,-apple-system,'Hiragino Sans','Yu Gothic',sans-serif";
+  c.font=font; const w=Math.ceil(c.measureText(text).width)+pad*2,h=fs+pad*1.3; cv.width=w; cv.height=h; c.font=font;
+  c.fillStyle="rgba(255,255,255,0.92)"; c.fillRect(0,0,w,h); c.strokeStyle=ACC; c.lineWidth=2; c.strokeRect(1,1,w-2,h-2);
+  c.fillStyle=ACC; c.textBaseline="middle"; c.fillText(text,pad,h/2+1);
+  const tx=new THREE.CanvasTexture(cv); tx.minFilter=THREE.LinearFilter;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:false,sizeAttenuation:false,transparent:true}));
+  const k=0.02; sp.scale.set(k*w/h,k,1); sp.renderOrder=30; return sp; }
+const LM=new THREE.LineBasicMaterial({color:ACC,depthTest:false,transparent:true});
+function seg(pts){ const l=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),LM); l.renderOrder=29; return l; }
+// 断面上の寸法線：a,b は断面の座標 [横, 標高]。両端に短い目盛り、中ほどに値
+function dim(s,a,b,text,lab){ const W=(u,z)=>CFG.world(s,u,z);
+  const du=b[0]-a[0], dz=b[1]-a[1], L=Math.hypot(du,dz)||1, nu=-dz/L*0.07, nz=du/L*0.07;
+  grp.add(seg([W(a[0],a[1]),W(b[0],b[1]), W(a[0]-nu,a[1]-nz),W(a[0]+nu,a[1]+nz), W(b[0]-nu,b[1]-nz),W(b[0]+nu,b[1]+nz)]));
+  if(text){ const sp=sprite(text), m=lab||[(a[0]+b[0])/2,(a[1]+b[1])/2]; sp.position.copy(W(m[0],m[1])); grp.add(sp); } }
+function note(s,p,text){ const sp=sprite(text); sp.position.copy(CFG.world(s,p[0],p[1])); grp.add(sp); }
+function clear(){ if(!grp) return; while(grp.children.length){ const c=grp.children.pop(); if(c.geometry)c.geometry.dispose(); if(c.material&&c.material!==LM){ if(c.material.map)c.material.map.dispose(); c.material.dispose(); } } }
+const esc=t=>String(t).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+function table(r){ if(!r.rows.length) return "<p>"+esc(r.empty||"この位置には測る寸法がありません。")+"</p>";
+  let h="<table>"; r.rows.forEach(q=>{ if(q.g){ h+='<tr class="g"><th colspan="2">'+esc(q.g)+'</th></tr>'; return; }
+    h+="<tr><th>"+esc(q[0])+"</th><td>"+esc(q[1])+"<br><span class=\"sp\">"+esc(q[2]||"")+"</span></td></tr>"; });
+  return h+"</table><p>"+esc(r.note||"")+"</p>"; }
+function update(){ const v=window.__viewer; if(!v||!v.scene) return;
+  if(!grp){ grp=new THREE.Group(); grp.name="dekigata"; v.scene.add(grp); }
+  const st=CFG.state(), key=st.on+"|"+st.s.toFixed(3)+"|"+(st.k||"");
+  if(key===last) return; last=key; clear();
+  if(!st.on){ box.innerHTML="<p>断面で切ると、その測点で測る寸法が出ます。</p>"; CFG.redraw(); return; }
+  const r=CFG.dims(st.s, {dim:(a,b,t,l)=>dim(st.s,a,b,t,l), note:(p,t)=>note(st.s,p,t)}, st);
+  box.innerHTML=table(r); CFG.redraw(); }
+setInterval(update,200); update();
+})();</script>
 </body></html>
