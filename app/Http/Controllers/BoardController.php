@@ -100,6 +100,7 @@ class BoardController extends Controller
         return view('board.show', [
             'title' => $post->title.'・掲示板',
             'thread' => $post,
+            'adjacentThreads' => $this->board->adjacentThreads($post),
             'canDeleteThread' => $this->canDelete($user, $post->author_user_id),
             'currentUser' => $user,
             'attachmentLimit' => BoardService::ATTACHMENT_LIMIT,

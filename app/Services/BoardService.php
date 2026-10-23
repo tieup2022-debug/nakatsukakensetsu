@@ -133,6 +133,38 @@ class BoardService
             ->pluck('author_name');
     }
 
+    /** Adjacent articles in the list's last-activity / ID descending order. */
+    public function adjacentThreads(object $thread): array
+    {
+        $neighbors = [];
+        foreach (['previous' => '>', 'next' => '<'] as $direction => $operator) {
+            $query = DB::table('t_board_threads')->select('id', 'title');
+            $query->where(function (Builder $position) use ($thread, $operator): void {
+                if ($thread->last_activity_at === null) {
+                    $position->where(function (Builder $tie) use ($thread, $operator): void {
+                        $tie->whereNull('last_activity_at')->where('id', $operator, $thread->id);
+                    });
+                    if ($operator === '>') {
+                        $position->orWhereNotNull('last_activity_at');
+                    }
+                } else {
+                    $position->where('last_activity_at', $operator, $thread->last_activity_at)
+                        ->orWhere(function (Builder $tie) use ($thread, $operator): void {
+                            $tie->where('last_activity_at', $thread->last_activity_at)
+                                ->where('id', $operator, $thread->id);
+                        });
+                    if ($operator === '<') {
+                        $position->orWhereNull('last_activity_at');
+                    }
+                }
+            });
+            $sort = $direction === 'previous' ? 'asc' : 'desc';
+            $neighbors[$direction] = $query->orderBy('last_activity_at', $sort)->orderBy('id', $sort)->first();
+        }
+
+        return $neighbors;
+    }
+
     public function findThread(int $threadId, int $viewerUserId = 0, bool $incrementViews = false): ?object
     {
         if ($incrementViews) {

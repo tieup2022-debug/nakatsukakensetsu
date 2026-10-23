@@ -382,6 +382,32 @@ class BoardTest extends TestCase
         $this->assertSame(0, DB::table('t_board_threads')->count());
     }
 
+    public function test_article_navigation_matches_list_order_including_ties_and_endpoints(): void
+    {
+        $service = app(\App\Services\BoardService::class);
+        foreach ([null, '2026-10-20 09:00:00', '2026-10-23 09:00:00', '2026-10-20 09:00:00', null] as $activity) {
+            $id = $this->insertThread(2);
+            DB::table('t_board_threads')->where('id', $id)->update(['last_activity_at' => $activity]);
+        }
+        $deleted = $this->insertThread(2);
+        $service->deleteThread($deleted);
+        $ordered = $service->paginateThreads('')->items();
+
+        foreach ($ordered as $index => $thread) {
+            $neighbors = $service->adjacentThreads($thread);
+            $this->assertSame($ordered[$index - 1]->id ?? null, $neighbors['previous']->id ?? null);
+            $this->assertSame($ordered[$index + 1]->id ?? null, $neighbors['next']->id ?? null);
+        }
+
+        $this->withSession(['login_user_id' => 3])
+            ->get(route('board.show', ['thread' => $ordered[1]->id]))
+            ->assertOk()
+            ->assertSee('前の記事')
+            ->assertSee('次の記事')
+            ->assertSee('href="'.route('board.show', ['thread' => $ordered[0]->id]).'"', false)
+            ->assertSee('href="'.route('board.show', ['thread' => $ordered[2]->id]).'"', false);
+    }
+
     private function insertThread(int $authorUserId): int
     {
         return DB::table('t_board_threads')->insertGetId([

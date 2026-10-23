@@ -30,6 +30,8 @@
         @endif
     </div>
 
+    @include('board.partials.thread-navigation')
+
     <article class="card border-0 shadow-sm mb-3">
         <div class="card-body p-3 p-lg-4">
             <h1 class="h4 fw-semibold mb-3 board-thread-title">{{ $thread->title }}</h1>
@@ -131,6 +133,8 @@
             @endforeach
         </div>
     </section>
+
+    @include('board.partials.thread-navigation')
 
     <section class="card border-0 shadow-sm">
         <div class="card-body p-3 p-lg-4">
