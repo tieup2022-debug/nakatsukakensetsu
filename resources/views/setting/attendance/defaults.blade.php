@@ -13,6 +13,12 @@
         </div>
     </div>
 
+    <div class="alert alert-warning mb-3" role="note">
+        <p class="mb-1">※変更し保存した瞬間に初期値が反映されます。</p>
+        <p class="mb-1">→当日配置済で勤怠未確定の人の勤務時間も変更されますので、注意してください。</p>
+        <p class="mb-0 fw-semibold">★勤務時間を変更する前日の夜か当日の朝がベストタイミングです。</p>
+    </div>
+
     @if (session('status'))
         <div class="alert alert-info mb-3">{{ session('status') }}</div>
     @endif
