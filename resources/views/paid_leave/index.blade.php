@@ -22,7 +22,7 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <div>
             <h1 class="h4 mb-1 fw-semibold">有給申請</h1>
-            <div class="text-muted small">有給対象者、休む日、取得日数（0.5日／1日）と開始・終了時刻を入力します。下部で全員の申請状況を確認できます。</div>
+            <div class="text-muted small">連続して休む場合は、休む初日と最終日を指定してまとめて申請できます。</div>
         </div>
         <div>
             <a class="btn btn-outline-primary btn-sm" href="{{ route('paid-leave.summary') }}">取得状況（社員別集計）</a>
@@ -46,9 +46,10 @@
                     @enderror
                 </div>
                 <div class="col-lg-2 col-md-6">
-                    <label class="form-label small text-muted">休む日</label>
+                    <label for="paidLeaveFirstDate" class="form-label small text-muted">休む日（初日）</label>
                     <input
                         type="text"
+                        id="paidLeaveFirstDate"
                         name="leave_date"
                         class="form-control js-datepicker @error('leave_date') is-invalid @enderror"
                         value="{{ old('leave_date') }}"
@@ -62,7 +63,21 @@
                     @enderror
                 </div>
                 <div class="col-lg-2 col-md-6">
-                    <label class="form-label small text-muted">取得日数</label>
+                    <label for="paidLeaveLastDate" class="form-label small text-muted">最終日（任意）</label>
+                    <div class="d-flex gap-1">
+                        <input type="text" id="paidLeaveLastDate" name="leave_end_date"
+                            class="form-control js-datepicker @error('leave_end_date') is-invalid @enderror"
+                            value="{{ old('leave_end_date') }}" aria-describedby="paidLeaveRangeHelp"
+                            readonly autocomplete="off" placeholder="1日だけなら空欄">
+                        <button type="button" class="btn btn-outline-secondary flex-shrink-0" aria-label="最終日をクリア"
+                            onclick="this.form.elements.leave_end_date._flatpickr?.clear()">×</button>
+                    </div>
+                    @error('leave_end_date')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <label class="form-label small text-muted">1日あたりの取得日数</label>
                     <select name="leave_days" class="form-select @error('leave_days') is-invalid @enderror" required>
                         <option value="1" @selected((string) old('leave_days', '1') === '1')>1日</option>
                         <option value="0.5" @selected((string) old('leave_days') === '0.5')>0.5日</option>
@@ -109,6 +124,9 @@
                     @error('reason')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
+                </div>
+                <div id="paidLeaveRangeHelp" class="col-12 small text-muted">
+                    最終日を指定すると、土日・祝日を含む期間内の全日に、同じ取得日数と時刻を適用します（最大{{ \App\Services\PaidLeaveService::MAX_APPLICATION_DATES }}日間）。通知は1通にまとまり、承認は日ごとに行います。
                 </div>
                 <div class="col-lg-2 col-md-12">
                     <button type="submit" class="btn btn-primary w-100">申請</button>

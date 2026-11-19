@@ -2,14 +2,66 @@
 
 namespace Tests\Feature;
 
+use App\Mail\PaidLeaveAppliedMail;
 use App\Services\PaidLeaveService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class PaidLeaveHalfDayTest extends TestCase
 {
+    public function test_one_submission_saves_each_day_and_notifies_each_recipient_once(): void
+    {
+        Mail::fake();
+        config([
+            'paid_leave.approver_staff_ids' => [10],
+            'paid_leave.staff_emails' => [10 => 'approver@example.com'],
+            'paid_leave.notification_emails' => ['approver@example.com', 'office@example.com'],
+        ]);
+
+        $form = [
+            'applicant_staff_id' => 20,
+            'leave_date' => '2026-11-30',
+            'leave_days' => '0.5',
+            'start_time' => '08:00',
+            'end_time' => '12:00',
+            'reason' => '私用',
+        ];
+        foreach (['2026-11-29', '2026-12-31'] as $invalidEndDate) {
+            $this->withSession(['login_user_id' => 2])->from(route('paid-leave.index'))
+                ->post(route('paid-leave.store'), $form + ['leave_end_date' => $invalidEndDate])
+                ->assertSessionHasErrors('leave_end_date');
+        }
+        $this->assertDatabaseMissing('t_paid_leave_requests', ['status' => 'pending']);
+        Mail::assertNothingSent();
+
+        $this->withSession(['login_user_id' => 2])->from(route('paid-leave.index'))
+            ->post(route('paid-leave.store'), $form + ['leave_end_date' => '2026-12-02'])
+            ->assertRedirect(route('paid-leave.index'))
+            ->assertSessionHas('status');
+
+        foreach (['2026-11-30', '2026-12-01', '2026-12-02'] as $date) {
+            $this->assertDatabaseHas('t_paid_leave_requests', [
+                'applicant_staff_id' => 20,
+                'starts_at' => $date.' 08:00:00',
+                'ends_at' => $date.' 12:00:00',
+                'leave_days' => 0.5,
+                'status' => 'pending',
+            ]);
+        }
+        $this->assertDatabaseCount('t_paid_leave_requests', 4);
+        $this->assertDatabaseCount('t_in_app_notifications', 1);
+        Mail::assertSentCount(2);
+        foreach (['approver@example.com', 'office@example.com'] as $address) {
+            Mail::assertSent(PaidLeaveAppliedMail::class, fn (PaidLeaveAppliedMail $mail) => $mail->hasTo($address)
+                && $mail->rangeText === '2026/11/30 〜 2026/12/02（各日 08:00〜12:00）'
+                && $mail->leaveDaysText === '1.5日'
+                && $mail->reason === '私用');
+        }
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

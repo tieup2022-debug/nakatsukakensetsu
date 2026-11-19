@@ -123,10 +123,14 @@ class PaidLeaveController extends Controller
         $validated = $request->validate([
             'applicant_staff_id' => ['required', 'integer', 'min:1'],
             'leave_date' => ['required', 'date_format:Y-m-d'],
+            'leave_end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:leave_date'],
             'leave_days' => ['required', 'numeric', Rule::in(['0.5', '1'])],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
             'reason' => ['nullable', 'string', 'max:2000'],
+        ], [
+            'leave_end_date.after_or_equal' => '最終日は初日以降を指定してください。',
+            'leave_end_date.date_format' => '最終日を正しい形式で入力してください。',
         ]);
 
         $uid = (int) $request->session()->get('login_user_id');
@@ -143,6 +147,7 @@ class PaidLeaveController extends Controller
             $tz = (string) config('app.display_timezone', config('app.timezone'));
             $startsAt = Carbon::parse($validated['leave_date'].' '.$validated['start_time'], $tz);
             $endsAt = Carbon::parse($validated['leave_date'].' '.$validated['end_time'], $tz);
+            $lastDate = Carbon::parse($validated['leave_end_date'] ?? $validated['leave_date'], $tz)->startOfDay();
         } catch (\Throwable) {
             return back()->with('error', '日付・時刻の形式が正しくありません。');
         }
@@ -151,20 +156,25 @@ class PaidLeaveController extends Controller
             return back()->withInput()->with('error', '終了時刻は開始時刻より後を指定してください。');
         }
 
-        $result = $this->paidLeaveService->createRequest(
+        if ($lastDate->gte($startsAt->copy()->startOfDay()->addDays(PaidLeaveService::MAX_APPLICATION_DATES))) {
+            return back()->withInput()->withErrors(['leave_end_date' => '一度に申請できる期間は'.PaidLeaveService::MAX_APPLICATION_DATES.'日間までです。']);
+        }
+
+        $result = $this->paidLeaveService->createRequests(
             (int) $validated['applicant_staff_id'],
             $uid,
             $startsAt,
             $endsAt,
             $validated['reason'] ?? null,
-            (float) $validated['leave_days']
+            (float) $validated['leave_days'],
+            $lastDate
         );
 
         if (! $result) {
             return back()->withInput()->with('error', '申請に失敗しました。時間をご確認ください。');
         }
 
-        return back()->with('status', '有給申請を送信しました。承認者に通知しました。');
+        return back()->with('status', '有給申請を送信しました（対象：'.count($result).'日分）。');
     }
 
     /**

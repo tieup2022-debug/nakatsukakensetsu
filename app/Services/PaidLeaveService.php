@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Schema;
 
 class PaidLeaveService
 {
+    public const MAX_APPLICATION_DATES = 31;
+
     public function __construct(
         private InAppNotificationService $notifications,
         private LinkUserService $linkUserService,
@@ -157,41 +159,73 @@ class PaidLeaveService
      */
     public function createRequest(int $applicantStaffId, int $applicantUserId, Carbon $startsAt, Carbon $endsAt, ?string $reason, float $leaveDays = 1.0)
     {
+        $rows = $this->createRequests($applicantStaffId, $applicantUserId, $startsAt, $endsAt, $reason, $leaveDays, $startsAt);
+
+        return $rows[0] ?? false;
+    }
+
+    /** @return list<object>|false */
+    public function createRequests(
+        int $applicantStaffId,
+        int $applicantUserId,
+        Carbon $startsAt,
+        Carbon $endsAt,
+        ?string $reason,
+        float $leaveDays,
+        Carbon $lastDate
+    ): array|false {
         if ($endsAt->lt($startsAt) || ! $this->isSupportedLeaveDays($leaveDays)) {
             return false;
         }
 
+        $firstDate = $startsAt->copy()->startOfDay();
+        $lastDate = $lastDate->copy()->startOfDay();
+        if ($lastDate->lt($firstDate) || $lastDate->gte($firstDate->copy()->addDays(self::MAX_APPLICATION_DATES))) {
+            return false;
+        }
+
         try {
-            DB::beginTransaction();
+            $rows = DB::transaction(function () use ($applicantStaffId, $applicantUserId, $startsAt, $endsAt, $reason, $leaveDays, $firstDate, $lastDate) {
+                $ids = [];
+                $now = now();
+                for ($day = $firstDate->copy(), $offset = 0; $day->lte($lastDate); $day->addDay(), $offset++) {
+                    $ids[] = DB::table('t_paid_leave_requests')->insertGetId([
+                        'applicant_staff_id' => $applicantStaffId,
+                        'applicant_user_id' => $applicantUserId,
+                        'starts_at' => $startsAt->copy()->addDays($offset)->format('Y-m-d H:i:s'),
+                        'ends_at' => $endsAt->copy()->addDays($offset)->format('Y-m-d H:i:s'),
+                        'leave_days' => $leaveDays,
+                        'entry_type' => 'application',
+                        'status' => 'pending',
+                        'reason' => $reason,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+                }
 
-            $id = DB::table('t_paid_leave_requests')->insertGetId([
-                'applicant_staff_id' => $applicantStaffId,
-                'applicant_user_id' => $applicantUserId,
-                'starts_at' => $startsAt->format('Y-m-d H:i:s'),
-                'ends_at' => $endsAt->format('Y-m-d H:i:s'),
-                'leave_days' => $leaveDays,
-                'entry_type' => 'application',
-                'status' => 'pending',
-                'reason' => $reason,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $row = DB::table('t_paid_leave_requests')->where('id', '=', $id)->first();
-
-            DB::commit();
-
-            if ($row) {
-                $this->dispatchAppliedNotifications($row);
-            }
-
-            return $row ?: false;
+                return DB::table('t_paid_leave_requests')->whereIn('id', $ids)->orderBy('id')->get()->all();
+            });
         } catch (\Exception $e) {
-            DB::rollBack();
             error($e, __FILE__, __METHOD__, __LINE__);
 
             return false;
         }
+
+        $first = $rows[0];
+        $range = $this->formatRange($first);
+        $days = (float) $first->leave_days;
+        if (count($rows) > 1) {
+            $last = $rows[array_key_last($rows)];
+            $range = DatetimeDisplay::formatWallClock($first->starts_at, 'Y/m/d').' 〜 '
+                .DatetimeDisplay::formatWallClock($last->starts_at, 'Y/m/d').'（各日 '
+                .DatetimeDisplay::formatWallClock($first->starts_at, 'H:i').'〜'
+                .DatetimeDisplay::formatWallClock($first->ends_at, 'H:i').'）';
+            $days *= count($rows);
+        }
+
+        $this->dispatchAppliedNotifications($first, $range, $this->formatDayCount($days).'日');
+
+        return $rows;
     }
 
     /**
@@ -241,11 +275,9 @@ class PaidLeaveService
         }
     }
 
-    private function dispatchAppliedNotifications(object $request): void
+    private function dispatchAppliedNotifications(object $request, string $range, string $leaveDaysText): void
     {
         $applicantName = $this->staffDisplayName((int) $request->applicant_staff_id);
-        $range = $this->formatRange($request);
-        $leaveDaysText = $this->formatLeaveDays($request).'日';
         $approverMap = $this->approverUserIdsByStaffId();
         $notifiedUserIds = [];
         $notifiedEmails = [];
@@ -420,8 +452,11 @@ class PaidLeaveService
 
     private function formatLeaveDays(object $request): string
     {
-        $days = isset($request->leave_days) ? (float) $request->leave_days : 1.0;
+        return $this->formatDayCount((float) ($request->leave_days ?? 1.0));
+    }
 
+    private function formatDayCount(float $days): string
+    {
         return rtrim(rtrim(number_format($days, 1, '.', ''), '0'), '.');
     }
 
