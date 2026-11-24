@@ -41,6 +41,7 @@ return [
         'r08-12' => ['name' => 'R08-12岩部線', 'sites' => ['iwabe-a140', 'iwabe-a150', 'iwabe-a170', 'iwabe-takinoshita', 'iwabe-urawa', 'iwabe-itahashi', 'iwabe-shiogama']],
         'r08-14' => ['name' => 'R08-14豊浜', 'sites' => ['toyohama-kyukeisha', 'toyohama-fukushimagawa']],
         'r08-16' => ['name' => 'R08-16大沢', 'sites' => ['asahi-funaageba', 'asahi-higashi-gogan', 'osawa-kaigan-gogan']],
+        'kikonai' => ['name' => '木古内漁港海岸', 'sites' => ['kikonai-kyukeisha']],
     ],
 
     'sites' => [
@@ -244,6 +245,13 @@ return [
             'file' => 'hinokura-shisen.html',
             'schedule_file' => 'hinokura-shisen-kotei.html',
             'knowledge_file' => 'hinokura-shisen.md',
+        ],
+        'kikonai-kyukeisha' => [
+            'name' => '木古内漁港海岸 緩傾斜護岸（R8施工）',
+            'summary' => '木古内漁港海岸 道単局部改良工事（補正）外。緩傾斜護岸 SP−12.0〜−28.0（L=16.0m）。波返工13m³、スカラブロック2t 90個、ホロースケヤー1t 98個（据付72・仮置26）、基礎捨石136m³、消波ブロック ジュゴン2t 136個（新材65・再設置71）。',
+            'file' => 'kikonai-kyukeisha.html',
+            'schedule_file' => 'kikonai-kyukeisha-kotei.html',
+            'knowledge_file' => 'kikonai-kyukeisha.md',
         ],
     ],
 
