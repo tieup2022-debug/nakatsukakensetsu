@@ -48,7 +48,13 @@ class Genba3dController extends Controller
         return $this->page($site, 'model');
     }
 
-    /** 施工手順と工程表のタブ。 */
+    /** 施工手順のタブ（施工手順・数量・確認事項）。 */
+    public function steps(string $site): View
+    {
+        return $this->page($site, 'steps');
+    }
+
+    /** 工程表のタブ（条件・バーチャート・注意）。 */
     public function schedule(string $site): View
     {
         return $this->page($site, 'schedule');
@@ -60,10 +66,15 @@ class Genba3dController extends Controller
         return $this->document($site, 'file');
     }
 
-    /** 施工手順と工程表の本体の HTML。 */
-    public function schedulePage(string $site): Response
+    /**
+     * 施工手順と工程表の本体の HTML（1つのファイル）。
+     * ?part=steps なら施工手順の側だけ、?part=gantt なら工程表の側だけを見せる。指定が無ければ全部。
+     */
+    public function schedulePage(Request $request, string $site): Response
     {
-        return $this->document($site, 'schedule_file');
+        $part = $request->query('part');
+
+        return $this->document($site, 'schedule_file', in_array($part, self::PARTS, true) ? $part : null);
     }
 
     /** 現場ごとの追加資料（重機用足場のまとめなど）のタブ。 */
@@ -195,7 +206,7 @@ class Genba3dController extends Controller
     {
         $sites = $this->sites();
         abort_unless(isset($sites[$site]), 404);
-        abort_if($tab === 'schedule' && empty($sites[$site]['schedule_file']), 404);
+        abort_if(in_array($tab, ['schedule', 'steps'], true) && empty($sites[$site]['schedule_file']), 404);
         abort_if($tab === 'page' && ! isset($sites[$site]['pages'][$pageKey]['file']), 404);
 
         // 現場を切り替えるボタンには、同じ工事の現場だけを並べる。
@@ -213,16 +224,16 @@ class Genba3dController extends Controller
         ]);
     }
 
-    private function document(string $site, string $key): Response
+    private function document(string $site, string $key, ?string $part = null): Response
     {
         $sites = $this->sites();
         abort_unless(isset($sites[$site]) && ! empty($sites[$site][$key]), 404);
 
-        return $this->serve((string) $sites[$site][$key]);
+        return $this->serve((string) $sites[$site][$key], $part);
     }
 
     /** resources/genba3d/ のページを、画面内の枠（iframe）に入れられる形で返す。 */
-    private function serve(string $file): Response
+    private function serve(string $file, ?string $part = null): Response
     {
         // ファイル名は設定からだけ決める（URL の文字列をパスに使わない）。
         $path = resource_path('genba3d/'.basename($file));
@@ -231,6 +242,9 @@ class Genba3dController extends Controller
         $html = (string) file_get_contents($path);
         // アプリ本体が明るい配色なので、端末の設定に関わらず明るい配色に固定する。
         $html = (string) preg_replace('/<html(?=[\s>])/i', '<html lang="ja" data-theme="light"', $html, 1);
+        if ($part !== null) {
+            $html = $this->onlyPart($html, $part);
+        }
 
         return response($html, 200, [
             'Content-Type' => 'text/html; charset=UTF-8',
@@ -238,6 +252,33 @@ class Genba3dController extends Controller
             'X-Robots-Tag' => 'noindex, nofollow',
             'Cache-Control' => 'private, max-age=300',
         ]);
+    }
+
+    /** 施工手順と工程表のファイルを2つのタブに分けるときの名前。 */
+    private const PARTS = ['steps', 'gantt'];
+
+    /**
+     * 施工手順と工程表のファイルのうち、片方の見出し（h2）のまとまりだけを残して見せる。
+     *
+     * ファイルごとに見出しの並びが少しずつ違うので、見出しの言葉で分ける。
+     * 「施工手順」「数量」「確認」「気づいた点」を含む見出しは施工手順の側、それ以外（条件・見込み・工程表・
+     * バーチャート・注意）は工程表の側。工程表の計算のスクリプトはそのまま動かし、表示だけを切り替える。
+     */
+    private function onlyPart(string $html, string $part): string
+    {
+        $script = '<script data-genba3d-part>(function(){var part='.json_encode($part).';'
+            .'function stepsSide(t){return /施工手順|数量|確認|気づいた/.test(t);}'
+            .'function run(){var hs=[].slice.call(document.querySelectorAll("h2"));'
+            .'hs.forEach(function(h){var b=h;while(b.parentElement&&b.parentElement!==document.body&&b.parentElement.querySelectorAll("h2").length===1){b=b.parentElement;}'
+            .'var keep=(part==="steps")===stepsSide(h.textContent||"");if(!keep){b.style.display="none";}});'
+            // 工程表の側の注記（日数は概算…）は施工手順の側では出さない
+            .'if(part==="steps"){[].slice.call(document.querySelectorAll(".wrap > p.flag")).forEach(function(p){if(/日数/.test(p.textContent||""))p.style.display="none";});}'
+            .'}'
+            .'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",run);}else{run();}})();</script>';
+
+        return str_contains($html, '</body>')
+            ? (string) preg_replace('~</body>~i', $script.'</body>', $html, 1)
+            : $html.$script;
     }
 
     /**

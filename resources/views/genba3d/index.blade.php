@@ -44,7 +44,8 @@
                         <div class="d-flex flex-wrap gap-2">
                             <a href="{{ route('genba3d.show', ['site' => $slug]) }}" class="btn btn-primary btn-sm">3Dモデル</a>
                             @if (! empty($site['schedule_file']))
-                                <a href="{{ route('genba3d.schedule', ['site' => $slug]) }}" class="btn btn-outline-primary btn-sm">施工手順と工程表</a>
+                                <a href="{{ route('genba3d.steps', ['site' => $slug]) }}" class="btn btn-outline-primary btn-sm">施工手順</a>
+                                <a href="{{ route('genba3d.schedule', ['site' => $slug]) }}" class="btn btn-outline-primary btn-sm">工程表</a>
                             @endif
                             @foreach ((array) ($site['pages'] ?? []) as $pageKey => $page)
                                 <a href="{{ route('genba3d.page', ['site' => $slug, 'page' => $pageKey]) }}" class="btn btn-outline-primary btn-sm">{{ $page['label'] }}</a>

@@ -96,7 +96,7 @@ class Genba3dFeedbackController extends Controller
             return response()->json(['message' => '内容を入力してください。'], 422);
         }
         $tab = $data['tab'];
-        abort_unless(in_array($tab, ['model', 'schedule'], true) || isset($sites[$site]['pages'][$tab]), 422);
+        abort_unless(in_array($tab, ['model', 'steps', 'schedule'], true) || isset($sites[$site]['pages'][$tab]), 422);
 
         $pin = null;
         if (! empty($data['pin']['p'])) {

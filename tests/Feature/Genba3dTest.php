@@ -124,7 +124,8 @@ class Genba3dTest extends TestCase
             'tab' => 'model',
         ]);
         $page->assertSee('3Dモデル');
-        $page->assertDontSee('施工手順と工程表');
+        $page->assertDontSee('>施工手順</a>', false);
+        $page->assertDontSee('>工程表</a>', false);
     }
 
     public function test_unknown_site_is_not_found(): void
@@ -243,10 +244,66 @@ class Genba3dTest extends TestCase
             'tab' => 'schedule',
         ]);
 
-        $page->assertSee('src="'.route('genba3d.schedule.page', ['site' => $current]).'"', false);
+        $page->assertSee('src="'.route('genba3d.schedule.page', ['site' => $current, 'part' => 'gantt']).'"', false);
         foreach (array_keys($sites) as $slug) {
             $page->assertSee('href="'.route('genba3d.schedule', ['site' => $slug]).'"', false);
         }
+    }
+
+    public function test_steps_tab_embeds_the_steps_side_and_keeps_the_tab_across_sites(): void
+    {
+        $sites = config('genba3d.sites');
+        $current = array_key_first($sites);
+
+        $page = $this->view('genba3d.show', [
+            'sites' => $sites,
+            'currentSlug' => $current,
+            'current' => $sites[$current],
+            'tab' => 'steps',
+        ]);
+
+        $page->assertSee('src="'.route('genba3d.schedule.page', ['site' => $current, 'part' => 'steps']).'"', false);
+        foreach (array_keys($sites) as $slug) {
+            $page->assertSee('href="'.route('genba3d.steps', ['site' => $slug]).'"', false);
+        }
+    }
+
+    public function test_site_page_has_three_tabs_model_steps_and_schedule(): void
+    {
+        $site = 'kikonai-kyukeisha';
+        foreach (['genba3d.show' => '3Dモデル', 'genba3d.steps' => '施工手順', 'genba3d.schedule' => '工程表'] as $name => $label) {
+            $html = (string) $this->withSession(['login_user_id' => 1])->get(route($name, ['site' => $site]))->assertOk()->getContent();
+            $this->assertMatchesRegularExpression('/aria-current="page"\s*>'.$label.'<\/a>/u', $html);
+            $this->assertTrue(mb_strpos($html, '>3Dモデル</a>') < mb_strpos($html, '>施工手順</a>'));
+            $this->assertTrue(mb_strpos($html, '>施工手順</a>') < mb_strpos($html, '>工程表</a>'));
+            $this->assertStringNotContainsString('施工手順と工程表</a>', $html);
+        }
+
+        // 一覧ページにも、施工手順と工程表へのボタンが別々に出る
+        $this->withSession(['login_user_id' => 1])->get(route('genba3d.index'))
+            ->assertSee('href="'.route('genba3d.steps', ['site' => $site]).'"', false)
+            ->assertSee('href="'.route('genba3d.schedule', ['site' => $site]).'"', false);
+    }
+
+    public function test_schedule_file_shows_only_the_requested_side(): void
+    {
+        foreach (config('genba3d.sites') as $slug => $site) {
+            foreach (['steps', 'gantt'] as $part) {
+                $this->withSession(['login_user_id' => 1])
+                    ->get(route('genba3d.schedule.page', ['site' => $slug, 'part' => $part]))
+                    ->assertOk()
+                    ->assertSee('data-genba3d-part', false)
+                    ->assertSee('var part="'.$part.'"', false);
+            }
+        }
+        // 指定が無い・知らない値なら、これまでどおり全部を見せる
+        $this->withSession(['login_user_id' => 1])
+            ->get(route('genba3d.schedule.page', ['site' => 'kikonai-kyukeisha', 'part' => 'zzz']))
+            ->assertOk()
+            ->assertDontSee('data-genba3d-part', false);
+        $this->withSession(['login_user_id' => 1])
+            ->get(route('genba3d.steps', ['site' => 'no-such-site']))
+            ->assertNotFound();
     }
 
     public function test_extra_page_is_shown_as_a_tab_of_its_site(): void
@@ -295,9 +352,11 @@ class Genba3dTest extends TestCase
                 ->get(route('genba3d.page', ['site' => $site, 'page' => 'sekokanri']));
             $tab->assertOk()->assertSee('is-document', false);
             $this->assertMatchesRegularExpression('/aria-current="page"\s*>施工管理<\/a>/u', (string) $tab->getContent());
-            // タブの並び: 3Dモデル → 施工手順と工程表 → 施工管理
+            // タブの並び: 3Dモデル → 施工手順 → 工程表 → 施工管理
             $html = (string) $tab->getContent();
-            $this->assertTrue(mb_strpos($html, '>施工手順と工程表</a>') < mb_strpos($html, '>施工管理</a>'));
+            $this->assertNotFalse(mb_strpos($html, '>工程表</a>'));
+            $this->assertTrue(mb_strpos($html, '>施工手順</a>') < mb_strpos($html, '>工程表</a>'));
+            $this->assertTrue(mb_strpos($html, '>工程表</a>') < mb_strpos($html, '>施工管理</a>'));
 
             $raw = $this->withSession(['login_user_id' => 1])
                 ->get(route('genba3d.page.raw', ['site' => $site, 'page' => 'sekokanri']));

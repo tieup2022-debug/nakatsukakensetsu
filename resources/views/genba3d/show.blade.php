@@ -2,7 +2,9 @@
 
 @php
     $tab = $tab ?? 'model';
-    $isSchedule = $tab === 'schedule';
+    // 施工手順と工程表は1つのファイル。施工手順（steps）と工程表（schedule）の2つのタブに分けて見せる。
+    $isSteps = $tab === 'steps';
+    $isSchedule = $tab === 'schedule' || $isSteps;
     $hasSchedule = ! empty($current['schedule_file']);
     // 現場ごとの追加資料（重機用足場のまとめなど）
     $extraPages = (array) ($current['pages'] ?? []);
@@ -13,8 +15,10 @@
         $frameUrl = route('genba3d.page.raw', ['site' => $currentSlug, 'page' => $pageKey]);
         $frameTitle = $extra['label'];
     } else {
-        $frameUrl = route($isSchedule ? 'genba3d.schedule.page' : 'genba3d.model', ['site' => $currentSlug]);
-        $frameTitle = $isSchedule ? '施工手順と工程表' : '3Dモデル';
+        $frameUrl = $isSchedule
+            ? route('genba3d.schedule.page', ['site' => $currentSlug, 'part' => $isSteps ? 'steps' : 'gantt'])
+            : route('genba3d.model', ['site' => $currentSlug]);
+        $frameTitle = $isSteps ? '施工手順' : ($isSchedule ? '工程表' : '3Dモデル');
     }
 @endphp
 
@@ -156,8 +160,10 @@
             <div class="text-muted small">
                 @if ($extra !== null)
                     {{ $extra['note'] ?? '' }}
+                @elseif ($isSteps)
+                    設計図と数量から組んだ施工手順の案です。数量と、発注者に確認したい点も並べています。
                 @elseif ($isSchedule)
-                    設計図と数量から組んだ施工手順と工程表の案です。日数は概算なので、標準歩掛や実績に置き換えて使ってください。
+                    施工手順をもとにした工程表の案です。日数は概算なので、標準歩掛や実績に置き換えて使ってください。
                 @else
                     設計図（2次元）から組み立てた3Dモデルです。数量や出来形の確認には元の図面を使ってください。
                 @endif
@@ -171,8 +177,8 @@
     <ul class="nav nav-pills genba3d-tabs gap-2 mb-2" aria-label="現場を選ぶ">
         @foreach ($sites as $slug => $site)
             @php
-                // 工程表を見ているときは、切り替え先の現場でも工程表を開く（無い現場は3Dモデルへ）。
-                $siteRoute = $isSchedule && ! empty($site['schedule_file']) ? 'genba3d.schedule' : 'genba3d.show';
+                // 施工手順・工程表を見ているときは、切り替え先の現場でも同じタブを開く（無い現場は3Dモデルへ）。
+                $siteRoute = $isSchedule && ! empty($site['schedule_file']) ? ($isSteps ? 'genba3d.steps' : 'genba3d.schedule') : 'genba3d.show';
             @endphp
             <li class="nav-item">
                 <a
@@ -192,7 +198,10 @@
         </li>
         @if ($hasSchedule)
             <li class="nav-item">
-                <a href="{{ route('genba3d.schedule', ['site' => $currentSlug]) }}" class="nav-link px-3 {{ $isSchedule ? 'active' : '' }}" @if ($isSchedule) aria-current="page" @endif>施工手順と工程表</a>
+                <a href="{{ route('genba3d.steps', ['site' => $currentSlug]) }}" class="nav-link px-3 {{ $isSteps ? 'active' : '' }}" @if ($isSteps) aria-current="page" @endif>施工手順</a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('genba3d.schedule', ['site' => $currentSlug]) }}" class="nav-link px-3 {{ $tab === 'schedule' ? 'active' : '' }}" @if ($tab === 'schedule') aria-current="page" @endif>工程表</a>
             </li>
         @endif
         @foreach ($extraPages as $key => $page)

@@ -206,8 +206,11 @@ class Genba3dFeedbackService
         if ($tab === 'model') {
             return '3Dモデル';
         }
+        if ($tab === 'steps') {
+            return '施工手順';
+        }
         if ($tab === 'schedule') {
-            return '施工手順と工程表';
+            return '工程表';
         }
 
         return (string) ($site['pages'][$tab]['label'] ?? $tab);
