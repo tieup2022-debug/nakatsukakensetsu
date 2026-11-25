@@ -197,12 +197,19 @@ const fmt = d => (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '（' + WD[d.get
 const fmtY = d => d.getUTCFullYear() + '/' + (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '（' + WD[d.getUTCDay()] + '）';
 function isNY(d) { const m = d.getUTCMonth() + 1, x = d.getUTCDate(); return (m === 12 && x >= 29) || (m === 1 && x <= 3); }
 function isOff(d, c) { const w = d.getUTCDay(); return w === 0 || (c.sat && w === 6) || (c.ny && isNY(d)); }
+const FXK = 'kotei-fix:' + document.title; let FIX = {}, DWc = 8;
+try { const v = JSON.parse(localStorage.getItem(FXK) || '{}'); if (v && typeof v === 'object') Object.keys(v).forEach(i => { const f = v[i]; if (!T[i] || !f) return; const o = { s: isFinite(f.s) && f.s !== null ? +f.s : null, e: isFinite(f.e) && f.e !== null ? +f.e : null }; if (o.s !== null || o.e !== null) FIX[i] = o; }); } catch (e) {}
+const fxSave = () => { try { localStorage.setItem(FXK, JSON.stringify(FIX)); } catch (e) {} };
+const fxIso = t => new Date(t).toISOString().slice(0, 10);
+const fxMs = s => { const p = s.split('-').map(Number); return Date.UTC(p[0], p[1] - 1, p[2]); };
+let LASTR = [];
 function schedule(c) {
   const p0 = c.start.split('-').map(Number); let t0 = Date.UTC(p0[0], p0[1] - 1, p0[2]);
   if (!isFinite(t0)) t0 = Date.UTC(2026, 11, 14);
   const R = [];
   T.forEach((k, i) => {
     let s = t0; for (const j of k.p) s = Math.max(s, R[j].e + DAY);
+    const sMin = s;
     let e, need = k.d, wait = 0;
     if (k.t === 'cure') e = s + (k.d - 1) * DAY;
     else {
@@ -210,7 +217,13 @@ function schedule(c) {
       while (isOff(new Date(s), c)) s += DAY;
       e = s; let n = 1; while (n < need) { e += DAY; if (!isOff(new Date(e), c)) n++; }
     }
-    R.push({ s, e, need, wait });
+    const f = FIX[i];
+    if (f) {
+      if (f.s !== null) { s = Math.max(t0, f.s);
+        if (f.e === null) { if (k.t === 'cure') e = s + (k.d - 1) * DAY; else { e = s; let n = isOff(new Date(s), c) ? 0 : 1; while (n < need) { e += DAY; if (!isOff(new Date(e), c)) n++; } } } }
+      if (f.e !== null) e = Math.max(s, f.e);
+    }
+    R.push({ s, e, need, wait, fixed: !!f, clash: s < sMin });
   });
   return { t0, R };
 }
@@ -219,7 +232,7 @@ function draw() {
   const { t0, R } = schedule(c);
   const tEnd = Math.max.apply(null, R.map(r => r.e)), N = Math.round((tEnd - t0) / DAY) + 4;
   const g = $('gin'), gs = getComputedStyle($('gantt')), lw = parseFloat(gs.getPropertyValue('--lw')) || 318;
-  const dw = Math.max(5, Math.min(11, Math.floor(($('gantt').clientWidth - lw - 2) / N))); $('gantt').style.setProperty('--dw', dw + 'px');
+  const dw = Math.max(5, Math.min(11, Math.floor(($('gantt').clientWidth - lw - 2) / N))); $('gantt').style.setProperty('--dw', dw + 'px'); DWc = dw; LASTR = R;
   const X = t => Math.round((t - t0) / DAY) * dw;
   let h = '<div class="offs" style="width:' + N * dw + 'px">';
   for (let i = 0; i < N; i++) if (isOff(new Date(t0 + i * DAY), c)) h += '<i style="left:' + i * dw + 'px"></i>';
@@ -234,8 +247,8 @@ function draw() {
     const r = R[i], unit = k.t === 'cure' ? '暦日' : '日';
     h += '<div class="grow"><div class="glab"><span class="no">' + (i + 1) + '</span><span class="nm">' + k.n + '<span class="chip ' + k.t + '">' + TYPE[k.t] + '</span></span>' +
       '<span class="dd"><input type="number" id="d' + i + '" min="1" max="90" value="' + k.d + '" aria-label="' + k.n + ' の日数">' + unit + '</span>' +
-      '<span class="dt">' + fmt(new Date(r.s)) + '〜' + fmt(new Date(r.e)) + (r.wait ? '　待ち込みで' + r.need + '日' : '') + '</span></div>' +
-      '<div class="gtrk" style="width:' + N * dw + 'px"><span class="bar b-' + k.t + '" style="left:' + X(r.s) + 'px;width:' + (X(r.e) - X(r.s) + dw) + 'px" title="' + k.n + ' ' + fmt(new Date(r.s)) + '〜' + fmt(new Date(r.e)) + '"></span></div></div>';
+      '<span class="dt"><a class="pk' + (FIX[i] && FIX[i].s !== null ? ' fx' : '') + '" data-i="' + i + '" data-k="s" role="button" tabindex="0">' + fmt(new Date(r.s)) + '</a>〜<a class="pk' + (FIX[i] && FIX[i].e !== null ? ' fx' : '') + '" data-i="' + i + '" data-k="e" role="button" tabindex="0">' + fmt(new Date(r.e)) + '</a>' + (r.wait ? '　待ち込みで' + r.need + '日' : '') + (FIX[i] ? '<button type="button" class="unfix" data-i="' + i + '">自動に戻す</button>' : '') + '</span></div>' +
+      '<div class="gtrk" style="width:' + N * dw + 'px"><span class="bar b-' + k.t + (r.fixed ? ' fixed' : '') + (r.clash ? ' clash' : '') + '" data-i="' + i + '" style="left:' + X(r.s) + 'px;width:' + (X(r.e) - X(r.s) + dw) + 'px" title="' + k.n + ' ' + fmt(new Date(r.s)) + '〜' + fmt(new Date(r.e)) + '"></span></div></div>';
   });
   const act = document.activeElement && document.activeElement.id;
   g.innerHTML = h;
@@ -257,6 +270,9 @@ function draw() {
   W.push(['i', '作業半径22.0m（2t）では、消波ブロックの起点側（天端の海側は SP−8.9付近、法尻は SP−11.9付近より起点側）に届きません。撤去と再設置で、クレーンの位置を変える日数を見込んでください。']);
   W.push(['i', '床掘の底と基礎捨石の底（−0.13m）は L.W.L（±0.0m）より低い位置です。床掘・捨石・ホロースケヤーは干潮の時間帯に合わせるため、潮汐表で日を決め直してください。']);
   W.push(['i', 'ブロックの製作は、据付できる強度（吊り上げ時の強度）が出るまでの養生を14日で仮置きしています。冬期は加熱養生の実績で置き換えてください。']);
+  const cl = T.map((k, i) => R[i].clash ? k.n : null).filter(Boolean);
+  if (cl.length) W.unshift(['w', '<b>前の作業が終わる前に始まる作業があります（赤い枠）。</b>' + cl.join('、') + '。手で直した期間を確かめてください。']);
+  if ($('fxAll')) { const n = Object.keys(FIX).length; $('fxAll').hidden = !n; $('fxAll').textContent = '手で直した期間を自動に戻す（' + n + '件）'; }
   $('warns').innerHTML = W.map(w => '<p class="' + (w[0] === 'w' ? 'flag' : 'info') + '">' + w[1] + '</p>').join('');
 }
 $('gin').addEventListener('change', e => { const m = /^d(\d+)$/.exec(e.target.id || ''); if (!m) return; const v = Math.max(1, Math.min(90, Math.round(+e.target.value || 1))); T[+m[1]].d = v; draw(); });
@@ -264,6 +280,42 @@ for (const id of ['start', 'hol', 'ny']) $(id).addEventListener('change', draw);
 $('rate').addEventListener('input', draw);
 window.addEventListener('resize', draw);
 draw();
+/* ---- 期間を手で直す（バーのドラッグ・日付のクリック） ---- */
+(function(){
+  const st=document.createElement('style'); st.textContent='.bar{touch-action:none;cursor:grab}.bar.fixed{outline:2px dashed currentColor;outline-offset:1px;color:#17232e}.bar.clash{outline:2px solid #d23a3a;outline-offset:1px}.bar.dragging{opacity:.8;cursor:grabbing;z-index:5}.pk{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;color:inherit}.pk:hover{color:#c2313a}.pk.fx{font-weight:700}.unfix{font:inherit;font-size:11px;line-height:1.2;margin-left:6px;padding:0 5px;border:1px solid #ccd3da;border-radius:3px;background:transparent;color:#5b6b78;cursor:pointer}.fixbar{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:12px;color:#5b6b78;margin:6px 0 8px}.fixbar button{font:inherit;font-size:12px;padding:3px 9px;border:1px solid #ccd3da;border-radius:3px;background:#fff;color:inherit;cursor:pointer}.fixpick{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;z-index:50}.fixpick.show{width:auto;height:auto;opacity:1;border:1px solid #888;padding:4px;background:#fff}.fxd{display:block;font-size:11px;margin-top:2px}'; document.head.appendChild(st);
+  const bar=document.createElement('div'); bar.className='fixbar'; bar.innerHTML='<span>バーをドラッグして期間を動かせます（真ん中で移動、端で伸び縮み）。開始・終了の日付をクリックしても直せます。手で直した期間は点線の枠になり、後ろの作業はそれに合わせて動きます（この端末に保存）。</span><button type="button" id="fxAll" hidden></button>';
+  const ref=$('gantt'); ref.parentNode.insertBefore(bar, ref);
+  const root=$('gin');
+  let g=null;
+  const zone=(b,e)=>{const r=b.getBoundingClientRect(),x=e.clientX-r.left,ed=Math.min(8,r.width/3); return x<ed?'s':x>r.width-ed?'e':'m';};
+  root.addEventListener('pointermove',e=>{
+    const b=e.target.closest&&e.target.closest('.bar[data-i]');
+    if(!g){ if(b) b.style.cursor={s:'w-resize',e:'e-resize',m:'grab'}[zone(b,e)]; return; }
+    if(Math.abs(e.clientX-g.x0)>3)g.moved=true; if(!g.moved)return;
+    const d=Math.round((e.clientX-g.x0)/(DWc)); g.d=d; const w0=g.w0,l0=g.l0,dw=(DWc);
+    if(g.z==='m'){g.b.style.left=(l0+d*dw)+'px';}
+    else if(g.z==='s'){const dd=Math.min(d,Math.round((w0-dw)/dw)); g.d=dd; g.b.style.left=(l0+dd*dw)+'px'; g.b.style.width=Math.max(3,w0-dd*dw)+'px';}
+    else {const dd=Math.max(d,-Math.round((w0-dw)/dw)); g.d=dd; g.b.style.width=Math.max(3,w0+dd*dw)+'px';}
+  });
+  root.addEventListener('pointerdown',e=>{
+    const b=e.target.closest&&e.target.closest('.bar[data-i]'); if(!b||e.button!==0)return; e.preventDefault();
+    g={b,i:+b.dataset.i,z:zone(b,e),x0:e.clientX,d:0,moved:false,l0:parseFloat(b.style.left)||0,w0:b.getBoundingClientRect().width};
+    try{b.setPointerCapture(e.pointerId);}catch(_){} b.classList.add('dragging');
+  });
+  const up=()=>{ if(!g)return; const q=g; g=null; q.b.classList.remove('dragging'); if(!q.moved||!q.d){draw();return;} const r=LASTR[q.i], f=Object.assign({s:null,e:null},FIX[q.i]); if(q.z==='e'){f.e=r.e+q.d*DAY;} else if(q.z==='s'){f.s=r.s+q.d*DAY; f.e=r.e;} else {f.s=r.s+q.d*DAY; f.e=r.e+q.d*DAY;} FIX[q.i]=f; fxSave(); draw(); };
+  root.addEventListener('pointerup',up); root.addEventListener('pointercancel',up);
+  const pk=document.createElement('input'); pk.type='date'; pk.className='fixpick'; pk.setAttribute('aria-label','日付を選ぶ'); document.body.appendChild(pk);
+  let pf=null; const done=()=>{pf=null; pk.classList.remove('show'); pk.style.left='0px'; pk.style.top='0px';};
+  const openPick=el=>{ const i=+el.dataset.i,k=el.dataset.k; pf={i,k}; pk.value=([fxIso(LASTR[i].s), fxIso(LASTR[i].e)])[k==='s'?0:1];
+    const rc=el.getBoundingClientRect(); pk.style.left=Math.max(4,Math.min(window.innerWidth-170,rc.left))+'px'; pk.style.top=Math.min(window.innerHeight-40,rc.bottom+2)+'px';
+    if(pk.showPicker){try{pk.showPicker();return;}catch(_){}} pk.classList.add('show'); pk.focus(); };
+  root.addEventListener('click',e=>{ const u=e.target.closest('.unfix'); if(u){ delete FIX[+u.dataset.i]; fxSave(); draw(); return; } const el=e.target.closest('.pk'); if(el) openPick(el); });
+  root.addEventListener('keydown',e=>{ const el=e.target.closest&&e.target.closest('.pk'); if(el&&(e.key==='Enter'||e.key===' ')){e.preventDefault(); openPick(el);} });
+  pk.addEventListener('change',()=>{ if(!pf||!/^\d{4}-\d\d-\d\d$/.test(pk.value))return; const q=pf; done(); const r=LASTR[q.i], f=Object.assign({s:null,e:null},FIX[q.i]), v=fxMs(pk.value); if(q.k==='s'){f.s=v; if(f.e!==null&&f.e<v)f.e=null;} else {f.e=Math.max(f.s!==null?f.s:r.s,v);} FIX[q.i]=f; fxSave(); draw(); });
+  pk.addEventListener('blur',()=>setTimeout(done,200));
+  $('fxAll').addEventListener('click',()=>{FIX={};fxSave();draw();}); root.addEventListener('change',e=>{const m=/^d(\d+)$/.exec(e.target.id||''); if(!m)return; const f=FIX[+m[1]]; if(f&&f.e!==null){f.e=null; if(f.s===null)delete FIX[+m[1]]; fxSave(); draw();}}); draw();
+})();
+
 window.__sched = { T, schedule, cfg };
 })();
 </script>

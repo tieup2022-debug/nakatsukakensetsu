@@ -436,12 +436,15 @@ function isOff(d, o){
   return false;
 }
 /* 工程の計算。前の作業が終わってから次を始める。海上・潮待ちは稼働率に応じて待ちの日が入る */
+const FXK = 'kotei-fix:' + document.title; let FIX = {}, DWb = 8, LASTSC = [];
+try { const v = JSON.parse(localStorage.getItem(FXK) || '{}'); if (v && typeof v === 'object') Object.keys(v).forEach(i => { const f = v[i]; if (!TASKS[i] || !f) return; const o = { s: /^\d{4}-\d\d-\d\d$/.test(f.s || '') ? f.s : null, e: /^\d{4}-\d\d-\d\d$/.test(f.e || '') ? f.e : null }; if (o.s || o.e) FIX[i] = o; }); } catch (e) {}
+const fxSave = () => { try { localStorage.setItem(FXK, JSON.stringify(FIX)); } catch (e) {} };
 function schedule(o){
   let cur = parse(o.start), acc = 1 - o.rate; const out = [];
-  TASKS.forEach(t => {
+  TASKS.forEach((t, ti) => {
     const d = Math.max(0, Number(t.d) || 0);
     if(d === 0){ out.push({t, s:null, e:null}); return; }
-    let s, e;
+    let s, e; const sMin = cur;
     if(t.t === 'cure'){ s = cur; e = add(cur, Math.ceil(d)-1); cur = add(e, 1); }
     else {
       let rem = d, guard = 0;
@@ -455,7 +458,14 @@ function schedule(o){
         e = cur; cur = add(cur, 1);
       }
     }
-    out.push({t, s, e});
+    const f = FIX[ti];
+    if (f) {
+      if (f.s) { s = parse(f.s); if (s < parse(o.start)) s = parse(o.start);
+        if (!f.e) { if (t.t === 'cure') e = add(s, Math.ceil(d) - 1); else { let rem = d, x = s, gg = 0, a2 = 1 - o.rate; e = s; while (rem > 1e-9 && gg++ < 3000) { if (!isOff(x, o)) { if (t.t === 'sea') { a2 += o.rate; if (a2 >= 1 - 1e-9) { a2 -= 1; rem -= 1; } } else rem -= 1; } e = x; x = add(x, 1); } } } }
+      if (f.e) { e = parse(f.e); if (e < s) e = s; }
+      cur = add(e, 1);
+    }
+    out.push({t, s, e, fixed: !!f, clash: !!f && s < sMin});
   });
   return out;
 }
@@ -497,12 +507,14 @@ function render(){
     if(rough) warn('海上・潮待ち作業が 11〜3月にかかります。冬の時化で稼働率が下がる時期です。稼働率の値を見直してください。');
   }
   if(last > parse(first.getUTCMonth() >= 3 ? (first.getUTCFullYear()+1)+'-03-31' : first.getUTCFullYear()+'-03-31')) warn('完了が年度末（3/31）を越えます。工事名に「補正明許」とあるので、工期末を契約図書で確認してください。');
+  const cl = sc.filter(r => r.clash).map(r => r.t.n); if(cl.length) warn('前の作業が終わる前に始まる作業があります（赤い枠）：'+cl.join('、')+'。手で直した期間を確かめてください。', true);
+  if(document.getElementById('fxAll')){ const n = Object.keys(FIX).length, fb = document.getElementById('fxAll'); fb.hidden = !n; fb.textContent = '手で直した期間を自動に戻す（'+n+'件）'; }
   const wl = $('#warns'); wl.textContent = ''; W.forEach(w => { const li = document.createElement('li'); if(w[1]) li.className = 'big'; li.textContent = w[0]; wl.appendChild(li); });
   /* バーチャート */
   const G = $('#gantt'), narrow = window.innerWidth < 700;
   const c0 = add(first, -((first.getUTCDay()+6)%7)), c1 = add(last, 9), nd = Math.round((c1-c0)/DAY)+1;
   const namew = Math.min(330, Math.max(150, window.innerWidth*0.36)), room = (G.parentNode.clientWidth || 900) - namew - 2;
-  const dw = Math.max(narrow ? 9 : 6.5, Math.min(16, Math.floor(room/nd*10)/10)), x = d => Math.round((d-c0)/DAY)*dw; const act = document.activeElement, actId = act && act.id; G.textContent = '';
+  const dw = Math.max(narrow ? 9 : 6.5, Math.min(16, Math.floor(room/nd*10)/10)), x = d => Math.round((d-c0)/DAY)*dw; const act = document.activeElement, actId = act && act.id; G.textContent = ''; DWb = dw; LASTSC = sc;
   const cell = (cls) => { const e = document.createElement('div'); e.className = cls; return e; };
   const h1 = cell('c nmc hd'); h1.textContent = '作業と日数'; const h2 = cell('c hd ch'); h2.style.width = (nd*dw)+'px';
   for(let d = c0; d <= c1; d = add(d,1)){
@@ -518,9 +530,11 @@ function render(){
     inp.addEventListener('change', () => { r.t.d = Math.max(0, Math.min(60, Number(inp.value)||0)); render(); });
     const u = document.createElement('span'); u.className = 'u'; u.textContent = r.t.t === 'cure' ? '暦日' : '日';
     nm.append(tx, inp, u);
+    if(r.s){ const fd = document.createElement('span'); fd.className = 'fxd'; const f = FIX[i] || {};
+      fd.innerHTML = '<a class="pk'+(f.s?' fx':'')+'" data-i="'+i+'" data-k="s" role="button" tabindex="0">'+md(r.s)+'</a>〜<a class="pk'+(f.e?' fx':'')+'" data-i="'+i+'" data-k="e" role="button" tabindex="0">'+md(r.e)+'</a>'+(FIX[i]?'<button type="button" class="unfix" data-i="'+i+'">自動に戻す</button>':''); nm.appendChild(fd); }
     const ch = cell('c ch'); ch.style.width = (nd*dw)+'px';
     if(r.s){
-      const b = cell('bar '+r.t.t); b.style.left = x(r.s)+'px'; b.style.width = Math.max(3, x(r.e)-x(r.s)+dw-1)+'px'; b.title = r.t.n+'　'+md(r.s)+'〜'+md(r.e); ch.appendChild(b);
+      const b = cell('bar '+r.t.t+(r.fixed?' fixed':'')+(r.clash?' clash':'')); b.dataset.i = i; b.style.left = x(r.s)+'px'; b.style.width = Math.max(3, x(r.e)-x(r.s)+dw-1)+'px'; b.title = r.t.n+'　'+md(r.s)+'〜'+md(r.e); ch.appendChild(b);
       const l = cell('bl'); l.style.left = (x(r.e)+dw)+'px'; l.textContent = md(r.s) + (r.e > r.s ? '〜'+md(r.e) : ''); ch.appendChild(l);
     } else { const l = cell('bl'); l.style.left = '4px'; l.textContent = '日数 0（行わない）'; ch.appendChild(l); }
     G.append(nm, ch);
@@ -544,6 +558,42 @@ function render(){
 $('#rate').addEventListener('input', render);
 let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
 render();
+/* ---- 期間を手で直す（バーのドラッグ・日付のクリック） ---- */
+(function(){
+  const st=document.createElement('style'); st.textContent='.bar{touch-action:none;cursor:grab}.bar.fixed{outline:2px dashed currentColor;outline-offset:1px;color:#17232e}.bar.clash{outline:2px solid #d23a3a;outline-offset:1px}.bar.dragging{opacity:.8;cursor:grabbing;z-index:5}.pk{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;color:inherit}.pk:hover{color:#c2313a}.pk.fx{font-weight:700}.unfix{font:inherit;font-size:11px;line-height:1.2;margin-left:6px;padding:0 5px;border:1px solid #ccd3da;border-radius:3px;background:transparent;color:#5b6b78;cursor:pointer}.fixbar{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:12px;color:#5b6b78;margin:6px 0 8px}.fixbar button{font:inherit;font-size:12px;padding:3px 9px;border:1px solid #ccd3da;border-radius:3px;background:#fff;color:inherit;cursor:pointer}.fixpick{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;z-index:50}.fixpick.show{width:auto;height:auto;opacity:1;border:1px solid #888;padding:4px;background:#fff}.fxd{display:block;font-size:11px;margin-top:2px}'; document.head.appendChild(st);
+  const bar=document.createElement('div'); bar.className='fixbar'; bar.innerHTML='<span>バーをドラッグして期間を動かせます（真ん中で移動、端で伸び縮み）。開始・終了の日付をクリックしても直せます。手で直した期間は点線の枠になり、後ろの作業はそれに合わせて動きます（この端末に保存）。</span><button type="button" id="fxAll" hidden></button>';
+  const ref=document.getElementById('gantt').parentNode; ref.parentNode.insertBefore(bar, ref);
+  const root=document.getElementById('gantt');
+  let g=null;
+  const zone=(b,e)=>{const r=b.getBoundingClientRect(),x=e.clientX-r.left,ed=Math.min(8,r.width/3); return x<ed?'s':x>r.width-ed?'e':'m';};
+  root.addEventListener('pointermove',e=>{
+    const b=e.target.closest&&e.target.closest('.bar[data-i]');
+    if(!g){ if(b) b.style.cursor={s:'w-resize',e:'e-resize',m:'grab'}[zone(b,e)]; return; }
+    if(Math.abs(e.clientX-g.x0)>3)g.moved=true; if(!g.moved)return;
+    const d=Math.round((e.clientX-g.x0)/(DWb)); g.d=d; const w0=g.w0,l0=g.l0,dw=(DWb);
+    if(g.z==='m'){g.b.style.left=(l0+d*dw)+'px';}
+    else if(g.z==='s'){const dd=Math.min(d,Math.round((w0-dw)/dw)); g.d=dd; g.b.style.left=(l0+dd*dw)+'px'; g.b.style.width=Math.max(3,w0-dd*dw)+'px';}
+    else {const dd=Math.max(d,-Math.round((w0-dw)/dw)); g.d=dd; g.b.style.width=Math.max(3,w0+dd*dw)+'px';}
+  });
+  root.addEventListener('pointerdown',e=>{
+    const b=e.target.closest&&e.target.closest('.bar[data-i]'); if(!b||e.button!==0)return; e.preventDefault();
+    g={b,i:+b.dataset.i,z:zone(b,e),x0:e.clientX,d:0,moved:false,l0:parseFloat(b.style.left)||0,w0:b.getBoundingClientRect().width};
+    try{b.setPointerCapture(e.pointerId);}catch(_){} b.classList.add('dragging');
+  });
+  const up=()=>{ if(!g)return; const q=g; g=null; q.b.classList.remove('dragging'); if(!q.moved||!q.d){render();return;} const r=LASTSC[q.i], f=Object.assign({},FIX[q.i]); if(q.z==='e'){f.e=iso(add(r.e,q.d));} else if(q.z==='s'){f.s=iso(add(r.s,q.d)); f.e=iso(r.e);} else {f.s=iso(add(r.s,q.d)); f.e=iso(add(r.e,q.d));} FIX[q.i]=f; fxSave(); render(); };
+  root.addEventListener('pointerup',up); root.addEventListener('pointercancel',up);
+  const pk=document.createElement('input'); pk.type='date'; pk.className='fixpick'; pk.setAttribute('aria-label','日付を選ぶ'); document.body.appendChild(pk);
+  let pf=null; const done=()=>{pf=null; pk.classList.remove('show'); pk.style.left='0px'; pk.style.top='0px';};
+  const openPick=el=>{ const i=+el.dataset.i,k=el.dataset.k; pf={i,k}; pk.value=([iso(LASTSC[i].s), iso(LASTSC[i].e)])[k==='s'?0:1];
+    const rc=el.getBoundingClientRect(); pk.style.left=Math.max(4,Math.min(window.innerWidth-170,rc.left))+'px'; pk.style.top=Math.min(window.innerHeight-40,rc.bottom+2)+'px';
+    if(pk.showPicker){try{pk.showPicker();return;}catch(_){}} pk.classList.add('show'); pk.focus(); };
+  root.addEventListener('click',e=>{ const u=e.target.closest('.unfix'); if(u){ delete FIX[+u.dataset.i]; fxSave(); render(); return; } const el=e.target.closest('.pk'); if(el) openPick(el); });
+  root.addEventListener('keydown',e=>{ const el=e.target.closest&&e.target.closest('.pk'); if(el&&(e.key==='Enter'||e.key===' ')){e.preventDefault(); openPick(el);} });
+  pk.addEventListener('change',()=>{ if(!pf||!/^\d{4}-\d\d-\d\d$/.test(pk.value))return; const q=pf; done(); const r=LASTSC[q.i], f=Object.assign({},FIX[q.i]); if(q.k==='s'){f.s=pk.value; if(f.e&&f.e<f.s)delete f.e;} else {const s0=f.s||iso(r.s); f.e=pk.value<s0?s0:pk.value;} FIX[q.i]=f; fxSave(); render(); });
+  pk.addEventListener('blur',()=>setTimeout(done,200));
+  document.getElementById('fxAll').addEventListener('click',()=>{FIX={};fxSave();render();}); root.addEventListener('change',e=>{const m=/^d(\d+)$/.exec(e.target.id||''); if(!m)return; const f=FIX[+m[1]]; if(f&&f.e){delete f.e; if(!f.s)delete FIX[+m[1]]; fxSave(); render();}}, true); render();
+})();
+
 })();
 </script>
 
