@@ -41,7 +41,7 @@ return [
         'r08-12' => ['name' => 'R08-12岩部線', 'sites' => ['iwabe-a140', 'iwabe-a150', 'iwabe-a170', 'iwabe-takinoshita', 'iwabe-urawa', 'iwabe-itahashi', 'iwabe-shiogama']],
         'r08-14' => ['name' => 'R08-14豊浜', 'sites' => ['toyohama-kyukeisha', 'toyohama-fukushimagawa']],
         'r08-16' => ['name' => 'R08-16大沢', 'sites' => ['asahi-funaageba', 'asahi-higashi-gogan', 'osawa-kaigan-gogan']],
-        'kikonai' => ['name' => '木古内漁港海岸', 'sites' => ['kikonai-kyukeisha']],
+        'kikonai' => ['name' => 'R08-木古内漁港海岸', 'sites' => ['kikonai-kyukeisha']],
     ],
 
     'sites' => [
