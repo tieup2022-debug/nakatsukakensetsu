@@ -205,7 +205,7 @@ function schedule(c) {
   if (!isFinite(t0)) t0 = Date.UTC(2026, 10, 2);
   const R = [];
   T.forEach((k, i) => {
-    let s = t0; for (const j of k.p) s = Math.max(s, R[j].e + DAY);
+    let s = t0; for (const j of k.p) s = Math.max(s, (R[j].ae != null ? R[j].ae : R[j].e) + DAY);
     const sMin = s;
     let e, need = k.d, wait = 0;
     if (k.t === 'cure') e = s + (k.d - 1) * DAY;
@@ -214,14 +214,16 @@ function schedule(c) {
       while (isOff(new Date(s), c)) s += DAY;
       e = s; let n = 1; while (n < need) { e += DAY; if (!isOff(new Date(e), c)) n++; }
     }
-    const f = FIX[i];
+    const as0 = s, ae0 = e, f = FIX[i];
     if (f) {
       if (f.s !== null) { s = Math.max(t0, f.s);
         if (f.e === null) { if (k.t === 'cure') e = s + (k.d - 1) * DAY; else { e = s; let n = isOff(new Date(s), c) ? 0 : 1; while (n < need) { e += DAY; if (!isOff(new Date(e), c)) n++; } } } }
       if (f.e !== null) e = Math.max(s, f.e);
     }
-    R.push({ s, e, need, wait, fixed: !!f, clash: s < sMin });
+    R.push({ s, e, need, wait, fixed: !!f, as: as0, ae: ae0 });
   });
+  // 動かすのはその作業だけ。前後と重なったら知らせる
+  T.forEach((k, i) => { R[i].clash = k.p.some(j => R[i].s <= R[j].e) && (!!FIX[i] || k.p.some(j => !!FIX[j])); });
   return { t0, R };
 }
 function draw() {
@@ -267,7 +269,7 @@ function draw() {
   W.push(['i', '水中コンクリートの天端は+0.6mで H.W.L と同じ高さ、床掘底は−0.9mで L.W.L より低い位置です。型枠・打設は干潮の時間帯に合わせるため、潮汐表で日を決め直してください。']);
   W.push(['i', '波返しの鉄筋②は本体コンクリートに1.0m埋め込みます。本体の型枠の期間に建て込みを入れてください。']);
   const cl = T.map((k, i) => R[i].clash ? k.n : null).filter(Boolean);
-  if (cl.length) W.unshift(['w', '<b>前の作業が終わる前に始まる作業があります（赤い枠）。</b>' + cl.join('、') + '。手で直した期間を確かめてください。']);
+  if (cl.length) W.unshift(['w', '<b>前後の作業と期間が重なっています（赤い枠）。</b>' + cl.join('、') + '。手で直した期間を確かめてください。']);
   if ($('fxAll')) { const n = Object.keys(FIX).length; $('fxAll').hidden = !n; $('fxAll').textContent = '手で直した期間を自動に戻す（' + n + '件）'; }
   $('warns').innerHTML = W.map(w => '<p class="' + (w[0] === 'w' ? 'flag' : 'info') + '">' + w[1] + '</p>').join('');
 }
@@ -279,7 +281,7 @@ draw();
 /* ---- 期間を手で直す（バーのドラッグ・日付のクリック） ---- */
 (function(){
   const st=document.createElement('style'); st.textContent='.bar{touch-action:none;cursor:grab}.bar.fixed{outline:2px dashed currentColor;outline-offset:1px;color:#17232e}.bar.clash{outline:2px solid #d23a3a;outline-offset:1px}.bar.dragging{opacity:.8;cursor:grabbing;z-index:5}.pk{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;color:inherit}.pk:hover{color:#c2313a}.pk.fx{font-weight:700}.unfix{font:inherit;font-size:11px;line-height:1.2;margin-left:6px;padding:0 5px;border:1px solid #ccd3da;border-radius:3px;background:transparent;color:#5b6b78;cursor:pointer}.fixbar{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:12px;color:#5b6b78;margin:6px 0 8px}.fixbar button{font:inherit;font-size:12px;padding:3px 9px;border:1px solid #ccd3da;border-radius:3px;background:#fff;color:inherit;cursor:pointer}.fixpick{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;z-index:50}.fixpick.show{width:auto;height:auto;opacity:1;border:1px solid #888;padding:4px;background:#fff}.fxd{display:block;font-size:11px;margin-top:2px}'; document.head.appendChild(st);
-  const bar=document.createElement('div'); bar.className='fixbar'; bar.innerHTML='<span>バーをドラッグして期間を動かせます（真ん中で移動、端で伸び縮み）。開始・終了の日付をクリックしても直せます。手で直した期間は点線の枠になり、後ろの作業はそれに合わせて動きます（この端末に保存）。</span><button type="button" id="fxAll" hidden></button>';
+  const bar=document.createElement('div'); bar.className='fixbar'; bar.innerHTML='<span>バーをドラッグして期間を動かせます（真ん中で移動、端で伸び縮み）。開始・終了の日付をクリックしても直せます。手で直した期間は点線の枠になり、動くのはその作業だけで、ほかの作業はそのままです。前後の作業と重なると赤い枠になります（この端末に保存）。</span><button type="button" id="fxAll" hidden></button>';
   const ref=$('gantt'); ref.parentNode.insertBefore(bar, ref);
   const root=$('gin');
   let g=null;

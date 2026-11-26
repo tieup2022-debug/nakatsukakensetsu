@@ -312,12 +312,12 @@ const canWork=(t,i)=>isWork(i)&&!(t.t==="reg"&&state.hold==="yes"&&isHold(i));
 function schedule(){
   const r={}, rate=parseFloat(state.rate);
   TASKS.forEach(t=>{
-    let es=0; t.pre.concat(state.crews==="1"&&t.one?t.one:[]).forEach(p=>{es=Math.max(es,r[p].end+1);});
+    let es=0; t.pre.concat(state.crews==="1"&&t.one?t.one:[]).forEach(p=>{es=Math.max(es,aeOf(r[p])+1);});
     const d=state.days[t.id]; let start,end,need=d;
     if(t.t==="cure"){start=es;end=es+d-1;}
     else{ need=t.t==="out"?Math.ceil(d/rate-1e-9):d; let i=es; while(!canWork(t,i))i++; start=i; let c=0;
       for(;;){ if(canWork(t,i)){c++; if(c>=need)break;} i++; } end=i; }
-    ({start,end}=fixSpan(t,start,end,need,(t2,i)=>canWork(t2,i)));r[t.id]={start,end,need,clash:start<es};
+    const as0=start,ae0=end;({start,end}=fixSpan(t,start,end,need,(t2,i)=>canWork(t2,i)));r[t.id]={start,end,need,as:as0,ae:ae0};
   });
   return r;
 }
@@ -407,11 +407,13 @@ $("reset").addEventListener("click",()=>{Object.assign(state,DEF);TASKS.forEach(
 
 /* ---- 期間を手で直す：バーをドラッグ（真ん中で移動、両端で伸び縮み）、開始・終了の日付をクリック ----
    手で決めた期間は state.fix に {s: 開始日, e: 終了日} で覚える（この端末のブラウザに保存）。
-   後ろの作業は、手で決めた終了日に合わせて動く。前の作業より先に始まると赤い枠で知らせる。 */
+   動かすのはその作業だけ。後ろの作業は日数から計算した位置のまま動かさない（aeOf/asOf）。
+   前後の作業と重なると赤い枠で知らせる。 */
 if(!state.fix||typeof state.fix!=="object")state.fix={};
 try{const s0=JSON.parse(localStorage.getItem(KEY)||"null"); if(s0&&s0.fix&&typeof s0.fix==="object")Object.keys(s0.fix).forEach(k=>{
   const f=s0.fix[k]; if(!f||!TASKS.some(t=>String(t.id)===k))return; const o={};
   if(/^\d{4}-\d\d-\d\d$/.test(f.s||""))o.s=f.s; if(/^\d{4}-\d\d-\d\d$/.test(f.e||""))o.e=f.e; if(o.s||o.e)state.fix[k]=o;});}catch(e){}
+const aeOf=x=>x.ae!=null?x.ae:x.end, asOf=x=>x.as!=null?x.as:x.start;
 const fxIso=i=>{const d=dt(i);return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");};
 const fxIdx=s=>{const p=s.split("-").map(Number);return Math.round((Date.UTC(p[0],p[1]-1,p[2])-base())/864e5);};
 function fixSpan(t,start,end,need,ok){
@@ -433,7 +435,7 @@ function fixSpan(t,start,end,need,ok){
   document.head.appendChild(st);
 })();
 const fxBar=document.createElement("div"); fxBar.className="fixbar";
-fxBar.innerHTML='<span>バーをドラッグして期間を動かせます（真ん中で移動、端で伸び縮み）。開始・終了の日付をクリックしても直せます。手で直した期間は点線の枠になり、後ろの作業はそれに合わせて動きます（この端末に保存）。</span><button type="button" id="fxAll" hidden></button>';
+fxBar.innerHTML='<span>バーをドラッグして期間を動かせます（真ん中で移動、端で伸び縮み）。開始・終了の日付をクリックしても直せます。動くのはその作業だけで、ほかの作業はそのままです。手で直した期間は点線の枠、前後の作業と重なると赤い枠になります（この端末に保存）。</span><button type="button" id="fxAll" hidden></button>';
 $("gwrap").parentNode.insertBefore(fxBar,$("gwrap"));
 const fxAll=$("fxAll");
 fxAll.addEventListener("click",()=>{state.fix={};save();render();});
@@ -441,12 +443,14 @@ $("reset").addEventListener("click",()=>{state.fix={};save();render();});
 function fxAfter(){
   let n=0; const clash=[];
   TASKS.forEach(t=>{if(t.done||t.talk)return; const f=state.fix[t.id],r=R[t.id],b=$("b-"+t.id);
-    b.classList.toggle("fixed",!!f); b.classList.toggle("clash",!!r.clash); if(f)n++; if(r.clash)clash.push(t.n);
+    const pres=t.pre.concat(state.crews==="1"&&t.one?t.one:[]).filter(p=>R[p]);
+    const cl=pres.some(p=>r.start<=R[p].end)&&(!!f||pres.some(p=>state.fix[p]));
+    b.classList.toggle("fixed",!!f); b.classList.toggle("clash",cl); if(f)n++; if(cl)clash.push(t.n);
     const u=$("u-"+t.id); if(u)u.hidden=!f;
     ["s","e"].forEach(k=>{const c=$(k+"-"+t.id); c.classList.add("pick"); c.classList.toggle("fixed",!!(f&&f[k])); c.title=(k==="s"?"開始日":"終了日")+"をクリックして直す";});
   });
   fxAll.hidden=!n; fxAll.textContent="手で直した期間を自動に戻す（"+n+"件）";
-  if(clash.length){const a=$("alert"); a.hidden=false; a.innerHTML=(a.innerHTML?a.innerHTML+"<br>":"")+"前の作業が終わる前に始まる作業があります（赤い枠）："+clash.slice(0,4).join("、")+(clash.length>4?" ほか":"")+"。手で直した期間を確かめてください。";}
+  if(clash.length){const a=$("alert"); a.hidden=false; a.innerHTML=(a.innerHTML?a.innerHTML+"<br>":"")+"前後の作業と期間が重なっています（赤い枠）："+clash.slice(0,4).join("、")+(clash.length>4?" ほか":"")+"。手で直した期間を確かめてください。";}
 }
 function fxSetup(){
   TASKS.forEach(t=>{

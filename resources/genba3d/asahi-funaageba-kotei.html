@@ -463,10 +463,12 @@ function schedule(o){
       if (f.s) { s = parse(f.s); if (s < parse(o.start)) s = parse(o.start);
         if (!f.e) { if (t.t === 'cure') e = add(s, Math.ceil(d) - 1); else { let rem = d, x = s, gg = 0, a2 = 1 - o.rate; e = s; while (rem > 1e-9 && gg++ < 3000) { if (!isOff(x, o)) { if (t.t === 'sea') { a2 += o.rate; if (a2 >= 1 - 1e-9) { a2 -= 1; rem -= 1; } } else rem -= 1; } e = x; x = add(x, 1); } } } }
       if (f.e) { e = parse(f.e); if (e < s) e = s; }
-      cur = add(e, 1);
     }
-    out.push({t, s, e, fixed: !!f, clash: !!f && s < sMin});
+    out.push({t, s, e, fixed: !!f, clash: false});
   });
+  // 動かすのはその作業だけ（後ろは日数から計算した位置のまま）。前の作業と重なったら知らせる
+  let prev = null;
+  out.forEach((r, i) => { if (!r.s) return; if (prev && r.s <= prev.r.e && (FIX[i] || FIX[prev.i])) r.clash = true; prev = {r, i}; });
   return out;
 }
 function longBreaks(a, b, o){ // a〜b の間にある3日以上の連休
@@ -507,7 +509,7 @@ function render(){
     if(rough) warn('海上・潮待ち作業が 11〜3月にかかります。冬の時化で稼働率が下がる時期です。稼働率の値を見直してください。');
   }
   if(last > parse(first.getUTCMonth() >= 3 ? (first.getUTCFullYear()+1)+'-03-31' : first.getUTCFullYear()+'-03-31')) warn('完了が年度末（3/31）を越えます。工事名に「補正明許」とあるので、工期末を契約図書で確認してください。');
-  const cl = sc.filter(r => r.clash).map(r => r.t.n); if(cl.length) warn('前の作業が終わる前に始まる作業があります（赤い枠）：'+cl.join('、')+'。手で直した期間を確かめてください。', true);
+  const cl = sc.filter(r => r.clash).map(r => r.t.n); if(cl.length) warn('前後の作業と期間が重なっています（赤い枠）：'+cl.join('、')+'。手で直した期間を確かめてください。', true);
   if(document.getElementById('fxAll')){ const n = Object.keys(FIX).length, fb = document.getElementById('fxAll'); fb.hidden = !n; fb.textContent = '手で直した期間を自動に戻す（'+n+'件）'; }
   const wl = $('#warns'); wl.textContent = ''; W.forEach(w => { const li = document.createElement('li'); if(w[1]) li.className = 'big'; li.textContent = w[0]; wl.appendChild(li); });
   /* バーチャート */
@@ -561,7 +563,7 @@ render();
 /* ---- 期間を手で直す（バーのドラッグ・日付のクリック） ---- */
 (function(){
   const st=document.createElement('style'); st.textContent='.bar{touch-action:none;cursor:grab}.bar.fixed{outline:2px dashed currentColor;outline-offset:1px;color:#17232e}.bar.clash{outline:2px solid #d23a3a;outline-offset:1px}.bar.dragging{opacity:.8;cursor:grabbing;z-index:5}.pk{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;color:inherit}.pk:hover{color:#c2313a}.pk.fx{font-weight:700}.unfix{font:inherit;font-size:11px;line-height:1.2;margin-left:6px;padding:0 5px;border:1px solid #ccd3da;border-radius:3px;background:transparent;color:#5b6b78;cursor:pointer}.fixbar{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:12px;color:#5b6b78;margin:6px 0 8px}.fixbar button{font:inherit;font-size:12px;padding:3px 9px;border:1px solid #ccd3da;border-radius:3px;background:#fff;color:inherit;cursor:pointer}.fixpick{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;z-index:50}.fixpick.show{width:auto;height:auto;opacity:1;border:1px solid #888;padding:4px;background:#fff}.fxd{display:block;font-size:11px;margin-top:2px}'; document.head.appendChild(st);
-  const bar=document.createElement('div'); bar.className='fixbar'; bar.innerHTML='<span>バーをドラッグして期間を動かせます（真ん中で移動、端で伸び縮み）。開始・終了の日付をクリックしても直せます。手で直した期間は点線の枠になり、後ろの作業はそれに合わせて動きます（この端末に保存）。</span><button type="button" id="fxAll" hidden></button>';
+  const bar=document.createElement('div'); bar.className='fixbar'; bar.innerHTML='<span>バーをドラッグして期間を動かせます（真ん中で移動、端で伸び縮み）。開始・終了の日付をクリックしても直せます。手で直した期間は点線の枠になり、動くのはその作業だけで、ほかの作業はそのままです。前後の作業と重なると赤い枠になります（この端末に保存）。</span><button type="button" id="fxAll" hidden></button>';
   const ref=document.getElementById('gantt').parentNode; ref.parentNode.insertBefore(bar, ref);
   const root=document.getElementById('gantt');
   let g=null;
