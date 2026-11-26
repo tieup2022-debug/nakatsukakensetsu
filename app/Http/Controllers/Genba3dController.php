@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Services\Genba3dChatService;
+use App\Services\Genba3dTermService;
+use App\Services\UserService;
 use App\Support\Genba3dCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,6 +29,7 @@ class Genba3dController extends Controller
         return view('genba3d.index', [
             'title' => '現場3D',
             'projects' => array_filter($projects, fn (array $project): bool => $project['sites'] !== []),
+            'terms' => app(Genba3dTermService::class)->terms(array_map('strval', array_keys($projects))),
             'upcoming' => array_filter($projects, fn (array $project): bool => $project['sites'] === []),
             'koeOpen' => $this->koeOpenCount(),
         ]);
@@ -73,8 +76,113 @@ class Genba3dController extends Controller
     public function schedulePage(Request $request, string $site): Response
     {
         $part = $request->query('part');
+        $part = in_array($part, self::PARTS, true) ? $part : null;
+        $response = $this->document($site, 'schedule_file', $part);
+        // 工程表の側には、工事の工期の入力欄を出し、工期末と着手日の初期値に使う
+        if ($part !== 'steps') {
+            $response->setContent($this->withTerm((string) $response->getContent(), $site, $request));
+        }
 
-        return $this->document($site, 'schedule_file', in_array($part, self::PARTS, true) ? $part : null);
+        return $response;
+    }
+
+    /** 工事の工期（開始日・工期末）を保存する。工期は工事ごとで、ログインした人なら誰でも入力できる（変更は記録に残す）。 */
+    public function saveTerm(Request $request, string $site, Genba3dTermService $terms, UserService $users): JsonResponse
+    {
+        abort_unless(isset($this->sites()[$site]), 404);
+        $project = Genba3dCatalog::projectOf($site);
+        abort_unless($project !== null, 404);
+        $user = $users->GetUser((int) $request->session()->get('login_user_id'));
+        abort_unless($user, 401);
+        if (! $terms->ready()) {
+            return response()->json(['message' => '工期の保存はまだ準備中です（データベースの更新待ち）。'], 503);
+        }
+
+        $data = $request->validate([
+            'start' => ['nullable', 'date_format:Y-m-d'],
+            'end' => ['nullable', 'date_format:Y-m-d'],
+        ], [
+            'start.date_format' => '開始日の形が正しくありません。',
+            'end.date_format' => '工期末の形が正しくありません。',
+        ]);
+        $start = $data['start'] ?? null;
+        $end = $data['end'] ?? null;
+        if ($start !== null && $end !== null && $end < $start) {
+            return response()->json(['message' => '工期末は開始日より後の日にしてください。'], 422);
+        }
+
+        $changed = $terms->save($project['key'], $start, $end, $user);
+
+        return response()->json([
+            'message' => $changed ? '工期を保存しました。' : '工期は変わっていません。',
+            'changed' => $changed,
+            'term' => $terms->term($project['key']),
+            'logs' => $terms->logs($project['key']),
+        ]);
+    }
+
+    /**
+     * 工程表のページに、工事の工期を差し込む。
+     * 入力欄のスクリプトと値（window.GENBA3D_TERM）を足し、ページに書いてある工期末・着手日の初期値を置き換える。
+     */
+    private function withTerm(string $html, string $site, Request $request): string
+    {
+        $project = Genba3dCatalog::projectOf($site);
+        if ($project === null) {
+            return $html;
+        }
+        $service = app(Genba3dTermService::class);
+        $term = $service->term($project['key']);
+        $user = app(UserService::class)->GetUser((int) $request->session()->get('login_user_id'));
+
+        $html = self::applyTerm($html, $term['start'], $term['end']);
+        $data = [
+            'project' => $project['name'],
+            'start' => $term['start'],
+            'end' => $term['end'],
+            'source' => $term['source'],
+            'updatedBy' => $term['updatedBy'],
+            'updatedAt' => $term['updatedAt'],
+            'canEdit' => (bool) $user && $service->ready(),
+            'logs' => $service->logs($project['key']),
+            'saveUrl' => route('genba3d.term', ['site' => $site]),
+            'csrf' => csrf_token(),
+        ];
+        $head = '<script>window.GENBA3D_TERM='.json_encode($data, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT).';</script>';
+        $pos = stripos($html, '<script');
+        $html = $pos === false ? $head.$html : substr($html, 0, $pos).$head.substr($html, $pos);
+
+        $src = asset('js/genba3d-term.js').'?v='.(@filemtime(public_path('js/genba3d-term.js')) ?: '1');
+        $ui = '<script src="'.e($src).'" defer></script>';
+
+        return str_contains($html, '</body>') ? (string) preg_replace('~</body>~i', $ui.'</body>', $html, 1) : $html.$ui;
+    }
+
+    /**
+     * ページに書いてある工期末（DEADLINE と、その日付を書いた見出し・注意の文）と、着手日の初期値を、
+     * 入力された工期に置き換える。設計図書の説明として書いた日付（「設計図書の工期（…）」など）はそのまま。
+     */
+    public static function applyTerm(string $html, ?string $start, ?string $end): string
+    {
+        if ($end !== null && preg_match('/DEADLINE="(\d{4})-(\d\d)-(\d\d)"/', $html, $m)) {
+            [, $y, $mo, $d] = $m;
+            [$ny, $nmo, $nd] = explode('-', $end);
+            $wa = fn (string $yy, string $mm, string $dd): string => '令和'.((int) $yy - 2018).'年'.(int) $mm.'月'.(int) $dd.'日';
+            $old = $wa($y, $mo, $d);
+            $new = $wa($ny, $nmo, $nd);
+            $html = str_replace($m[0], 'DEADLINE="'.$end.'"', $html);
+            if ($old !== $new) {
+                $html = (string) preg_replace('/(工期末|工事完了期限)([（ ])'.preg_quote($old, '/').'(と仮定|（仮定）|（設計図書の工期）)?/u', '$1$2'.$new, $html);
+                $html = str_replace('（'.(int) $mo.'/'.(int) $d.'）までの余裕', '（'.(int) $nmo.'/'.(int) $nd.'）までの余裕', $html);
+            }
+        }
+        if ($start !== null) {
+            $html = (string) preg_replace('/(const DEF=\{start:")\d{4}-\d\d-\d\d"/', '${1}'.$start.'"', $html, 1);
+            $html = (string) preg_replace('/(id="start" value=")\d{4}-\d\d-\d\d"/', '${1}'.$start.'"', $html, 1);
+            $html = (string) preg_replace("/(\\$\('#start'\)\.value \|\| ')\d{4}-\d\d-\d\d'/", '${1}'.$start."'", $html, 1);
+        }
+
+        return $html;
     }
 
     /** 現場ごとの追加資料（重機用足場のまとめなど）のタブ。 */

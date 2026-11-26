@@ -21,6 +21,9 @@
 | 一覧ページに「準備中」として名前だけ出る。新しい現場を作ったら、下の sites に
 | 1件足し、その工事の sites にキーを書き足す。
 |
+| term は工事の工期（開始日 start・工期末 end、Y-m-d）の初期値で、設計図書から拾った値。
+| 工程表の画面で工期を入力すると、そちらが優先される（t_genba3d_terms）。分からない値は書かない。
+|
 | knowledge_file は「AIに質問」が答えの根拠にする資料（resources/genba3d/knowledge/
 | 配下のテキスト）。3Dモデルと工程表の画面に載っている寸法・数量・手順・確認事項を、
 | 根拠の図面名つきでまとめてある。ページの中身を直したら、こちらも合わせて直す。
@@ -30,16 +33,16 @@
 
 return [
     'projects' => [
-        'r07-20' => ['name' => 'R07-20重内', 'sites' => ['omonai-koren', 'omonai-omonai', 'omonai-shinma', 'omonai-haraguchi', 'omonai-hatsukami', 'omonai-toranosawa']],
-        'r08-01' => ['name' => 'R08-01福島トンネル', 'sites' => ['fukushima-tunnel']],
+        'r07-20' => ['name' => 'R07-20重内', 'sites' => ['omonai-koren', 'omonai-omonai', 'omonai-shinma', 'omonai-haraguchi', 'omonai-hatsukami', 'omonai-toranosawa'], 'term' => ['end' => '2027-02-24']],
+        'r08-01' => ['name' => 'R08-01福島トンネル', 'sites' => ['fukushima-tunnel'], 'term' => ['end' => '2026-12-04']],
         'r08-02' => ['name' => 'R08-02魚礁', 'sites' => []],
-        'r08-03' => ['name' => 'R08-03桧倉', 'sites' => ['hinokura-shisen']],
+        'r08-03' => ['name' => 'R08-03桧倉', 'sites' => ['hinokura-shisen'], 'term' => ['end' => '2027-01-29']],
         'r08-04' => ['name' => 'R08-04軌道施設', 'sites' => []],
-        'r08-06' => ['name' => 'R08-06桧倉維持', 'sites' => ['hinokura-rindo']],
+        'r08-06' => ['name' => 'R08-06桧倉維持', 'sites' => ['hinokura-rindo'], 'term' => ['start' => '2026-05-15', 'end' => '2026-11-30']],
         'r08-08' => ['name' => 'R08-08滝ノ下', 'sites' => ['takinoshita-chisan']],
-        'r08-11' => ['name' => 'R08-11吉岡', 'sites' => ['yoshioka-ganpeki', 'yoshioka-funaage', 'yoshioka-sokkou']],
-        'r08-12' => ['name' => 'R08-12岩部線', 'sites' => ['iwabe-a140', 'iwabe-a150', 'iwabe-a170', 'iwabe-takinoshita', 'iwabe-urawa', 'iwabe-itahashi', 'iwabe-shiogama']],
-        'r08-14' => ['name' => 'R08-14豊浜', 'sites' => ['toyohama-kyukeisha', 'toyohama-fukushimagawa']],
+        'r08-11' => ['name' => 'R08-11吉岡', 'sites' => ['yoshioka-ganpeki', 'yoshioka-funaage', 'yoshioka-sokkou'], 'term' => ['start' => '2026-06-18', 'end' => '2027-01-04']],
+        'r08-12' => ['name' => 'R08-12岩部線', 'sites' => ['iwabe-a140', 'iwabe-a150', 'iwabe-a170', 'iwabe-takinoshita', 'iwabe-urawa', 'iwabe-itahashi', 'iwabe-shiogama'], 'term' => ['end' => '2027-03-10']],
+        'r08-14' => ['name' => 'R08-14豊浜', 'sites' => ['toyohama-kyukeisha', 'toyohama-fukushimagawa'], 'term' => ['start' => '2026-07-16', 'end' => '2027-03-23']],
         'r08-16' => ['name' => 'R08-16大沢', 'sites' => ['asahi-funaageba', 'asahi-higashi-gogan', 'osawa-kaigan-gogan']],
         'kikonai' => ['name' => 'R08-木古内漁港海岸', 'sites' => ['kikonai-kyukeisha']],
     ],

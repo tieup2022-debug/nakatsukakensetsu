@@ -202,6 +202,7 @@ Route::middleware('nakatsuka.auth')->group(function (): void {
     Route::get('/genba3d/{site}/kotei/page', [Genba3dController::class, 'schedulePage'])->name('genba3d.schedule.page')->where('site', '[a-z0-9-]+');
     Route::get('/genba3d/{site}/shiryo/{page}', [Genba3dController::class, 'extra'])->name('genba3d.page')->where(['site' => '[a-z0-9-]+', 'page' => '[a-z0-9-]+']);
     Route::get('/genba3d/{site}/shiryo/{page}/page', [Genba3dController::class, 'extraPage'])->name('genba3d.page.raw')->where(['site' => '[a-z0-9-]+', 'page' => '[a-z0-9-]+']);
+    Route::post('/genba3d/{site}/term', [Genba3dController::class, 'saveTerm'])->name('genba3d.term')->where('site', '[a-z0-9-]+');
     Route::post('/genba3d/{site}/ask', [Genba3dController::class, 'ask'])->name('genba3d.ask')->where('site', '[a-z0-9-]+');
     Route::post('/genba3d/{site}/koe', [Genba3dFeedbackController::class, 'store'])->name('genba3d.koe.store')->where('site', '[a-z0-9-]+');
 });

@@ -5,6 +5,14 @@
         .genba3d-site + .genba3d-site {
             border-top: 1px solid #e2e8f0;
         }
+        .genba3d-terms td, .genba3d-terms th { vertical-align: middle; white-space: nowrap; }
+        .genba3d-terms .name { white-space: normal; min-width: 9em; }
+        .genba3d-term-bar { position: relative; height: 8px; min-width: 120px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+        .genba3d-term-bar span { position: absolute; inset: 0 auto 0 0; background: #2563eb; border-radius: 999px; }
+        .genba3d-term-bar.is-over span { background: #dc2626; }
+        .genba3d-term-bar.is-late span { background: #d97706; }
+        .genba3d-term-left.is-over { color: #b91c1c; font-weight: 600; }
+        .genba3d-term-left.is-late { color: #b45309; font-weight: 600; }
         .genba3d-upcoming .badge {
             font-weight: 500;
             font-size: .85rem;
@@ -30,11 +38,83 @@
         </a>
     </div>
 
+    @php
+        $fmt = fn (?string $d): string => $d ? \Illuminate\Support\Carbon::parse($d)->format('Y/n/j') : '—';
+        // 工期を入力する画面（その工事で最初に工程表がある現場）
+        $termLink = function (array $project): ?string {
+            foreach ($project['sites'] as $slug => $site) {
+                if (! empty($site['schedule_file'])) {
+                    return route('genba3d.schedule', ['site' => $slug]);
+                }
+            }
+            return null;
+        };
+    @endphp
+
+    @if (! empty($projects))
+        <section class="card shadow-sm border-0 mb-4" aria-labelledby="genba3d-terms-title">
+            <div class="card-header bg-white py-3">
+                <h2 class="h5 mb-0 fw-semibold" id="genba3d-terms-title">工期の一覧</h2>
+                <div class="small text-muted">工期は各工事の「工程表」で入力します（誰でも入力でき、変更は工程表の「変更の記録」に残ります）。「設計図書の値」は図面・説明書から拾った値で、まだ契約の工期として保存されていません。</div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 genba3d-terms">
+                    <thead class="small text-muted">
+                        <tr><th class="ps-3">工事</th><th>開始日</th><th>工期末</th><th>残り</th><th style="width:22%">経過</th><th class="pe-3"></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($projects as $key => $project)
+                            @php
+                                $term = $terms[$key] ?? ['start' => null, 'end' => null, 'source' => null];
+                                $pg = \App\Services\Genba3dTermService::progress($term);
+                                $late = $pg['state'] === 'running' && $pg['left'] !== null && $pg['left'] <= 14;
+                                $cls = $pg['state'] === 'over' ? 'is-over' : ($late ? 'is-late' : '');
+                                $link = $termLink($project);
+                            @endphp
+                            <tr data-term="{{ $key }}">
+                                <td class="ps-3 name"><a href="#{{ $key }}" class="text-decoration-none fw-semibold">{{ $project['name'] }}</a>
+                                    @if (($term['source'] ?? null) === 'default')<span class="badge text-bg-light border ms-1 fw-normal">設計図書の値</span>@endif
+                                    @if (($term['source'] ?? null) === 'saved' && ! empty($term['updatedBy']))
+                                        <div class="small text-muted">更新：{{ $term['updatedBy'] }}（{{ $term['updatedAt'] }}）</div>
+                                    @endif
+                                </td>
+                                <td class="small">{{ $fmt($term['start']) }}</td>
+                                <td class="small">{{ $fmt($term['end']) }}</td>
+                                <td class="small genba3d-term-left {{ $cls }}">
+                                    @if ($pg['state'] === 'none') <span class="text-muted">未入力</span>
+                                    @elseif ($pg['state'] === 'over') 工期末を{{ -$pg['left'] }}日過ぎ
+                                    @elseif ($pg['state'] === 'before') 着手前（あと{{ $pg['left'] }}日で工期末）
+                                    @else あと{{ $pg['left'] }}日
+                                    @endif
+                                </td>
+                                <td>
+                                    @if ($pg['percent'] !== null)
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="genba3d-term-bar flex-grow-1 {{ $cls }}" role="img" aria-label="工期の経過 {{ $pg['percent'] }}%"><span style="width: {{ $pg['percent'] }}%"></span></div>
+                                            <span class="small text-muted">{{ $pg['percent'] }}%</span>
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="pe-3 text-end">
+                                    @if ($link)<a href="{{ $link }}" class="btn btn-link btn-sm p-0">{{ ($term['source'] ?? null) === 'saved' ? '工程表' : '入力する' }}</a>@endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    @endif
+
     @foreach ($projects as $key => $project)
         <section class="card shadow-sm border-0 mb-4" id="{{ $key }}" aria-labelledby="genba3d-project-{{ $key }}">
             <div class="card-header bg-white d-flex align-items-baseline gap-2 py-3">
                 <h2 class="h5 mb-0 fw-semibold" id="genba3d-project-{{ $key }}">{{ $project['name'] }}</h2>
                 <span class="small text-muted">{{ count($project['sites']) }}現場</span>
+                @php $term = $terms[$key] ?? ['start' => null, 'end' => null]; @endphp
+                @if ($term['start'] || $term['end'])
+                    <span class="small text-muted ms-auto">工期 {{ $fmt($term['start']) }} 〜 {{ $fmt($term['end']) }}</span>
+                @endif
             </div>
             <div class="card-body py-0">
                 @foreach ($project['sites'] as $slug => $site)
