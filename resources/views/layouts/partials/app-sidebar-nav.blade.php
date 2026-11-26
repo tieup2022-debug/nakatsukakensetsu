@@ -60,10 +60,13 @@
     </li>
     --}}
     @php
-        // 現場3D: 押すと「一覧」と工事の名前が開く。PC用とスマホ用で2回読み込まれるので id を分ける。
+        // 現場3D: 押すと「一覧」と、年度ごとの工事が開く。工事を押すと工程表の種類（契約・計画・変更・実施・ネットワーク工程表）が開く。
+        // PC用とスマホ用で2回読み込まれるので id を分ける。
         $genba3dProjects = \App\Support\Genba3dCatalog::activeProjects();
         $genba3dOpen = request()->routeIs('genba3d.*');
         $genba3dCurrent = (string) request()->route('site');
+        $genba3dCurrentProject = \App\Support\Genba3dCatalog::currentProjectKey();
+        $genba3dCurrentPhase = \App\Support\Genba3dCatalog::currentPhase();
         $genba3dListId = $dismiss ? 'genba3dNavMobile' : 'genba3dNavDesktop';
     @endphp
     @if (! empty($genba3dProjects))
@@ -85,12 +88,36 @@
                         一覧
                     </a>
                 </li>
-                {{-- 工事ごとに1行。押すと、その工事の最初の現場が開く（現場は画面の上のボタンで切り替える） --}}
-                @foreach ($genba3dProjects as $genba3dProject)
-                    <li class="nav-item">
-                        <a href="{{ route('genba3d.show', ['site' => array_key_first($genba3dProject['sites'])]) }}" class="nav-link py-1 small {{ isset($genba3dProject['sites'][$genba3dCurrent]) ? 'active' : 'text-white-50' }}">
-                            {{ $genba3dProject['name'] }}
-                        </a>
+                {{-- 年度 › 工事 › 工程表の種類（契約・計画・変更・実施・ネットワーク工程表）。開いている工事だけ広げる --}}
+                @foreach (\App\Support\Genba3dCatalog::byYear($genba3dProjects) as $genba3dYearKey => $genba3dYear)
+                    <li class="nav-item mt-2">
+                        <div class="px-3 pt-1 pb-1 small text-white-50 fw-semibold" style="font-size:.72rem;letter-spacing:.06em">{{ $genba3dYear['label'] }}</div>
+                        <ul class="list-unstyled mb-0">
+                            @foreach ($genba3dYear['projects'] as $genba3dKey => $genba3dProject)
+                                @php
+                                    $genba3dIsCurrent = $genba3dCurrentProject === $genba3dKey;
+                                    $genba3dSubId = $genba3dListId.'-'.$genba3dKey;
+                                @endphp
+                                <li class="nav-item">
+                                    <button type="button"
+                                        class="nav-link py-1 small d-flex align-items-center w-100 text-start {{ $genba3dIsCurrent ? 'text-white fw-semibold' : 'text-white-50' }}"
+                                        data-bs-toggle="collapse" data-bs-target="#{{ $genba3dSubId }}"
+                                        aria-expanded="{{ $genba3dIsCurrent ? 'true' : 'false' }}" aria-controls="{{ $genba3dSubId }}">
+                                        {{ $genba3dProject['name'] }}
+                                        <span class="ms-auto" aria-hidden="true" style="font-size:.65rem">▾</span>
+                                    </button>
+                                    <ul id="{{ $genba3dSubId }}" class="collapse {{ $genba3dIsCurrent ? 'show' : '' }} list-unstyled ms-3 ps-2 mb-1 border-start border-secondary border-opacity-50">
+                                        @foreach (\App\Support\Genba3dCatalog::PHASES as $genba3dPhase => $genba3dPhaseLabel)
+                                            @php $genba3dOn = $genba3dIsCurrent && $genba3dCurrentPhase === $genba3dPhase; @endphp
+                                            <li class="nav-item">
+                                                <a href="{{ \App\Support\Genba3dCatalog::phaseUrl($genba3dKey, $genba3dProject, $genba3dPhase) }}"
+                                                    class="nav-link py-1 small {{ $genba3dOn ? 'active' : 'text-white-50' }}" @if ($genba3dOn) aria-current="page" @endif>{{ $genba3dPhaseLabel }}</a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </li>
+                            @endforeach
+                        </ul>
                     </li>
                 @endforeach
             </ul>

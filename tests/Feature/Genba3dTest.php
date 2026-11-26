@@ -268,16 +268,30 @@ class Genba3dTest extends TestCase
         }
     }
 
-    public function test_site_page_has_three_tabs_model_steps_and_schedule(): void
+    public function test_site_page_shows_the_schedule_kinds_and_the_tabs_of_the_open_kind(): void
     {
         $site = 'kikonai-kyukeisha';
-        foreach (['genba3d.show' => '3Dモデル', 'genba3d.steps' => '施工手順', 'genba3d.schedule' => '工程表'] as $name => $label) {
+        // 3Dモデルは「変更」、施工手順・工程表は「計画」の中のタブ
+        $model = (string) $this->withSession(['login_user_id' => 1])->get(route('genba3d.show', ['site' => $site]))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/aria-current="page"\s*>3Dモデル<\/a>/u', $model);
+        $this->assertMatchesRegularExpression('/class="active"\s*aria-current="page"\s*>変更<\/a>/u', $model);
+        $this->assertStringNotContainsString('>施工手順</a>', $model);
+        $this->assertStringContainsString('令和8年度</a>', $model);
+
+        foreach (['genba3d.steps' => '施工手順', 'genba3d.schedule' => '工程表'] as $name => $label) {
             $html = (string) $this->withSession(['login_user_id' => 1])->get(route($name, ['site' => $site]))->assertOk()->getContent();
             $this->assertMatchesRegularExpression('/aria-current="page"\s*>'.$label.'<\/a>/u', $html);
-            $this->assertTrue(mb_strpos($html, '>3Dモデル</a>') < mb_strpos($html, '>施工手順</a>'));
+            $this->assertMatchesRegularExpression('/class="active"\s*aria-current="page"\s*>計画<\/a>/u', $html);
             $this->assertTrue(mb_strpos($html, '>施工手順</a>') < mb_strpos($html, '>工程表</a>'));
-            $this->assertStringNotContainsString('施工手順と工程表</a>', $html);
+            $this->assertStringNotContainsString('>3Dモデル</a>', $html);
         }
+
+        // 工程表の種類は5つ、この並び
+        $pos = array_map(fn ($l) => mb_strpos($model, '>'.$l), ['契約', '計画', '変更', '実施', 'ネットワーク工程表']);
+        $this->assertSame($pos, array_values(array_filter($pos, fn ($p) => $p !== false)));
+        $sorted = $pos;
+        sort($sorted);
+        $this->assertSame($sorted, $pos);
 
         // 一覧ページにも、施工手順と工程表へのボタンが別々に出る
         $this->withSession(['login_user_id' => 1])->get(route('genba3d.index'))
@@ -329,8 +343,8 @@ class Genba3dTest extends TestCase
         $raw->assertSee('<html lang="ja" data-theme="light">', false);
         $raw->assertSee('重機用足場');
 
-        // ほかのタブからも入口が見える。資料の無い現場には出ない
-        foreach (['genba3d.show', 'genba3d.schedule'] as $name) {
+        // 計画のほかのタブからも入口が見える。資料の無い現場には出ない
+        foreach (['genba3d.steps', 'genba3d.schedule'] as $name) {
             $this->withSession(['login_user_id' => 1])
                 ->get(route($name, ['site' => $site]))
                 ->assertOk()
@@ -382,5 +396,47 @@ class Genba3dTest extends TestCase
                 ->get(route($name, ['site' => 'no-such-site', 'page' => 'ashiba']))
                 ->assertNotFound();
         }
+    }
+
+    public function test_menu_groups_projects_by_year_and_lists_the_schedule_kinds(): void
+    {
+        $menu = $this->withSession(['login_user_id' => 1])
+            ->view('layouts.partials.app-sidebar-nav', ['dismissOffcanvas' => false]);
+        $menu->assertSeeInOrder(['現場3D', '一覧', '令和7年度', 'R07-20重内', '令和8年度', 'R08-01福島トンネル', 'R08-木古内漁港海岸']);
+        $menu->assertSeeInOrder(['R07-20重内', '契約', '計画', '変更', '実施', 'ネットワーク工程表']);
+        // 計画は工程表、変更は3Dモデル、ほかは準備中のページへ
+        $menu->assertSee('href="'.route('genba3d.schedule', ['site' => 'omonai-koren']).'"', false);
+        $menu->assertSee('href="'.route('genba3d.show', ['site' => 'omonai-koren']).'"', false);
+        $menu->assertSee('href="'.route('genba3d.phase', ['project' => 'r07-20', 'phase' => 'network']).'"', false);
+        $menu->assertSee('href="'.route('genba3d.phase', ['project' => 'kikonai', 'phase' => 'keiyaku']).'"', false);
+    }
+
+    public function test_phase_pages_that_are_not_ready_say_so_and_ready_ones_redirect(): void
+    {
+        foreach (['keiyaku' => 'PDFで出力', 'jisshi' => '実施工程表', 'network' => 'クリティカルパス'] as $phase => $text) {
+            $this->withSession(['login_user_id' => 1])
+                ->get(route('genba3d.phase', ['project' => 'r08-14', 'phase' => $phase]))
+                ->assertOk()
+                ->assertSee('準備中')
+                ->assertSee($text)
+                ->assertSee('R08-14豊浜')
+                ->assertSee('令和8年度');
+        }
+        $this->withSession(['login_user_id' => 1])->get(route('genba3d.phase', ['project' => 'r08-14', 'phase' => 'keikaku']))
+            ->assertRedirect(route('genba3d.schedule', ['site' => 'toyohama-kyukeisha']));
+        $this->withSession(['login_user_id' => 1])->get(route('genba3d.phase', ['project' => 'r08-14', 'phase' => 'henko']))
+            ->assertRedirect(route('genba3d.show', ['site' => 'toyohama-kyukeisha']));
+        $this->withSession(['login_user_id' => 1])->get(route('genba3d.phase', ['project' => 'r08-14', 'phase' => 'zzz']))->assertNotFound();
+        $this->withSession(['login_user_id' => 1])->get(route('genba3d.phase', ['project' => 'r08-02', 'phase' => 'keiyaku']))->assertNotFound();
+    }
+
+    public function test_year_is_read_from_the_project_key_or_name(): void
+    {
+        $this->assertSame(7, \App\Support\Genba3dCatalog::year('r07-20'));
+        $this->assertSame(8, \App\Support\Genba3dCatalog::year('kikonai'));
+        $this->assertNull(\App\Support\Genba3dCatalog::year('other', 'その他'));
+        $groups = \App\Support\Genba3dCatalog::byYear(\App\Support\Genba3dCatalog::activeProjects());
+        $this->assertSame(['r07', 'r08'], array_keys($groups));
+        $this->assertSame(['r07-20'], array_keys($groups['r07']['projects']));
     }
 }

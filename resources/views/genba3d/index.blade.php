@@ -63,7 +63,9 @@
                         <tr><th class="ps-3">工事</th><th>開始日</th><th>工期末</th><th>残り</th><th style="width:22%">経過</th><th class="pe-3"></th></tr>
                     </thead>
                     <tbody>
-                        @foreach ($projects as $key => $project)
+                        @foreach (\App\Support\Genba3dCatalog::byYear($projects) as $yearKey => $yearGroup)
+                        <tr class="table-light"><th colspan="6" class="ps-3 small text-muted fw-semibold">{{ $yearGroup['label'] }}</th></tr>
+                        @foreach ($yearGroup['projects'] as $key => $project)
                             @php
                                 $term = $terms[$key] ?? ['start' => null, 'end' => null, 'source' => null];
                                 $pg = \App\Services\Genba3dTermService::progress($term);
@@ -100,21 +102,33 @@
                                 </td>
                             </tr>
                         @endforeach
+                        @endforeach
                     </tbody>
                 </table>
             </div>
         </section>
     @endif
 
-    @foreach ($projects as $key => $project)
+    @foreach (\App\Support\Genba3dCatalog::byYear($projects) as $yearKey => $yearGroup)
+    <h2 class="h5 fw-semibold mt-4 mb-3 pb-1 border-bottom" id="year-{{ $yearKey }}">{{ $yearGroup['label'] }}</h2>
+    @foreach ($yearGroup['projects'] as $key => $project)
         <section class="card shadow-sm border-0 mb-4" id="{{ $key }}" aria-labelledby="genba3d-project-{{ $key }}">
             <div class="card-header bg-white d-flex align-items-baseline gap-2 py-3">
-                <h2 class="h5 mb-0 fw-semibold" id="genba3d-project-{{ $key }}">{{ $project['name'] }}</h2>
+                <h3 class="h5 mb-0 fw-semibold" id="genba3d-project-{{ $key }}">{{ $project['name'] }}</h3>
                 <span class="small text-muted">{{ count($project['sites']) }}現場</span>
                 @php $term = $terms[$key] ?? ['start' => null, 'end' => null]; @endphp
                 @if ($term['start'] || $term['end'])
                     <span class="small text-muted ms-auto">工期 {{ $fmt($term['start']) }} 〜 {{ $fmt($term['end']) }}</span>
                 @endif
+            </div>
+            <div class="px-3 pt-3">
+                <div class="d-flex flex-wrap align-items-center gap-2 small" aria-label="工程表の種類">
+                    <span class="text-muted">工程表：</span>
+                    @foreach (\App\Support\Genba3dCatalog::PHASES as $phaseKey => $phaseLabel)
+                        @php $phaseReady = in_array($phaseKey, ['keikaku', 'henko'], true); @endphp
+                        <a href="{{ \App\Support\Genba3dCatalog::phaseUrl($key, $project, $phaseKey) }}" class="btn btn-sm {{ $phaseReady ? 'btn-dark' : 'btn-outline-secondary' }}">{{ $phaseLabel }}@if (! $phaseReady)<span class="ms-1 opacity-75" style="font-size:.7rem">準備中</span>@endif</a>
+                    @endforeach
+                </div>
             </div>
             <div class="card-body py-0">
                 @foreach ($project['sites'] as $slug => $site)
@@ -135,6 +149,7 @@
                 @endforeach
             </div>
         </section>
+    @endforeach
     @endforeach
 
     @if (empty($projects))

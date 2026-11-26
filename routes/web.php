@@ -195,6 +195,7 @@ Route::middleware('nakatsuka.auth')->group(function (): void {
     Route::post('/genba3d/koe/{id}/replies', [Genba3dFeedbackController::class, 'reply'])->name('genba3d.koe.reply')->where('id', '[0-9]+');
     Route::patch('/genba3d/koe/{id}/status', [Genba3dFeedbackController::class, 'status'])->name('genba3d.koe.status')->where('id', '[0-9]+');
     Route::delete('/genba3d/koe/{id}', [Genba3dFeedbackController::class, 'destroy'])->name('genba3d.koe.destroy')->where('id', '[0-9]+');
+    Route::get('/genba3d/project/{project}/{phase}', [Genba3dController::class, 'phase'])->name('genba3d.phase')->where(['project' => '[a-z0-9-]+', 'phase' => '[a-z]+']);
     Route::get('/genba3d/{site}', [Genba3dController::class, 'show'])->name('genba3d.show')->where('site', '[a-z0-9-]+');
     Route::get('/genba3d/{site}/model', [Genba3dController::class, 'model'])->name('genba3d.model')->where('site', '[a-z0-9-]+');
     Route::get('/genba3d/{site}/tejun', [Genba3dController::class, 'steps'])->name('genba3d.steps')->where('site', '[a-z0-9-]+');

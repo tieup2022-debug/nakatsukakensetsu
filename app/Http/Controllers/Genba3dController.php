@@ -35,6 +35,28 @@ class Genba3dController extends Controller
         ]);
     }
 
+    /**
+     * 工事ごとの工程表の種類のページ（契約・実施・ネットワーク工程表など、まだ中身の無いもの）。
+     * 計画と変更は中身があるので、その画面へ送る。
+     */
+    public function phase(string $project, string $phase): View|\Illuminate\Http\RedirectResponse
+    {
+        $projects = Genba3dCatalog::activeProjects();
+        abort_unless(isset($projects[$project]) && isset(Genba3dCatalog::PHASES[$phase]), 404);
+        $url = Genba3dCatalog::phaseUrl($project, $projects[$project], $phase);
+        if ($url !== route('genba3d.phase', ['project' => $project, 'phase' => $phase])) {
+            return redirect($url);
+        }
+
+        return view('genba3d.phase', [
+            'title' => '現場3D｜'.$projects[$project]['name'].'｜'.Genba3dCatalog::PHASES[$phase],
+            'projectKey' => $project,
+            'project' => ['key' => $project] + $projects[$project],
+            'phase' => $phase,
+            'term' => app(Genba3dTermService::class)->term($project),
+        ]);
+    }
+
     /** 現場の声の未対応・対応中の件数（表が無い・読めないときは 0）。 */
     private function koeOpenCount(): int
     {

@@ -11,6 +11,8 @@
     $extra = $tab === 'page' ? ($extraPages[$pageKey ?? ''] ?? null) : null;
     // 工程表と追加資料は縦に長い文書なので、枠を中身の高さに合わせる
     $isDocument = $isSchedule || $extra !== null;
+    // 工程表の種類: 3Dモデルは「変更」、施工手順・工程表・追加資料は「計画」
+    $phase = $tab === 'model' ? 'henko' : 'keikaku';
     if ($extra !== null) {
         $frameUrl = route('genba3d.page.raw', ['site' => $currentSlug, 'page' => $pageKey]);
         $frameTitle = $extra['label'];
@@ -151,11 +153,7 @@
 @section('content')
     <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
         <div class="min-w-0">
-            <nav class="small mb-1" aria-label="現在の位置">
-                <a href="{{ route('genba3d.index') }}" class="text-decoration-none">現場3D</a>
-                <span class="text-muted mx-1" aria-hidden="true">›</span>
-                <span class="text-muted">{{ $project['name'] ?? '現場' }}</span>
-            </nav>
+            @include('genba3d.partials.phases', ['project' => $project ?? [], 'phase' => $phase])
             <h1 class="h4 mb-1 fw-semibold">{{ $project['name'] ?? '現場3D' }}</h1>
             <div class="text-muted small">
                 @if ($extra !== null)
@@ -193,10 +191,12 @@
     <p class="small text-muted mb-2">{{ $current['summary'] }}</p>
 
     <ul class="nav genba3d-kinds border-bottom mb-3" aria-label="表示する内容">
+        @if ($phase === 'henko')
         <li class="nav-item">
             <a href="{{ route('genba3d.show', ['site' => $currentSlug]) }}" class="nav-link px-3 {{ $tab === 'model' ? 'active' : '' }}" @if ($tab === 'model') aria-current="page" @endif>3Dモデル</a>
         </li>
-        @if ($hasSchedule)
+        @endif
+        @if ($phase === 'keikaku' && $hasSchedule)
             <li class="nav-item">
                 <a href="{{ route('genba3d.steps', ['site' => $currentSlug]) }}" class="nav-link px-3 {{ $isSteps ? 'active' : '' }}" @if ($isSteps) aria-current="page" @endif>施工手順</a>
             </li>
@@ -204,7 +204,7 @@
                 <a href="{{ route('genba3d.schedule', ['site' => $currentSlug]) }}" class="nav-link px-3 {{ $tab === 'schedule' ? 'active' : '' }}" @if ($tab === 'schedule') aria-current="page" @endif>工程表</a>
             </li>
         @endif
-        @foreach ($extraPages as $key => $page)
+        @foreach ($phase === 'keikaku' ? $extraPages : [] as $key => $page)
             <li class="nav-item">
                 <a href="{{ route('genba3d.page', ['site' => $currentSlug, 'page' => $key]) }}" class="nav-link px-3 {{ $extra !== null && $key === $pageKey ? 'active' : '' }}" @if ($extra !== null && $key === $pageKey) aria-current="page" @endif>{{ $page['label'] }}</a>
             </li>
