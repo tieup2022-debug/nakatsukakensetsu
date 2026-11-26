@@ -125,7 +125,7 @@
                 <div class="d-flex flex-wrap align-items-center gap-2 small" aria-label="工程表の種類">
                     <span class="text-muted">工程表：</span>
                     @foreach (\App\Support\Genba3dCatalog::PHASES as $phaseKey => $phaseLabel)
-                        @php $phaseReady = in_array($phaseKey, ['keikaku', 'henko'], true); @endphp
+                        @php $phaseReady = $phaseKey === 'keikaku'; @endphp
                         <a href="{{ \App\Support\Genba3dCatalog::phaseUrl($key, $project, $phaseKey) }}" class="btn btn-sm {{ $phaseReady ? 'btn-dark' : 'btn-outline-secondary' }}">{{ $phaseLabel }}@if (! $phaseReady)<span class="ms-1 opacity-75" style="font-size:.7rem">準備中</span>@endif</a>
                     @endforeach
                 </div>

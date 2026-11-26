@@ -271,19 +271,17 @@ class Genba3dTest extends TestCase
     public function test_site_page_shows_the_schedule_kinds_and_the_tabs_of_the_open_kind(): void
     {
         $site = 'kikonai-kyukeisha';
-        // 3Dモデルは「変更」、施工手順・工程表は「計画」の中のタブ
+        // 3Dモデル・施工手順・工程表は、どれも「計画」の中のタブ
         $model = (string) $this->withSession(['login_user_id' => 1])->get(route('genba3d.show', ['site' => $site]))->assertOk()->getContent();
-        $this->assertMatchesRegularExpression('/aria-current="page"\s*>3Dモデル<\/a>/u', $model);
-        $this->assertMatchesRegularExpression('/class="active"\s*aria-current="page"\s*>変更<\/a>/u', $model);
-        $this->assertStringNotContainsString('>施工手順</a>', $model);
         $this->assertStringContainsString('令和8年度</a>', $model);
-
-        foreach (['genba3d.steps' => '施工手順', 'genba3d.schedule' => '工程表'] as $name => $label) {
+        foreach (['genba3d.show' => '3Dモデル', 'genba3d.steps' => '施工手順', 'genba3d.schedule' => '工程表'] as $name => $label) {
             $html = (string) $this->withSession(['login_user_id' => 1])->get(route($name, ['site' => $site]))->assertOk()->getContent();
             $this->assertMatchesRegularExpression('/aria-current="page"\s*>'.$label.'<\/a>/u', $html);
             $this->assertMatchesRegularExpression('/class="active"\s*aria-current="page"\s*>計画<\/a>/u', $html);
+            $this->assertTrue(mb_strpos($html, '>3Dモデル</a>') < mb_strpos($html, '>施工手順</a>'));
             $this->assertTrue(mb_strpos($html, '>施工手順</a>') < mb_strpos($html, '>工程表</a>'));
-            $this->assertStringNotContainsString('>3Dモデル</a>', $html);
+            // 変更は準備中
+            $this->assertMatchesRegularExpression('/>変更<span class="soon">準備中<\/span><\/a>/u', $html);
         }
 
         // 工程表の種類は5つ、この並び
@@ -404,16 +402,16 @@ class Genba3dTest extends TestCase
             ->view('layouts.partials.app-sidebar-nav', ['dismissOffcanvas' => false]);
         $menu->assertSeeInOrder(['現場3D', '一覧', '令和7年度', 'R07-20重内', '令和8年度', 'R08-01福島トンネル', 'R08-木古内漁港海岸']);
         $menu->assertSeeInOrder(['R07-20重内', '契約', '計画', '変更', '実施', 'ネットワーク工程表']);
-        // 計画は工程表、変更は3Dモデル、ほかは準備中のページへ
-        $menu->assertSee('href="'.route('genba3d.schedule', ['site' => 'omonai-koren']).'"', false);
+        // 計画は3Dモデル（そこから施工手順・工程表のタブ）、ほかは準備中のページへ
         $menu->assertSee('href="'.route('genba3d.show', ['site' => 'omonai-koren']).'"', false);
+        $menu->assertSee('href="'.route('genba3d.phase', ['project' => 'r07-20', 'phase' => 'henko']).'"', false);
         $menu->assertSee('href="'.route('genba3d.phase', ['project' => 'r07-20', 'phase' => 'network']).'"', false);
         $menu->assertSee('href="'.route('genba3d.phase', ['project' => 'kikonai', 'phase' => 'keiyaku']).'"', false);
     }
 
     public function test_phase_pages_that_are_not_ready_say_so_and_ready_ones_redirect(): void
     {
-        foreach (['keiyaku' => 'PDFで出力', 'jisshi' => '実施工程表', 'network' => 'クリティカルパス'] as $phase => $text) {
+        foreach (['keiyaku' => 'PDFで出力', 'henko' => '設計変更', 'jisshi' => '実施工程表', 'network' => 'クリティカルパス'] as $phase => $text) {
             $this->withSession(['login_user_id' => 1])
                 ->get(route('genba3d.phase', ['project' => 'r08-14', 'phase' => $phase]))
                 ->assertOk()
@@ -423,8 +421,6 @@ class Genba3dTest extends TestCase
                 ->assertSee('令和8年度');
         }
         $this->withSession(['login_user_id' => 1])->get(route('genba3d.phase', ['project' => 'r08-14', 'phase' => 'keikaku']))
-            ->assertRedirect(route('genba3d.schedule', ['site' => 'toyohama-kyukeisha']));
-        $this->withSession(['login_user_id' => 1])->get(route('genba3d.phase', ['project' => 'r08-14', 'phase' => 'henko']))
             ->assertRedirect(route('genba3d.show', ['site' => 'toyohama-kyukeisha']));
         $this->withSession(['login_user_id' => 1])->get(route('genba3d.phase', ['project' => 'r08-14', 'phase' => 'zzz']))->assertNotFound();
         $this->withSession(['login_user_id' => 1])->get(route('genba3d.phase', ['project' => 'r08-02', 'phase' => 'keiyaku']))->assertNotFound();

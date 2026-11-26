@@ -30,7 +30,7 @@
 @if (! empty($project['key']))
     <div class="genba3d-phases" role="navigation" aria-label="工程表の種類">
         @foreach (\App\Support\Genba3dCatalog::PHASES as $pk => $label)
-            @php $soon = ! in_array($pk, ['keikaku', 'henko'], true); @endphp
+            @php $soon = $pk !== 'keikaku'; @endphp
             <a href="{{ \App\Support\Genba3dCatalog::phaseUrl($project['key'], $project, $pk) }}" class="{{ ($phase ?? null) === $pk ? 'active' : '' }}" @if (($phase ?? null) === $pk) aria-current="page" @endif>{{ $label }}@if ($soon)<span class="soon">準備中</span>@endif</a>
         @endforeach
     </div>

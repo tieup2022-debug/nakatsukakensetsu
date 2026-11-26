@@ -18,8 +18,7 @@
             <p class="mb-3">{{ \App\Support\Genba3dCatalog::PHASE_NOTES[$phase] }}</p>
             <p class="small text-muted mb-2">いま見られるもの</p>
             <div class="d-flex flex-wrap gap-2">
-                <a href="{{ \App\Support\Genba3dCatalog::phaseUrl($projectKey, $project, 'keikaku') }}" class="btn btn-outline-primary btn-sm">計画（施工手順・工程表）</a>
-                <a href="{{ \App\Support\Genba3dCatalog::phaseUrl($projectKey, $project, 'henko') }}" class="btn btn-outline-primary btn-sm">変更（3Dモデル）</a>
+                <a href="{{ \App\Support\Genba3dCatalog::phaseUrl($projectKey, $project, 'keikaku') }}" class="btn btn-outline-primary btn-sm">計画（3Dモデル・施工手順・工程表）</a>
             </div>
         </div>
     </div>

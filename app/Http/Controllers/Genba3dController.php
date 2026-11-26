@@ -36,8 +36,8 @@ class Genba3dController extends Controller
     }
 
     /**
-     * 工事ごとの工程表の種類のページ（契約・実施・ネットワーク工程表など、まだ中身の無いもの）。
-     * 計画と変更は中身があるので、その画面へ送る。
+     * 工事ごとの工程表の種類のページ（契約・変更・実施・ネットワーク工程表など、まだ中身の無いもの）。
+     * 計画は中身があるので、その画面へ送る。
      */
     public function phase(string $project, string $phase): View|\Illuminate\Http\RedirectResponse
     {

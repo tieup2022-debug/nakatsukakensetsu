@@ -11,8 +11,7 @@ class Genba3dCatalog
 {
     /**
      * 工事ごとに並べる工程表の種類（メニューの3段目）。キーは URL に使う。
-     * 計画は施工手順・工程表、変更は3Dモデル（変更後の図面から組み立てたもの）を開く。
-     * ほかはまだ中身が無く、「準備中」のページを開く。
+     * 計画は3Dモデル・施工手順・工程表を開く。ほかはまだ中身が無く、「準備中」のページを開く。
      */
     public const PHASES = [
         'keiyaku' => '契約',
@@ -25,8 +24,8 @@ class Genba3dCatalog
     /** 準備中のページに出す説明。 */
     public const PHASE_NOTES = [
         'keiyaku' => '契約時に発注者へ出す工程表です。PDFで出力できるようにする予定です。',
-        'keikaku' => '施工計画の工程表です。設計図と数量から組んだ施工手順と工程表を開きます。',
-        'henko' => '設計変更に合わせた工程です。変更後の図面から組み立てた3Dモデルを開きます。',
+        'keikaku' => '施工計画です。設計図から組み立てた3Dモデルと、数量から組んだ施工手順・工程表を開きます。',
+        'henko' => '設計変更に合わせて見直す工程表です。変更の内容と、変更前後の工程を並べて見られるようにする予定です。',
         'jisshi' => '実際に進んだ日を記録して、予定と並べて見る実施工程表です。',
         'network' => '作業のつながり（先に終わっている必要がある作業）と、遅れると工期に響く作業（クリティカルパス）を示す工程表です。',
     ];
@@ -111,22 +110,15 @@ class Genba3dCatalog
     }
 
     /**
-     * 工程表の種類ごとの行き先。計画は施工手順・工程表、変更は3Dモデル、ほかは準備中のページ。
+     * 工程表の種類ごとの行き先。計画はその工事の最初の現場の3Dモデル、ほかは準備中のページ。
      *
      * @param  array{name: string, sites: array<string, array<string, mixed>>}  $project
      */
     public static function phaseUrl(string $key, array $project, string $phase): string
     {
         $first = array_key_first($project['sites']);
-        if ($phase === 'henko' && $first !== null) {
+        if ($phase === 'keikaku' && $first !== null) {
             return route('genba3d.show', ['site' => $first]);
-        }
-        if ($phase === 'keikaku') {
-            foreach ($project['sites'] as $slug => $site) {
-                if (! empty($site['schedule_file'])) {
-                    return route('genba3d.schedule', ['site' => $slug]);
-                }
-            }
         }
 
         return route('genba3d.phase', ['project' => $key, 'phase' => $phase]);
@@ -141,10 +133,7 @@ class Genba3dCatalog
         if ($r->routeIs('genba3d.phase')) {
             return (string) $r->route('phase');
         }
-        if ($r->routeIs('genba3d.show')) {
-            return 'henko';
-        }
-        if ($r->routeIs('genba3d.steps', 'genba3d.schedule', 'genba3d.page')) {
+        if ($r->routeIs('genba3d.show', 'genba3d.steps', 'genba3d.schedule', 'genba3d.page')) {
             return 'keikaku';
         }
 
